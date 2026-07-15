@@ -26,6 +26,8 @@
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 		<key>NSCameraUsageDescription</key>
 		<string>Wird benötigt, um ein Foto direkt für dein Feedback aufzunehmen.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
