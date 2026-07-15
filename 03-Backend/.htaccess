@@ -1,0 +1,20 @@
+# Sensible Dateien (Zugangsdaten, Konfiguration, Quellcode-Metadaten)
+# duerfen niemals direkt per URL abrufbar sein.
+<FilesMatch "(^\.|\.(env|json|lock|log|sql|md)$)">
+    Require all denied
+</FilesMatch>
+
+# Manche Server-Konfigurationen kennen .m4a nicht in ihrer mime.types-Datei und
+# liefern es dann als application/octet-stream aus - Browser koennen es dann nicht
+# inline im <audio>-Element abspielen (nur Download funktioniert). Explizit setzen.
+<IfModule mod_mime.c>
+    AddType audio/mp4 .m4a
+</IfModule>
+
+# Hoeheres Upload-Limit fuer Video-Feedback (siehe api/feedback.php).
+# Nur wirksam, falls PHP als Apache-Modul (mod_php) laeuft - siehe auch .user.ini
+# fuer den PHP-FPM-Fall.
+<IfModule mod_php.c>
+    php_value upload_max_filesize 25M
+    php_value post_max_size 25M
+</IfModule>

@@ -1,0 +1,15 @@
+# Zugangsdaten niemals versionieren
+.env
+03-Backend/.env
+03-Backend/config/firebase-service-account.json
+
+# Claude-Code-Lokaleinstellungen (geraetespezifisch, nicht teilen)
+.claude/settings.local.json
+**/.claude/settings.local.json
+
+# Build-Ordner
+04-App/build/
+04-App/.dart_tool/
+
+# Composer-Abhaengigkeiten (per composer install reproduzierbar, siehe composer.lock)
+03-Backend/vendor/

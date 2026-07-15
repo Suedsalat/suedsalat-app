@@ -1,0 +1,14 @@
+{
+    "name": "suedsalat/backend",
+    "description": "Backend (API + Admin) fuer die Suedsalat-Podcast-App",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "Suedsalat\\": "lib/"
+        }
+    }
+}
