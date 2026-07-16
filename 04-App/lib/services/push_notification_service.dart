@@ -25,7 +25,25 @@ class PushNotificationService {
       return;
     }
 
-    final token = await _messaging.getToken();
+    if (Platform.isIOS) {
+      // Auf iOS liefert getToken() sofort nach App-Start einen Fehler
+      // (apns-token-not-set), weil der native APNs-Token erst kurz nach dem
+      // Start eintrifft. Darauf warten, bevor der FCM-Token angefragt wird.
+      var apnsToken = await _messaging.getAPNSToken();
+      var attempts = 0;
+      while (apnsToken == null && attempts < 10) {
+        await Future.delayed(const Duration(seconds: 1));
+        apnsToken = await _messaging.getAPNSToken();
+        attempts++;
+      }
+    }
+
+    String? token;
+    try {
+      token = await _messaging.getToken();
+    } catch (_) {
+      token = null;
+    }
     if (token != null) {
       await _api.registerPushToken(token, _platform);
     }
