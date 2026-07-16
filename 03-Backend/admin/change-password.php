@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
     <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino</a>
     <a href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
-    <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden</a>
+    <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
 </nav>
 <main class="auth-box">
     <h1>Passwort ändern</h1>
@@ -83,5 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit">Passwort speichern</button>
     </form>
 </main>
+<script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
 </body>
 </html>

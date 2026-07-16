@@ -52,6 +52,7 @@ nav.admin-nav a {
 nav.admin-nav a:hover { background: var(--color-primary-hover); }
 nav.admin-nav a:nth-last-child(2) { margin-left: 30px; }
 nav.admin-nav a.nav-gap { margin-left: 20px; }
+#logout-countdown { font-family: 'Courier New', monospace; font-variant-numeric: tabular-nums; }
 
 .auth-box, .content-box {
   width: 100%;

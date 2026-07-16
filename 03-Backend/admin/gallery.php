@@ -248,7 +248,7 @@ $deleteError = isset($_GET['delete_error']);
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
     <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino</a>
     <a href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
-    <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden</a>
+    <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
 </nav>
 <main class="content-box">
     <h1>Galerie</h1>
@@ -348,5 +348,6 @@ $deleteError = isset($_GET['delete_error']);
     </div>
 </div>
 <script src="<?= BASE_PATH ?>/admin/assets/confirm-delete.js?v=<?= @filemtime(__DIR__ . '/assets/confirm-delete.js') ?>"></script>
+<script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
 </body>
 </html>
