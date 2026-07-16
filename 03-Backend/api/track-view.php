@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$allowedScreens = ['start', 'episodes', 'events', 'movie_tips', 'gallery'];
+$allowedScreens = ['start', 'episodes', 'events', 'movie_tips', 'gallery', 'feedback'];
 $screen = trim((string) ($_POST['screen'] ?? ''));
 
 if (!in_array($screen, $allowedScreens, true)) {
