@@ -122,18 +122,20 @@ $recentViews = $pdo->query(
         <ul class="feedback-list">
         <?php foreach ($openFeedback as $fb): ?>
             <li>
-                <?php if (!empty($fb['image_path']) && ($fb['media_type'] ?? 'image') === 'video'): ?>
-                    <video class="thumb" src="<?= htmlspecialchars($fb['image_path'], ENT_QUOTES) ?>" muted style="width:40px;height:40px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px;"></video>
-                <?php elseif (!empty($fb['image_path']) && ($fb['media_type'] ?? 'image') === 'audio'): ?>
-                    <audio src="<?= htmlspecialchars($fb['image_path'], ENT_QUOTES) ?>" controls style="width:180px;height:28px;vertical-align:middle;margin-right:8px;"></audio>
-                <?php elseif (!empty($fb['image_path'])): ?>
-                    <img class="thumb" src="<?= htmlspecialchars($fb['image_path'], ENT_QUOTES) ?>" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px;" onclick="openLightbox('<?= htmlspecialchars($fb['image_path'], ENT_QUOTES) ?>')">
-                <?php endif; ?>
                 <a class="activity-link" href="<?= BASE_PATH ?>/admin/feedback.php#msg-<?= (int) $fb['id'] ?>">
-                    <strong><?= htmlspecialchars($fb['sender_name'] ?: 'Anonym', ENT_QUOTES) ?></strong>
-                    (<?= htmlspecialchars($feedbackTypeLabels[$fb['type']] ?? 'Allgemein', ENT_QUOTES) ?>):
-                    <?= htmlspecialchars(mb_strimwidth($fb['message'], 0, 100, '…'), ENT_QUOTES) ?>
-                    <span class="meta"><?= htmlspecialchars(date('d.m.Y H:i', strtotime($fb['created_at'])), ENT_QUOTES) ?></span>
+                    <?php if (!empty($fb['image_path']) && ($fb['media_type'] ?? 'image') === 'video'): ?>
+                        <video class="thumb" src="<?= htmlspecialchars($fb['image_path'], ENT_QUOTES) ?>" muted style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0;"></video>
+                    <?php elseif (!empty($fb['image_path']) && ($fb['media_type'] ?? 'image') === 'audio'): ?>
+                        <audio src="<?= htmlspecialchars($fb['image_path'], ENT_QUOTES) ?>" controls style="width:180px;height:28px;flex-shrink:0;" onclick="event.stopPropagation()"></audio>
+                    <?php elseif (!empty($fb['image_path'])): ?>
+                        <img class="thumb" src="<?= htmlspecialchars($fb['image_path'], ENT_QUOTES) ?>" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0;">
+                    <?php endif; ?>
+                    <span>
+                        <strong><?= htmlspecialchars($fb['sender_name'] ?: 'Anonym', ENT_QUOTES) ?></strong>
+                        (<?= htmlspecialchars($feedbackTypeLabels[$fb['type']] ?? 'Allgemein', ENT_QUOTES) ?>):
+                        <?= htmlspecialchars(mb_strimwidth($fb['message'], 0, 100, '…'), ENT_QUOTES) ?>
+                        <span class="meta"><?= htmlspecialchars(date('d.m.Y H:i', strtotime($fb['created_at'])), ENT_QUOTES) ?></span>
+                    </span>
                 </a>
             </li>
         <?php endforeach; ?>
@@ -150,14 +152,16 @@ $recentViews = $pdo->query(
         <ul class="feedback-list">
         <?php foreach ($recentAdminActions as $item): ?>
             <li class="is-done">
-                <?php if (!empty($item['image_path'])): ?>
-                    <img class="thumb" src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px;" onclick="openLightbox('<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>')">
-                <?php endif; ?>
                 <a class="activity-link" href="<?= BASE_PATH ?>/admin/feedback.php#<?= htmlspecialchars($item['entity'], ENT_QUOTES) ?>-<?= (int) $item['entity_id'] ?>">
-                    <strong><?= htmlspecialchars($item['status_label'], ENT_QUOTES) ?></strong>
-                    von <?= htmlspecialchars($item['from'], ENT_QUOTES) ?>:
-                    <?= htmlspecialchars(mb_strimwidth($item['content'], 0, 100, '…'), ENT_QUOTES) ?>
-                    <span class="meta"><?= htmlspecialchars(date('d.m.Y H:i', strtotime($item['date'])), ENT_QUOTES) ?></span>
+                    <?php if (!empty($item['image_path'])): ?>
+                        <img class="thumb" src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0;">
+                    <?php endif; ?>
+                    <span>
+                        <strong><?= htmlspecialchars($item['status_label'], ENT_QUOTES) ?></strong>
+                        von <?= htmlspecialchars($item['from'], ENT_QUOTES) ?>:
+                        <?= htmlspecialchars(mb_strimwidth($item['content'], 0, 100, '…'), ENT_QUOTES) ?>
+                        <span class="meta"><?= htmlspecialchars(date('d.m.Y H:i', strtotime($item['date'])), ENT_QUOTES) ?></span>
+                    </span>
                 </a>
             </li>
         <?php endforeach; ?>
@@ -167,20 +171,6 @@ $recentViews = $pdo->query(
     <a class="button" href="<?= BASE_PATH ?>/admin/feedback.php">Alle Aktivitäten ansehen</a>
 </section>
 
-<div id="lightbox" class="lightbox" onclick="closeLightbox()">
-    <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
-    <img id="lightbox-img" src="" alt="">
-</div>
-<script>
-function openLightbox(src) {
-    document.getElementById('lightbox-img').src = src;
-    document.getElementById('lightbox').classList.add('is-open');
-}
-function closeLightbox() {
-    document.getElementById('lightbox').classList.remove('is-open');
-    document.getElementById('lightbox-img').src = '';
-}
-</script>
 <script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
 </body>
 </html>
