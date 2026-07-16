@@ -141,6 +141,8 @@ $recentViews = $pdo->query(
         <?php endforeach; ?>
         </ul>
     <?php endif; ?>
+
+    <a class="button" href="<?= BASE_PATH ?>/admin/feedback.php">Alle Aktivitäten ansehen</a>
 </section>
 
 <section class="content-box">
