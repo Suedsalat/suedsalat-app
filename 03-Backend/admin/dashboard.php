@@ -34,6 +34,7 @@ $feedbackTypeLabels = [
     'foto_vorschlag' => 'Fotoempfehlung',
     'kino_tipp' => 'Kinotipp',
     'allgemein' => 'Allgemeines Feedback',
+    'sprachnachricht' => 'Sprachnachricht',
 ];
 
 // Anonyme Nutzungsstatistik (siehe api/track-view.php): Aufrufe pro Bereich,
@@ -121,7 +122,11 @@ $recentViews = $pdo->query(
         <ul class="feedback-list">
         <?php foreach ($openFeedback as $fb): ?>
             <li>
-                <?php if (!empty($fb['image_path'])): ?>
+                <?php if (!empty($fb['image_path']) && ($fb['media_type'] ?? 'image') === 'video'): ?>
+                    <video class="thumb" src="<?= htmlspecialchars($fb['image_path'], ENT_QUOTES) ?>" muted style="width:40px;height:40px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px;"></video>
+                <?php elseif (!empty($fb['image_path']) && ($fb['media_type'] ?? 'image') === 'audio'): ?>
+                    <audio src="<?= htmlspecialchars($fb['image_path'], ENT_QUOTES) ?>" controls style="width:180px;height:28px;vertical-align:middle;margin-right:8px;"></audio>
+                <?php elseif (!empty($fb['image_path'])): ?>
                     <img class="thumb" src="<?= htmlspecialchars($fb['image_path'], ENT_QUOTES) ?>" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px;" onclick="openLightbox('<?= htmlspecialchars($fb['image_path'], ENT_QUOTES) ?>')">
                 <?php endif; ?>
                 <a class="activity-link" href="<?= BASE_PATH ?>/admin/feedback.php#msg-<?= (int) $fb['id'] ?>">
