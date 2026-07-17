@@ -1,0 +1,7 @@
+# Verteidigung in der Tiefe: selbst falls die Datei-Validierung in api/feedback.php
+# je umgangen wuerde, darf hier niemals ein Skript ausgefuehrt werden - nur die
+# hochgeladenen Bilder/Videos/Audiodateien werden ausgeliefert, nichts interpretiert.
+# Gilt automatisch auch fuer Unterordner wie uploads/feedback/.
+<FilesMatch "\.(php|php\d|phtml|phar)$">
+    Require all denied
+</FilesMatch>

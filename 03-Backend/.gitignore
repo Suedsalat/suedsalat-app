@@ -1,4 +1,5 @@
 .env
 vendor/
-uploads/
+uploads/*
+!uploads/.htaccess
 *.log

@@ -16,7 +16,7 @@ use Suedsalat\FcmSender;
 // Nur bei HTTP-Aufruf pruefen (CLI-Aufruf, z.B. per SSH-Cronjob, bleibt offen -
 // dort kennt ohnehin nur der Server selbst den Aufrufpfad).
 if (PHP_SAPI !== 'cli') {
-    if (empty(CRON_SECRET) || ($_GET['secret'] ?? '') !== CRON_SECRET) {
+    if (empty(CRON_SECRET) || !hash_equals(CRON_SECRET, (string) ($_GET['secret'] ?? ''))) {
         http_response_code(403);
         die('Forbidden');
     }
@@ -108,3 +108,21 @@ foreach ($xml->channel->item as $item) {
 }
 
 echo "Sync abgeschlossen. Neue Folgen: $newCount" . PHP_EOL;
+
+// Aufraeumen alter Auth-/Rate-Limit-Zeilen, damit diese Tabellen nicht unbegrenzt
+// wachsen. Laeuft im selben 15-Min-Cronjob mit, ist aber unabhaengig vom RSS-Sync -
+// ein Fehler hier darf den eigentlichen Sync oben nicht ungueltig machen.
+try {
+    // Rate-Limit-Fenster sind maximal 60 Minuten lang - 1 Tag Aufbewahrung ist reichlich Puffer.
+    $pdo->exec('DELETE FROM rate_limits WHERE created_at < (NOW() - INTERVAL 1 DAY)');
+    // Nur wirklich abgelaufene Refresh-Tokens loeschen, NICHT vorzeitig widerrufene -
+    // die werden fuer die Wiederverwendungs-Erkennung (siehe RefreshToken::verifyAndRotate)
+    // bis zu ihrem urspruenglichen Ablaufdatum gebraucht.
+    $pdo->exec('DELETE FROM refresh_tokens WHERE expires_at < NOW()');
+    // Login-Versuche nur fuer das 15-Minuten-Rate-Limit relevant (siehe Auth::isRateLimited) -
+    // 30 Tage Aufbewahrung als grosszuegiger Puffer fuer eine manuelle Nachschau.
+    $pdo->exec('DELETE FROM login_attempts WHERE attempted_at < (NOW() - INTERVAL 30 DAY)');
+    echo 'Aufraeumen abgeschlossen.' . PHP_EOL;
+} catch (\Throwable $e) {
+    error_log('Cleanup alter Auth-Zeilen fehlgeschlagen: ' . $e->getMessage());
+}
