@@ -98,6 +98,16 @@ define('LOGIN_LOCKOUT_MINUTES', 15);
 define('PASSWORD_RESET_TTL_MINUTES', 60);
 define('ADMIN_IDLE_TIMEOUT_MINUTES', 5);
 
+// --- API-Auth fuer die App (anonyme Geraete-Tokens, siehe lib/Jwt.php, lib/ApiAuth.php) ---
+define('JWT_SECRET', env('JWT_SECRET'));
+define('APP_SECRET', env('APP_SECRET'));
+// Rollout-Schalter: solange false, werden fehlende/ungueltige Tokens nur geloggt statt
+// mit 401 abgelehnt - noetig, damit bereits installierte App-Versionen ohne Token-Code
+// nicht sofort ausfallen. Erst auf true stellen, wenn die neue App-Version ausgerollt ist.
+define('API_AUTH_ENFORCE', env('API_AUTH_ENFORCE', 'false') === 'true');
+define('JWT_ACCESS_TTL_MINUTES', 60);
+define('JWT_REFRESH_TTL_DAYS', 180);
+
 // Zusaetzliche Passwort-Bestaetigung vor endgueltigen Loeschvorgaengen im
 // Admin-Bereich (Termine/Fotos/Aktivitaeten) - prueft das Passwort des
 // AKTUELL eingeloggten Admins, unabhaengig davon, wessen Datensatz geloescht wird.

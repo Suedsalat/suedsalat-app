@@ -3,9 +3,12 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/bootstrap.php';
 
+use Suedsalat\ApiAuth;
 use Suedsalat\Database;
 
 header('Content-Type: application/json; charset=utf-8');
+
+ApiAuth::requireDeviceToken();
 
 $pdo = Database::connection();
 $stmt = $pdo->query('SELECT id, image_path, media_type, description, published_at

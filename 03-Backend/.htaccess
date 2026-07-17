@@ -4,6 +4,25 @@
     Require all denied
 </FilesMatch>
 
+# Viele Shared-Hosting-Setups (Apache+mod_php) reichen den Authorization-Header
+# nicht automatisch an PHP durch - ohne das hier wuerde $_SERVER['HTTP_AUTHORIZATION']
+# in api/*.php immer leer bleiben, auch wenn der Client ihn korrekt sendet.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>
+
+# HSTS: erzwingt HTTPS auch fuer zukuenftige Aufrufe dieser Domain im Browser/Client.
+# Zusaetzliche Standard-Haertung, v.a. fuer die Admin-HTML-Seiten (Clickjacking-,
+# MIME-Sniffing-Schutz); fuer die JSON-API der App wirkungslos, aber unschaedlich.
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
 # Manche Server-Konfigurationen kennen .m4a nicht in ihrer mime.types-Datei und
 # liefern es dann als application/octet-stream aus - Browser koennen es dann nicht
 # inline im <audio>-Element abspielen (nur Download funktioniert). Explizit setzen.

@@ -3,16 +3,28 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/bootstrap.php';
 
+use Suedsalat\ApiAuth;
 use Suedsalat\Database;
 use Suedsalat\Mailer;
+use Suedsalat\RateLimiter;
 
 header('Content-Type: application/json; charset=utf-8');
+
+ApiAuth::requireDeviceToken();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'Nur POST erlaubt.']);
     exit;
 }
+
+$ip = ApiAuth::clientIp();
+if (RateLimiter::tooMany('feedback_submit', $ip, 20, 60)) {
+    http_response_code(429);
+    echo json_encode(['error' => 'Zu viele Anfragen. Bitte spaeter erneut versuchen.']);
+    exit;
+}
+RateLimiter::record('feedback_submit', $ip);
 
 $senderName = trim((string) ($_POST['sender_name'] ?? ''));
 $type = trim((string) ($_POST['type'] ?? 'allgemein'));

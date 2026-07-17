@@ -113,6 +113,36 @@ CREATE TABLE IF NOT EXISTS push_tokens (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS devices (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  device_uuid VARCHAR(64) NOT NULL UNIQUE,
+  platform ENUM('ios','android') NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  token_hash VARCHAR(255) NOT NULL,
+  subject_type ENUM('device') NOT NULL DEFAULT 'device',
+  subject_id INT NOT NULL,
+  expires_at DATETIME NOT NULL,
+  revoked_at DATETIME NULL,
+  replaced_by_id INT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_used_at DATETIME NULL,
+  INDEX token_hash_idx (token_hash),
+  INDEX subject_idx (subject_type, subject_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  bucket VARCHAR(50) NOT NULL,
+  ip_address VARCHAR(45) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX bucket_ip_idx (bucket, ip_address, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS feedback_messages (
   id INT PRIMARY KEY AUTO_INCREMENT,
   sender_name VARCHAR(100) NULL,
