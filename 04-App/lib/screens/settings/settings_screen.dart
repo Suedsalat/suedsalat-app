@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/push_notification_service.dart';
+import 'privacy_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -89,7 +90,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: const Icon(Icons.privacy_tip_outlined),
                   title: const Text('Datenschutzerklärung'),
-                  onTap: () => _openUrl('https://www.xn--sdsalat-n2a.eu/seiten/datenschutz.html'),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const PrivacyScreen()),
+                  ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.admin_panel_settings_outlined),
