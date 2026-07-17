@@ -41,7 +41,13 @@ class _NewsletterScreenState extends State<NewsletterScreen> {
       _emailController.clear();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Fast geschafft! Bitte bestätige die Anmeldung über den Link in der E-Mail.'),
+          backgroundColor: Color(0xFF77B538),
+          content: Center(
+            child: Text(
+              'Fast geschafft! Bitte bestätige die Anmeldung über den Link in der E-Mail.',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ),
       );
     } catch (_) {
