@@ -297,6 +297,13 @@ if ($prefillFeedbackId !== '') {
     }
 }
 
+// Kurzform fuer die Folgen-Auswahl (z.B. "Episode 21" statt "09.04.2026 – Episode 21: Gratulation") -
+// die Dropdown-Eintraege waren mit Datum+Volltitel zu lang.
+function episode_short_label(string $title): string
+{
+    return preg_match('/^(Episode\s+\d+)/i', $title, $matches) ? $matches[1] : $title;
+}
+
 $episodeOptions = $pdo->query('SELECT guid, title, pub_date FROM episodes_cache ORDER BY pub_date DESC')->fetchAll();
 
 $allEvents = $pdo->query('SELECT * FROM events ORDER BY event_date ASC, event_time ASC')->fetchAll();
@@ -369,7 +376,7 @@ $deleteError = isset($_GET['delete_error']);
                     <?php foreach ($episodeOptions as $episode): ?>
                         <option value="<?= htmlspecialchars($episode['guid'], ENT_QUOTES) ?>"
                             <?= ($editEvent['episode_guid'] ?? '') === $episode['guid'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars(date('d.m.Y', strtotime($episode['pub_date'])) . ' – ' . $episode['title'], ENT_QUOTES) ?>
+                            <?= htmlspecialchars(episode_short_label($episode['title']), ENT_QUOTES) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
