@@ -4,8 +4,22 @@ declare(strict_types=1);
 require_once __DIR__ . '/../config/bootstrap.php';
 
 use Suedsalat\Auth;
+use Suedsalat\Database;
 
 $adminId = Auth::requireLogin();
+$pdo = Database::connection();
+
+$currentAdminRole = $pdo->prepare('SELECT role FROM admins WHERE id = :id');
+$currentAdminRole->execute([':id' => $adminId]);
+$isOwner = $currentAdminRole->fetchColumn() === 'owner';
+
+// Newsletter-Versand ist bewusst nur fuer den Owner (Thorsten) gedacht - nicht nur
+// der Nav-Link ist versteckt, der direkte Aufruf der Seite wird hier serverseitig
+// abgeblockt, sonst koennte ein Member die URL einfach direkt aufrufen.
+if (!$isOwner) {
+    header('Location: ' . BASE_PATH . '/admin/dashboard.php');
+    exit;
+}
 
 // Die eigentliche Abonnenten-Liste und E-Mail-Vorlage liegen im separaten
 // newsletter/-Ordner (Homepage-Root), nicht innerhalb von 03-Backend - historisch
@@ -16,6 +30,11 @@ $templateFile = $newsletterDir . '/email_template.html';
 $abmeldeScriptUrl = 'https://www.xn--sdsalat-n2a.eu/newsletter/abmelden.php';
 
 $defaultSubject = 'Eine neue Folge vom Südsalat Podcast ist da!';
+$defaultHeadline = 'Es gibt eine neue Folge!';
+// Vorausgefuellt bis zum Episoden-Praefix, damit nur noch die Nummer ergaenzt werden
+// muss (Folgen sind durchgaengig 3-stellig, z.B. "episode034") statt jedes Mal die
+// komplette URL einzutippen.
+$defaultEpisodeLink = 'https://www.xn--sdsalat-n2a.eu#episode0';
 $fromEmail = 'newsletter@xn--sdsalat-n2a.eu';
 $fromName = 'Südsalat Podcast';
 $delayMicrosec = 500000;
@@ -106,14 +125,31 @@ function build_email_photo_html(?string $photoUrl): string
         . 'style="display:block;width:100%;max-width:560px;height:auto;margin:0 0 20px;border-radius:8px;">';
 }
 
-function render_email_html(string $templateFile, string $subject, string $episodeLink, string $bodyText, ?string $photoUrl): string
+// Der "Jetzt reinhören"-Button erscheint nur, wenn ein Episoden-Link angegeben ist -
+// wird das Feld im Formular komplett geleert, kann so auch ein allgemeiner Newsletter
+// ohne Folgenbezug verschickt werden.
+function build_episode_button_html(string $episodeLink): string
+{
+    if ($episodeLink === '') {
+        return '';
+    }
+    $escapedLink = htmlspecialchars($episodeLink, ENT_QUOTES);
+    return '<table border="0" align="center" cellpadding="0" cellspacing="0" style="margin: 25px auto;" role="presentation">'
+        . '<tr><td align="center" bgcolor="#77B538" style="border-radius: 5px; background-color: #77B538; padding: 0;">'
+        . '<a href="' . $escapedLink . '" target="_blank" style="display: inline-block; padding: 10px 20px; font-size: 16px; '
+        . 'font-weight: bold; color: #ffffff; text-decoration: none; border-radius: 5px; line-height: 1.5;">Jetzt reinhören</a>'
+        . '</td></tr></table>';
+}
+
+function render_email_html(string $templateFile, string $headline, string $episodeLink, string $bodyText, ?string $photoUrl): string
 {
     $template = file_get_contents($templateFile);
-    $search = ['[EMAIL_PHOTO]', '[EMAIL_BODY]', '[LINK_ZUR_EPISODE_AUF_HOMEPAGE]', '[UNSUBSCRIBE_LINK]'];
+    $search = ['[EMAIL_HEADLINE]', '[EMAIL_PHOTO]', '[EMAIL_BODY]', '[EPISODE_BUTTON]', '[UNSUBSCRIBE_LINK]'];
     $replace = [
+        htmlspecialchars($headline, ENT_QUOTES),
         build_email_photo_html($photoUrl),
         build_email_body_html($bodyText),
-        htmlspecialchars($episodeLink, ENT_QUOTES),
+        build_episode_button_html($episodeLink),
         '#', // Platzhalter fuer die Vorschau - der echte Abmeldelink wird erst pro Empfaenger im Versand gesetzt.
     ];
     return str_replace($search, $replace, $template);
@@ -130,6 +166,7 @@ if (!file_exists($templateFile)) {
 // --- STUFE 2: ECHTER VERSAND (nur per POST mit action=send) ---
 if ($action === 'send') {
     $subject = trim((string) ($_POST['subject'] ?? $defaultSubject));
+    $headline = trim((string) ($_POST['headline'] ?? $defaultHeadline));
     $episodeLink = trim((string) ($_POST['episode_link'] ?? ''));
     $bodyText = (string) ($_POST['body_text'] ?? '');
     $photoUrl = trim((string) ($_POST['photo_url'] ?? '')) ?: null;
@@ -143,8 +180,10 @@ if ($action === 'send') {
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
     $encodedSubject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
 
+    $headlineHtml = htmlspecialchars($headline, ENT_QUOTES);
     $photoHtml = build_email_photo_html($photoUrl);
     $bodyHtml = build_email_body_html($bodyText);
+    $episodeButtonHtml = build_episode_button_html($episodeLink);
 
     $countSent = 0;
     $countFailed = 0;
@@ -160,9 +199,10 @@ if ($action === 'send') {
     foreach ($recipients as $toEmail) {
         $unsubscribeLink = $abmeldeScriptUrl . '?email=' . urlencode($toEmail);
 
-        $finalContent = str_replace('[EMAIL_PHOTO]', $photoHtml, $template);
+        $finalContent = str_replace('[EMAIL_HEADLINE]', $headlineHtml, $template);
+        $finalContent = str_replace('[EMAIL_PHOTO]', $photoHtml, $finalContent);
         $finalContent = str_replace('[EMAIL_BODY]', $bodyHtml, $finalContent);
-        $finalContent = str_replace('[LINK_ZUR_EPISODE_AUF_HOMEPAGE]', htmlspecialchars($episodeLink, ENT_QUOTES), $finalContent);
+        $finalContent = str_replace('[EPISODE_BUTTON]', $episodeButtonHtml, $finalContent);
         $finalContent = str_replace('[UNSUBSCRIBE_LINK]', $unsubscribeLink, $finalContent);
 
         if (@mail($toEmail, $encodedSubject, $finalContent, $headers)) {
@@ -192,13 +232,15 @@ $previewHtml = null;
 $recipientCount = null;
 if ($action === 'preview') {
     $subject = trim((string) ($_POST['subject'] ?? $defaultSubject)) ?: $defaultSubject;
+    $headline = trim((string) ($_POST['headline'] ?? $defaultHeadline));
+    // Episoden-Link ist bewusst optional - leer gelassen/geloescht bedeutet "kein Bezug
+    // zu einer Folge", dann erscheint auch kein "Jetzt reinhören"-Button (siehe
+    // build_episode_button_html()). So sind auch allgemeine Info-Newsletter moeglich.
     $episodeLink = trim((string) ($_POST['episode_link'] ?? ''));
     $bodyText = trim((string) ($_POST['body_text'] ?? ''));
     $photoUrl = null;
 
-    if ($episodeLink === '') {
-        $error = 'Bitte einen Episoden-Link angeben.';
-    } elseif ($bodyText === '') {
+    if ($bodyText === '') {
         $error = 'Bitte einen Text für die Newsletter-Mail eingeben.';
     }
 
@@ -227,11 +269,12 @@ if ($action === 'preview') {
     if ($error === null) {
         $recipients = load_recipients($emailsFile);
         $recipientCount = count($recipients);
-        $previewHtml = render_email_html($templateFile, $subject, $episodeLink, $bodyText, $photoUrl);
+        $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photoUrl);
     }
 } else {
     $subject = $defaultSubject;
-    $episodeLink = '';
+    $headline = $defaultHeadline;
+    $episodeLink = $defaultEpisodeLink;
     $bodyText = '';
     $photoUrl = null;
 }
@@ -256,7 +299,7 @@ if ($action === 'preview') {
     <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Termine</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
     <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino</a>
-    <a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a>
+    <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
     <a href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
     <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
 </nav>
@@ -275,6 +318,7 @@ if ($action === 'preview') {
         <form method="post" style="margin-top:16px;">
             <input type="hidden" name="action" value="send">
             <input type="hidden" name="subject" value="<?= htmlspecialchars($subject, ENT_QUOTES) ?>">
+            <input type="hidden" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>">
             <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
             <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
             <?php if ($photoUrl !== null): ?>
@@ -291,8 +335,11 @@ if ($action === 'preview') {
             <label>Betreff
                 <input type="text" name="subject" value="<?= htmlspecialchars($subject, ENT_QUOTES) ?>" required>
             </label>
-            <label>Episoden-Link (Button "Jetzt reinhören")
-                <input type="text" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>" placeholder="https://www.xn--sdsalat-n2a.eu#episode0XX" required>
+            <label>Überschrift in der Mail
+                <input type="text" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>" required>
+            </label>
+            <label>Episoden-Link (optional — nur Nummer ergänzen; komplett leeren = kein "Jetzt reinhören"-Button, z.B. für einen allgemeinen Newsletter ohne Folgenbezug)
+                <input type="text" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
             </label>
             <label>Text der Newsletter-Mail
                 <textarea name="body_text" rows="8" required><?= htmlspecialchars($bodyText, ENT_QUOTES) ?></textarea>
@@ -300,7 +347,7 @@ if ($action === 'preview') {
             <label>Foto (optional, max. 8 MB, JPG/PNG/WebP)
                 <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
             </label>
-            <p style="font-size:0.85rem;color:#666;">Logo, Kopfbereich und Fußzeile (Impressum/Datenschutz/Abmelden) der Vorlage bleiben unverändert.</p>
+            <p style="font-size:0.85rem;color:#666;">Logo und Fußzeile (Impressum/Datenschutz/Abmelden) der Vorlage bleiben unverändert.</p>
             <div class="button-row">
                 <button type="submit">Vorschau anzeigen</button>
             </div>

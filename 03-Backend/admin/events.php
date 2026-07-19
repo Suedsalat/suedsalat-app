@@ -10,6 +10,10 @@ use Suedsalat\FcmSender;
 $adminId = Auth::requireLogin();
 $pdo = Database::connection();
 
+$currentAdminRole = $pdo->prepare('SELECT role FROM admins WHERE id = :id');
+$currentAdminRole->execute([':id' => $adminId]);
+$isOwner = $currentAdminRole->fetchColumn() === 'owner';
+
 $error = null;
 $allowedImageTypes = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
 $maxPosterSizeBytes = 8 * 1024 * 1024;
@@ -341,7 +345,7 @@ $deleteError = isset($_GET['delete_error']);
     <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Termine</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
     <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino</a>
-    <a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a>
+    <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
     <a href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
     <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
 </nav>

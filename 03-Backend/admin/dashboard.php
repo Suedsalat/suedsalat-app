@@ -10,9 +10,10 @@ use Suedsalat\Database;
 $adminId = Auth::requireLogin();
 $pdo = Database::connection();
 
-$admin = $pdo->prepare('SELECT name, totp_enabled FROM admins WHERE id = :id');
+$admin = $pdo->prepare('SELECT name, totp_enabled, role FROM admins WHERE id = :id');
 $admin->execute([':id' => $adminId]);
 $admin = $admin->fetch();
+$isOwner = $admin['role'] === 'owner';
 
 $eventCount = (int) $pdo->query('SELECT COUNT(*) FROM events WHERE event_date >= CURDATE()')->fetchColumn();
 $photoCount = (int) $pdo->query('SELECT COUNT(*) FROM photos')->fetchColumn();
@@ -73,7 +74,7 @@ $recentViews = $pdo->query(
     <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Termine</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
     <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino</a>
-    <a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a>
+    <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
     <a href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
     <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
 </nav>
