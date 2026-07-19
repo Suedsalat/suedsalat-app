@@ -116,6 +116,15 @@ function build_email_body_html(string $bodyText): string
     return $html;
 }
 
+function build_email_headline_html(string $headline): string
+{
+    if ($headline === '') {
+        return '';
+    }
+    return '<h2 style="margin: 0 0 20px; font-size: 22px; color: #102024; text-align: center;">'
+        . htmlspecialchars($headline, ENT_QUOTES) . '</h2>';
+}
+
 function build_email_photo_html(?string $photoUrl): string
 {
     if ($photoUrl === null || $photoUrl === '') {
@@ -144,9 +153,9 @@ function build_episode_button_html(string $episodeLink): string
 function render_email_html(string $templateFile, string $headline, string $episodeLink, string $bodyText, ?string $photoUrl): string
 {
     $template = file_get_contents($templateFile);
-    $search = ['[EMAIL_HEADLINE]', '[EMAIL_PHOTO]', '[EMAIL_BODY]', '[EPISODE_BUTTON]', '[UNSUBSCRIBE_LINK]'];
+    $search = ['[EMAIL_HEADLINE_BLOCK]', '[EMAIL_PHOTO]', '[EMAIL_BODY]', '[EPISODE_BUTTON]', '[UNSUBSCRIBE_LINK]'];
     $replace = [
-        htmlspecialchars($headline, ENT_QUOTES),
+        build_email_headline_html($headline),
         build_email_photo_html($photoUrl),
         build_email_body_html($bodyText),
         build_episode_button_html($episodeLink),
@@ -180,7 +189,7 @@ if ($action === 'send') {
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
     $encodedSubject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
 
-    $headlineHtml = htmlspecialchars($headline, ENT_QUOTES);
+    $headlineHtml = build_email_headline_html($headline);
     $photoHtml = build_email_photo_html($photoUrl);
     $bodyHtml = build_email_body_html($bodyText);
     $episodeButtonHtml = build_episode_button_html($episodeLink);
@@ -199,7 +208,7 @@ if ($action === 'send') {
     foreach ($recipients as $toEmail) {
         $unsubscribeLink = $abmeldeScriptUrl . '?email=' . urlencode($toEmail);
 
-        $finalContent = str_replace('[EMAIL_HEADLINE]', $headlineHtml, $template);
+        $finalContent = str_replace('[EMAIL_HEADLINE_BLOCK]', $headlineHtml, $template);
         $finalContent = str_replace('[EMAIL_PHOTO]', $photoHtml, $finalContent);
         $finalContent = str_replace('[EMAIL_BODY]', $bodyHtml, $finalContent);
         $finalContent = str_replace('[EPISODE_BUTTON]', $episodeButtonHtml, $finalContent);
@@ -232,11 +241,19 @@ $previewHtml = null;
 $recipientCount = null;
 if ($action === 'preview') {
     $subject = trim((string) ($_POST['subject'] ?? $defaultSubject)) ?: $defaultSubject;
-    $headline = trim((string) ($_POST['headline'] ?? $defaultHeadline));
-    // Episoden-Link ist bewusst optional - leer gelassen/geloescht bedeutet "kein Bezug
-    // zu einer Folge", dann erscheint auch kein "Jetzt reinhören"-Button (siehe
-    // build_episode_button_html()). So sind auch allgemeine Info-Newsletter moeglich.
-    $episodeLink = trim((string) ($_POST['episode_link'] ?? ''));
+
+    // Jedes optionale Modul (Ueberschrift, Folgen-Link, Foto) hat eine eigene Checkbox
+    // im Formular - nur bei angehaktem Kaestchen wird der zugehoerige Wert uebernommen,
+    // sonst bleibt das Modul komplett weg (leerer String = "aus" fuer die build_*_html()-
+    // Funktionen). So laesst sich der Newsletter modular zusammenstellen.
+    $useHeadline = isset($_POST['use_headline']);
+    $headline = $useHeadline ? trim((string) ($_POST['headline'] ?? $defaultHeadline)) : '';
+
+    $useEpisodeLink = isset($_POST['use_episode_link']);
+    $episodeLink = $useEpisodeLink ? trim((string) ($_POST['episode_link'] ?? '')) : '';
+
+    $usePhoto = isset($_POST['use_photo']);
+
     $bodyText = trim((string) ($_POST['body_text'] ?? ''));
     $photoUrl = null;
 
@@ -244,7 +261,7 @@ if ($action === 'preview') {
         $error = 'Bitte einen Text für die Newsletter-Mail eingeben.';
     }
 
-    if ($error === null && !empty($_FILES['photo']['name'])) {
+    if ($error === null && $usePhoto && !empty($_FILES['photo']['name'])) {
         $file = $_FILES['photo'];
         if ($file['error'] !== UPLOAD_ERR_OK) {
             $error = 'Foto-Upload fehlgeschlagen.';
@@ -277,6 +294,11 @@ if ($action === 'preview') {
     $episodeLink = $defaultEpisodeLink;
     $bodyText = '';
     $photoUrl = null;
+    // Anfangszustand der Modul-Checkboxen: Ueberschrift und Folgen-Link meist gewuenscht
+    // (typischer Fall: neue Folge), Foto ist die Ausnahme und startet daher abgehakt-frei.
+    $useHeadline = true;
+    $useEpisodeLink = true;
+    $usePhoto = false;
 }
 ?>
 <!DOCTYPE html>
@@ -335,23 +357,64 @@ if ($action === 'preview') {
             <label>Betreff
                 <input type="text" name="subject" value="<?= htmlspecialchars($subject, ENT_QUOTES) ?>" required>
             </label>
-            <label>Überschrift in der Mail
-                <input type="text" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>" required>
+
+            <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
+                <input type="checkbox" id="chk_headline" name="use_headline" <?= $useHeadline ? 'checked' : '' ?> style="width:auto;">
+                Überschrift anzeigen
             </label>
-            <label>Episoden-Link (optional — nur Nummer ergänzen; komplett leeren = kein "Jetzt reinhören"-Button, z.B. für einen allgemeinen Newsletter ohne Folgenbezug)
-                <input type="text" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
+            <div id="field_headline">
+                <label>Überschrift in der Mail
+                    <input type="text" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>">
+                </label>
+            </div>
+
+            <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
+                <input type="checkbox" id="chk_episode" name="use_episode_link" <?= $useEpisodeLink ? 'checked' : '' ?> style="width:auto;">
+                Link zur Folge einbauen
             </label>
+            <div id="field_episode">
+                <label>Episoden-Link (nur Nummer ergänzen)
+                    <input type="text" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
+                </label>
+            </div>
+
             <label>Text der Newsletter-Mail
                 <textarea name="body_text" rows="8" required><?= htmlspecialchars($bodyText, ENT_QUOTES) ?></textarea>
             </label>
-            <label>Foto (optional, max. 8 MB, JPG/PNG/WebP)
-                <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
+
+            <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
+                <input type="checkbox" id="chk_photo" name="use_photo" <?= $usePhoto ? 'checked' : '' ?> style="width:auto;">
+                Foto einbinden
             </label>
-            <p style="font-size:0.85rem;color:#666;">Logo und Fußzeile (Impressum/Datenschutz/Abmelden) der Vorlage bleiben unverändert.</p>
+            <div id="field_photo">
+                <label>Foto (max. 8 MB, JPG/PNG/WebP)
+                    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
+                </label>
+            </div>
+
+            <p style="font-size:0.85rem;color:#666;">Logo und Fußzeile (Impressum/Datenschutz/Abmelden) der Vorlage bleiben immer unverändert. Nicht angehakte Module (Überschrift/Folgen-Link/Foto) erscheinen gar nicht erst im Newsletter.</p>
             <div class="button-row">
                 <button type="submit">Vorschau anzeigen</button>
             </div>
         </form>
+        <script>
+            // Blendet die zu einer Checkbox gehoerenden Felder ein/aus - rein optisch,
+            // die eigentliche Entscheidung (Modul an/aus) trifft serverseitig ohnehin
+            // die Checkbox selbst (siehe admin/newsletter.php use_headline/use_episode_link/use_photo).
+            (function () {
+                function bind(checkboxId, fieldId) {
+                    var checkbox = document.getElementById(checkboxId);
+                    var field = document.getElementById(fieldId);
+                    if (!checkbox || !field) return;
+                    function update() { field.style.display = checkbox.checked ? '' : 'none'; }
+                    checkbox.addEventListener('change', update);
+                    update();
+                }
+                bind('chk_headline', 'field_headline');
+                bind('chk_episode', 'field_episode');
+                bind('chk_photo', 'field_photo');
+            })();
+        </script>
     <?php endif; ?>
 </main>
 <script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
