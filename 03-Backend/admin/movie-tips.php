@@ -160,6 +160,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     exit;
 }
 
+// Rezension direkt beim Bearbeiten eintragen - wird sofort freigegeben (der Admin ist
+// hier selbst die freigebende Instanz), siehe auch admin/tip-reviews.php.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_review') {
+    $reviewTipId = (int) ($_POST['tip_id'] ?? 0);
+    $reviewRating = (int) ($_POST['rating'] ?? 0);
+    $reviewText = trim((string) ($_POST['review_text'] ?? '')) ?: null;
+    if ($reviewTipId > 0 && $reviewRating >= 1 && $reviewRating <= 5) {
+        $stmt = $pdo->prepare(
+            'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, approved, approved_at, approved_by)
+             VALUES ("movie_tip", :tip_id, :rating, :review_text, 1, NOW(), :admin_id)'
+        );
+        $stmt->execute([
+            ':tip_id' => $reviewTipId,
+            ':rating' => $reviewRating,
+            ':review_text' => $reviewText,
+            ':admin_id' => $adminId,
+        ]);
+    }
+    header('Location: ' . BASE_PATH . '/admin/movie-tips.php?edit=' . $reviewTipId);
+    exit;
+}
+
 // Anlegen oder Bearbeiten
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
     $editId = isset($_POST['edit_id']) && $_POST['edit_id'] !== '' ? (int) $_POST['edit_id'] : null;
@@ -390,6 +412,25 @@ $deleteError = isset($_GET['delete_error']);
             <a class="button" href="<?= BASE_PATH ?>/admin/movie-tips.php">Abbrechen</a>
         <?php endif; ?>
     </form>
+
+    <?php if ($editTip): ?>
+    <h2>Rezension zu „<?= htmlspecialchars($editTip['title'], ENT_QUOTES) ?>“ eintragen</h2>
+    <form method="post">
+        <input type="hidden" name="action" value="add_review">
+        <input type="hidden" name="tip_id" value="<?= (int) $editTip['id'] ?>">
+        <label>Mikros
+            <div class="mikro-rating">
+                <input type="radio" name="rating" value="5" id="add-rating-5" required><label for="add-rating-5"></label>
+                <input type="radio" name="rating" value="4" id="add-rating-4"><label for="add-rating-4"></label>
+                <input type="radio" name="rating" value="3" id="add-rating-3"><label for="add-rating-3"></label>
+                <input type="radio" name="rating" value="2" id="add-rating-2"><label for="add-rating-2"></label>
+                <input type="radio" name="rating" value="1" id="add-rating-1"><label for="add-rating-1"></label>
+            </div>
+        </label>
+        <label>Rezensionstext (optional) <textarea name="review_text" rows="2"></textarea></label>
+        <button type="submit">Rezension eintragen</button>
+    </form>
+    <?php endif; ?>
 
     <h2>Alle Kinotipps</h2>
     <?php if (empty($allTips)): ?>

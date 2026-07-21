@@ -196,6 +196,40 @@ tr.is-done { background: rgba(0, 0, 0, 0.08); }
 
 tr[id]:target { outline: 3px solid var(--color-primary); outline-offset: -3px; }
 
+/* Anklickbare Mikro-Bewertung (5 Mikros, radiobasiert, per CSS gefuellt via
+   umgekehrte DOM-Reihenfolge + row-reverse - klassisches Stern-Bewertungs-Muster). */
+.mikro-rating {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 6px;
+}
+.mikro-rating input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+.mikro-rating label {
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  background-image: url('img/mikro.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: pointer;
+  filter: grayscale(1) opacity(0.35);
+  transition: filter 0.15s;
+}
+.mikro-rating label:hover,
+.mikro-rating label:hover ~ label,
+.mikro-rating input:checked ~ label {
+  filter: none;
+}
+
 @media (prefers-color-scheme: dark) {
   body { background: #121212; color: #eee; }
   .admin-header { color: #eee; }

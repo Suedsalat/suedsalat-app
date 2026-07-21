@@ -26,6 +26,39 @@ $tipTypeTables = [
 ];
 
 $deleteError = false;
+$error = null;
+
+// Manuell als Admin eintragen (z.B. zum Testen oder wenn jemand eine Bewertung
+// muendlich/per Chat mitteilt statt ueber die App) - wird sofort freigegeben,
+// da der Admin hier selbst die freigebende Instanz ist.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'manual_add') {
+    $tipRef = (string) ($_POST['tip_ref'] ?? '');
+    $rating = (int) ($_POST['rating'] ?? 0);
+    $reviewText = trim((string) ($_POST['review_text'] ?? '')) ?: null;
+
+    [$tipType, $tipIdRaw] = array_pad(explode(':', $tipRef, 2), 2, null);
+    $tipId = $tipIdRaw !== null ? (int) $tipIdRaw : 0;
+
+    if (!isset($tipTypeTables[$tipType]) || $tipId <= 0) {
+        $error = 'Bitte einen Eintrag auswählen.';
+    } elseif ($rating < 1 || $rating > 5) {
+        $error = 'Bitte 1 bis 5 Mikros auswählen.';
+    } else {
+        $stmt = $pdo->prepare(
+            'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, approved, approved_at, approved_by)
+             VALUES (:tip_type, :tip_id, :rating, :review_text, 1, NOW(), :admin_id)'
+        );
+        $stmt->execute([
+            ':tip_type' => $tipType,
+            ':tip_id' => $tipId,
+            ':rating' => $rating,
+            ':review_text' => $reviewText,
+            ':admin_id' => $adminId,
+        ]);
+        header('Location: ' . BASE_PATH . '/admin/tip-reviews.php');
+        exit;
+    }
+}
 
 // Freigeben
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'approve') {
@@ -87,6 +120,13 @@ function load_tip_reviews(\PDO $pdo, bool $approved, array $tipTypeTables): arra
 
 $pendingReviews = load_tip_reviews($pdo, false, $tipTypeTables);
 $approvedReviews = load_tip_reviews($pdo, true, $tipTypeTables);
+
+// Dropdown-Optionen fuer das manuelle Eintragen, gruppiert nach Bereich.
+$tipOptions = [];
+foreach ($tipTypeTables as $tipType => $meta) {
+    $rows = $pdo->query('SELECT id, ' . $meta['name_column'] . ' AS label FROM ' . $meta['table'] . ' ORDER BY id DESC')->fetchAll();
+    $tipOptions[$tipType] = $rows;
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -118,9 +158,45 @@ $approvedReviews = load_tip_reviews($pdo, true, $tipTypeTables);
     <h1>Rezensionen</h1>
     <p style="font-size:0.9rem;color:#666;">Mikro-Bewertungen und Rezensionstexte, die Nutzer:innen zu Kino-/Filmtipps, Terminen und Locationtipps abgegeben haben. Neue Rezensionen erscheinen erst öffentlich in der App, nachdem sie hier freigegeben wurden.</p>
 
+    <?php if ($error): ?>
+        <p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
+    <?php endif; ?>
     <?php if ($deleteError): ?>
         <p class="error text-center">Falsches Passwort — nichts wurde abgelehnt.</p>
     <?php endif; ?>
+
+    <h2>Rezension manuell eintragen</h2>
+    <p style="font-size:0.9rem;color:#666;">Zum Testen oder wenn euch jemand eine Bewertung mündlich/per Nachricht mitteilt statt über die App. Wird sofort freigegeben.</p>
+    <form method="post">
+        <input type="hidden" name="action" value="manual_add">
+        <label>Eintrag
+            <select name="tip_ref" required>
+                <option value="">— auswählen —</option>
+                <?php foreach ($tipTypeLabels as $type => $label): ?>
+                    <?php if (!empty($tipOptions[$type])): ?>
+                        <optgroup label="<?= htmlspecialchars($label, ENT_QUOTES) ?>">
+                            <?php foreach ($tipOptions[$type] as $option): ?>
+                                <option value="<?= htmlspecialchars($type, ENT_QUOTES) ?>:<?= (int) $option['id'] ?>">
+                                    <?= htmlspecialchars($option['label'], ENT_QUOTES) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label>Mikros
+            <div class="mikro-rating">
+                <input type="radio" name="rating" value="5" id="manual-rating-5" required><label for="manual-rating-5"></label>
+                <input type="radio" name="rating" value="4" id="manual-rating-4"><label for="manual-rating-4"></label>
+                <input type="radio" name="rating" value="3" id="manual-rating-3"><label for="manual-rating-3"></label>
+                <input type="radio" name="rating" value="2" id="manual-rating-2"><label for="manual-rating-2"></label>
+                <input type="radio" name="rating" value="1" id="manual-rating-1"><label for="manual-rating-1"></label>
+            </div>
+        </label>
+        <label>Rezensionstext (optional) <textarea name="review_text" rows="3"></textarea></label>
+        <button type="submit">Rezension eintragen</button>
+    </form>
 
     <h2>Ausstehende Rezensionen (<?= count($pendingReviews) ?>)</h2>
     <?php if (empty($pendingReviews)): ?>
