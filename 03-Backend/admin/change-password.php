@@ -61,6 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Termine</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
     <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino</a>
+    <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
+    <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
     <a href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
     <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>

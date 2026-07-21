@@ -310,7 +310,23 @@ function episode_short_label(string $title): string
 
 $episodeOptions = $pdo->query('SELECT guid, title, pub_date FROM episodes_cache ORDER BY pub_date DESC')->fetchAll();
 
-$allEvents = $pdo->query('SELECT * FROM events ORDER BY event_date ASC, event_time ASC')->fetchAll();
+$allEvents = $pdo->query(
+    'SELECT e.*,
+        (SELECT AVG(rating) FROM tip_reviews WHERE tip_type = "event" AND tip_id = e.id AND approved = 1) AS avg_rating,
+        (SELECT COUNT(*) FROM tip_reviews WHERE tip_type = "event" AND tip_id = e.id AND approved = 1) AS review_count
+     FROM events e
+     ORDER BY e.event_date ASC, e.event_time ASC'
+)->fetchAll();
+
+/** Kleine HTML-Zelle fuer die Durchschnittsbewertung, gemeinsam fuer kommende/vergangene Termine genutzt. */
+function event_rating_cell(array $event): string
+{
+    if ($event['avg_rating'] === null) {
+        return '—';
+    }
+    return htmlspecialchars(number_format((float) $event['avg_rating'], 1, ',', '.'), ENT_QUOTES)
+        . ' Mikros (' . (int) $event['review_count'] . ')';
+}
 $today = date('Y-m-d');
 $upcomingEvents = [];
 $pastEvents = [];
@@ -345,6 +361,8 @@ $deleteError = isset($_GET['delete_error']);
     <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Termine</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
     <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino</a>
+    <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
+    <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
     <a href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
     <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
@@ -418,7 +436,7 @@ $deleteError = isset($_GET['delete_error']);
     <div class="table-scroll">
     <table>
         <thead>
-            <tr><th>Poster</th><th>Datum</th><th>Titel</th><th></th></tr>
+            <tr><th>Poster</th><th>Datum</th><th>Titel</th><th>Ø Bewertung</th><th></th></tr>
         </thead>
         <tbody>
         <?php foreach ($upcomingEvents as $event): ?>
@@ -434,6 +452,7 @@ $deleteError = isset($_GET['delete_error']);
                     <?= $event['event_time'] && $event['event_end_time'] ? '–' . htmlspecialchars(substr($event['event_end_time'], 0, 5), ENT_QUOTES) : '' ?>
                 </td>
                 <td><?= htmlspecialchars($event['title'], ENT_QUOTES) ?></td>
+                <td><?= event_rating_cell($event) ?></td>
                 <td>
                     <div class="actions">
                         <a class="button" href="<?= BASE_PATH ?>/admin/events.php?edit=<?= (int) $event['id'] ?>">Bearbeiten</a>
@@ -457,7 +476,7 @@ $deleteError = isset($_GET['delete_error']);
     <div class="table-scroll">
     <table>
         <thead>
-            <tr><th>Poster</th><th>Datum</th><th>Titel</th><th></th><th></th></tr>
+            <tr><th>Poster</th><th>Datum</th><th>Titel</th><th>Ø Bewertung</th><th></th><th></th></tr>
         </thead>
         <tbody>
         <?php foreach ($pastEvents as $event): ?>
@@ -473,6 +492,7 @@ $deleteError = isset($_GET['delete_error']);
                     <?= $event['event_time'] && $event['event_end_time'] ? '–' . htmlspecialchars(substr($event['event_end_time'], 0, 5), ENT_QUOTES) : '' ?>
                 </td>
                 <td><?= htmlspecialchars($event['title'], ENT_QUOTES) ?></td>
+                <td><?= event_rating_cell($event) ?></td>
                 <td><span class="badge badge-muted">Abgelaufen</span></td>
                 <td>
                     <div class="actions">
