@@ -182,6 +182,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_r
     exit;
 }
 
+// Bestehende Rezension direkt hier freigeben/zurueckziehen/ablehnen - gleiche Aktionen
+// wie auf admin/tip-reviews.php, nur auf diese eine Veranstaltung bezogen.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'approve_review') {
+    $stmt = $pdo->prepare('UPDATE tip_reviews SET approved = 1, approved_at = NOW(), approved_by = :admin_id WHERE id = :id AND tip_type = "event"');
+    $stmt->execute([':admin_id' => $adminId, ':id' => (int) $_POST['review_id']]);
+    header('Location: ' . BASE_PATH . '/admin/events.php?edit=' . (int) $_POST['tip_id']);
+    exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'revoke_review') {
+    $stmt = $pdo->prepare('UPDATE tip_reviews SET approved = 0, approved_at = NULL, approved_by = NULL WHERE id = :id AND tip_type = "event"');
+    $stmt->execute([':id' => (int) $_POST['review_id']]);
+    header('Location: ' . BASE_PATH . '/admin/events.php?edit=' . (int) $_POST['tip_id']);
+    exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'reject_review') {
+    if (!verify_admin_password($pdo, $adminId, (string) ($_POST['confirm_password'] ?? ''))) {
+        header('Location: ' . BASE_PATH . '/admin/events.php?edit=' . (int) $_POST['tip_id'] . '&delete_error=1');
+        exit;
+    }
+    $stmt = $pdo->prepare('DELETE FROM tip_reviews WHERE id = :id AND tip_type = "event"');
+    $stmt->execute([':id' => (int) $_POST['review_id']]);
+    header('Location: ' . BASE_PATH . '/admin/events.php?edit=' . (int) $_POST['tip_id']);
+    exit;
+}
+
 // Anlegen oder Bearbeiten
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
     $editId = isset($_POST['edit_id']) && $_POST['edit_id'] !== '' ? (int) $_POST['edit_id'] : null;
@@ -301,10 +326,22 @@ render_events_page:
 
 // Zum Bearbeiten laden
 $editEvent = null;
+$tipPendingReviews = [];
+$tipApprovedReviews = [];
 if (isset($_GET['edit'])) {
     $stmt = $pdo->prepare('SELECT * FROM events WHERE id = :id');
     $stmt->execute([':id' => (int) $_GET['edit']]);
     $editEvent = $stmt->fetch() ?: null;
+
+    if ($editEvent) {
+        $stmt = $pdo->prepare('SELECT * FROM tip_reviews WHERE tip_type = "event" AND tip_id = :id AND approved = 0 ORDER BY created_at ASC');
+        $stmt->execute([':id' => $editEvent['id']]);
+        $tipPendingReviews = $stmt->fetchAll();
+
+        $stmt = $pdo->prepare('SELECT * FROM tip_reviews WHERE tip_type = "event" AND tip_id = :id AND approved = 1 ORDER BY created_at DESC');
+        $stmt->execute([':id' => $editEvent['id']]);
+        $tipApprovedReviews = $stmt->fetchAll();
+    }
 }
 
 // Vorbelegung aus einem Feedback-Veranstaltungstipp (siehe feedback.php)
@@ -452,7 +489,73 @@ $deleteError = isset($_GET['delete_error']);
     </form>
 
     <?php if ($editEvent): ?>
-    <h2>Rezension zu „<?= htmlspecialchars($editEvent['title'], ENT_QUOTES) ?>“ eintragen</h2>
+    <h2>Rezensionen zu „<?= htmlspecialchars($editEvent['title'], ENT_QUOTES) ?>“</h2>
+
+    <?php if (!empty($tipPendingReviews)): ?>
+        <p><strong>Ausstehend:</strong></p>
+        <div class="table-scroll">
+        <table>
+            <thead><tr><th>Mikros</th><th>Rezension</th><th>Eingereicht</th><th></th></tr></thead>
+            <tbody>
+            <?php foreach ($tipPendingReviews as $review): ?>
+                <tr>
+                    <td><?= (int) $review['rating'] ?> / 5</td>
+                    <td><?= $review['review_text'] !== null ? nl2br(htmlspecialchars($review['review_text'], ENT_QUOTES)) : '<em>(kein Text)</em>' ?></td>
+                    <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime($review['created_at'])), ENT_QUOTES) ?></td>
+                    <td>
+                        <div class="actions">
+                            <form method="post" style="display:inline;">
+                                <input type="hidden" name="action" value="approve_review">
+                                <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
+                                <input type="hidden" name="tip_id" value="<?= (int) $editEvent['id'] ?>">
+                                <button type="submit">Freigeben</button>
+                            </form>
+                            <form method="post" onsubmit="return false;">
+                                <input type="hidden" name="action" value="reject_review">
+                                <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
+                                <input type="hidden" name="tip_id" value="<?= (int) $editEvent['id'] ?>">
+                                <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Die Rezension wird dauerhaft abgelehnt und gelöscht.')">Ablehnen</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($tipApprovedReviews)): ?>
+        <p><strong>Freigegeben:</strong></p>
+        <div class="table-scroll">
+        <table>
+            <thead><tr><th>Mikros</th><th>Rezension</th><th>Freigegeben</th><th></th></tr></thead>
+            <tbody>
+            <?php foreach ($tipApprovedReviews as $review): ?>
+                <tr>
+                    <td><?= (int) $review['rating'] ?> / 5</td>
+                    <td><?= $review['review_text'] !== null ? nl2br(htmlspecialchars($review['review_text'], ENT_QUOTES)) : '<em>(kein Text)</em>' ?></td>
+                    <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $review['approved_at'])), ENT_QUOTES) ?></td>
+                    <td>
+                        <form method="post">
+                            <input type="hidden" name="action" value="revoke_review">
+                            <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
+                            <input type="hidden" name="tip_id" value="<?= (int) $editEvent['id'] ?>">
+                            <button type="submit" class="button">Freigabe zurückziehen</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+    <?php endif; ?>
+
+    <?php if (empty($tipPendingReviews) && empty($tipApprovedReviews)): ?>
+        <p>Noch keine Rezensionen zu diesem Eintrag.</p>
+    <?php endif; ?>
+
+    <h3>Rezension eintragen</h3>
     <form method="post">
         <input type="hidden" name="action" value="add_review">
         <input type="hidden" name="tip_id" value="<?= (int) $editEvent['id'] ?>">
