@@ -18,6 +18,7 @@ $isOwner = $admin['role'] === 'owner';
 $eventCount = (int) $pdo->query('SELECT COUNT(*) FROM events WHERE event_date >= CURDATE()')->fetchColumn();
 $photoCount = (int) $pdo->query('SELECT COUNT(*) FROM photos')->fetchColumn();
 $episodeCount = (int) $pdo->query('SELECT COUNT(*) FROM episodes_cache')->fetchColumn();
+$pendingReviewCount = (int) $pdo->query('SELECT COUNT(*) FROM tip_reviews WHERE approved = 0')->fetchColumn();
 
 // Immer ALLE offenen Nutzeranfragen (keine Begrenzung).
 $openFeedback = $pdo->query(
@@ -147,6 +148,18 @@ $recentViews = $pdo->query(
     <?php endif; ?>
 
     <a class="button" href="<?= BASE_PATH ?>/admin/feedback.php">Alle Aktivitäten ansehen</a>
+</section>
+
+<section class="content-box">
+    <h2>Ausstehende Rezensionen<?php if ($pendingReviewCount > 0): ?><span class="badge"><?= $pendingReviewCount ?> offen</span><?php endif; ?></h2>
+
+    <?php if ($pendingReviewCount === 0): ?>
+        <p>Aktuell keine ausstehenden Rezensionen.</p>
+    <?php else: ?>
+        <p><?= $pendingReviewCount ?> Rezension<?= $pendingReviewCount === 1 ? '' : 'en' ?> warte<?= $pendingReviewCount === 1 ? 't' : 'n' ?> auf Freigabe.</p>
+    <?php endif; ?>
+
+    <a class="button" href="<?= BASE_PATH ?>/admin/tip-reviews.php">Zur Rezensionsübersicht</a>
 </section>
 
 <section class="content-box">
