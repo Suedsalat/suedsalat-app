@@ -201,13 +201,13 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                             <br><span class="badge <?= !empty($item['consent_publish']) ? '' : 'badge-danger' ?>" style="margin-left:0;">Veröffentlichung: <?= !empty($item['consent_publish']) ? 'Ja' : 'Nein' ?></span>
                         <?php endif; ?>
                     </td>
-                    <td><?= nl2br(htmlspecialchars($item['content'], ENT_QUOTES)) ?></td>
+                    <td style="max-width:220px;overflow-wrap:break-word;"><?= nl2br(htmlspecialchars($item['content'], ENT_QUOTES)) ?></td>
                     <td><?= !empty($item['suggested_date']) ? htmlspecialchars(date('d.m.Y', strtotime($item['suggested_date'])), ENT_QUOTES) : '' ?></td>
                     <td>
                         <?php if (!empty($item['image_path']) && ($item['media_type'] ?? 'image') === 'video'): ?>
-                            <video src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" controls muted style="width:90px;border-radius:6px;"></video>
+                            <video src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" controls muted style="width:70px;border-radius:6px;"></video>
                         <?php elseif (!empty($item['image_path']) && ($item['media_type'] ?? 'image') === 'audio'): ?>
-                            <audio src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" controls style="width:220px;height:32px;"></audio>
+                            <audio src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" controls style="width:170px;height:32px;"></audio>
                         <?php elseif (!empty($item['extra_photos']) && count($item['extra_photos']) > 1): ?>
                             <div style="display:flex;flex-wrap:wrap;gap:4px;max-width:130px;">
                                 <?php foreach ($item['extra_photos'] as $photoUrl): ?>
@@ -215,7 +215,7 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                                 <?php endforeach; ?>
                             </div>
                         <?php elseif (!empty($item['image_path'])): ?>
-                            <img class="thumb" src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" alt="" style="width:60px;border-radius:6px;" onclick="openLightbox('<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>')">
+                            <img class="thumb" src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" alt="" style="width:44px;border-radius:6px;" onclick="openLightbox('<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>')">
                         <?php endif; ?>
                     </td>
                     <td>

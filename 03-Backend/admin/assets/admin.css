@@ -133,12 +133,12 @@ button:hover, .button:hover { background: var(--color-primary-hover); }
 
 .table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; min-width: 640px; border-collapse: collapse; margin-top: 20px; }
-th, td { text-align: left; padding: 8px; border-bottom: 1px solid rgba(0, 0, 0, 0.1); }
+th, td { text-align: left; padding: 6px; border-bottom: 1px solid rgba(0, 0, 0, 0.1); font-size: 0.92rem; }
 tr.is-done { background: rgba(0, 0, 0, 0.08); }
 
-.actions { display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 160px; }
+.actions { display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 128px; }
 .actions form { width: 100%; }
-.actions .button, .actions button { width: 100%; text-align: center; }
+.actions .button, .actions button { width: 100%; text-align: center; padding: 6px 10px; font-size: 0.85rem; }
 
 .button-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
