@@ -11,8 +11,13 @@ header('Content-Type: application/json; charset=utf-8');
 ApiAuth::requireDeviceToken();
 
 $pdo = Database::connection();
-$stmt = $pdo->query('SELECT id, title, description, link, episode_guid, episode_timestamp_seconds, image_path, created_at
-                      FROM movie_tips
-                      ORDER BY created_at DESC');
+$stmt = $pdo->query(
+    'SELECT mt.id, mt.title, mt.description, mt.link, mt.episode_guid, mt.episode_timestamp_seconds,
+        mt.image_path, mt.created_at,
+        (SELECT AVG(rating) FROM tip_reviews WHERE tip_type = "movie_tip" AND tip_id = mt.id AND approved = 1) AS avg_rating,
+        (SELECT COUNT(*) FROM tip_reviews WHERE tip_type = "movie_tip" AND tip_id = mt.id AND approved = 1) AS review_count
+     FROM movie_tips mt
+     ORDER BY mt.created_at DESC'
+);
 
 echo json_encode($stmt->fetchAll(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

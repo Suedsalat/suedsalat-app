@@ -75,6 +75,7 @@ $typeLabels = [
     'foto_vorschlag' => 'Fotoempfehlung',
     'sprachnachricht' => 'Sprachnachricht',
     'allgemein' => 'Allgemeines Feedback',
+    'frage' => 'Frage',
 ];
 
 // Nutzer-Feedback
@@ -84,6 +85,13 @@ $feedbackRows = $pdo->query(
      LEFT JOIN admins a ON a.id = f.handled_by
      ORDER BY f.created_at DESC"
 )->fetchAll();
+
+// Zusaetzliche Fotos bei Mehrfach-Einreichungen (siehe feedback_media) - einmal komplett
+// laden und nach Feedback-ID gruppieren, statt pro Zeile einzeln nachzufragen.
+$feedbackMediaByMessage = [];
+foreach ($pdo->query('SELECT feedback_message_id, image_path FROM feedback_media ORDER BY id ASC')->fetchAll() as $mediaRow) {
+    $feedbackMediaByMessage[$mediaRow['feedback_message_id']][] = $mediaRow['image_path'];
+}
 
 $activity = [];
 
@@ -122,6 +130,7 @@ foreach ($feedbackRows as $msg) {
         'image_path' => $msg['image_path'],
         'media_type' => $msg['media_type'] ?? 'image',
         'consent_publish' => (bool) ($msg['consent_publish'] ?? false),
+        'extra_photos' => $feedbackMediaByMessage[$msg['id']] ?? [],
         'row' => $msg,
     ];
 }
@@ -199,6 +208,12 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                             <video src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" controls muted style="width:90px;border-radius:6px;"></video>
                         <?php elseif (!empty($item['image_path']) && ($item['media_type'] ?? 'image') === 'audio'): ?>
                             <audio src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" controls style="width:220px;height:32px;"></audio>
+                        <?php elseif (!empty($item['extra_photos']) && count($item['extra_photos']) > 1): ?>
+                            <div style="display:flex;flex-wrap:wrap;gap:4px;max-width:130px;">
+                                <?php foreach ($item['extra_photos'] as $photoUrl): ?>
+                                    <img class="thumb" src="<?= htmlspecialchars($photoUrl, ENT_QUOTES) ?>" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;" onclick="openLightbox('<?= htmlspecialchars($photoUrl, ENT_QUOTES) ?>')">
+                                <?php endforeach; ?>
+                            </div>
                         <?php elseif (!empty($item['image_path'])): ?>
                             <img class="thumb" src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" alt="" style="width:60px;border-radius:6px;" onclick="openLightbox('<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>')">
                         <?php endif; ?>

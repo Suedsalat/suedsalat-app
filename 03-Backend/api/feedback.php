@@ -30,7 +30,7 @@ $senderName = trim((string) ($_POST['sender_name'] ?? ''));
 $type = trim((string) ($_POST['type'] ?? 'allgemein'));
 $message = trim((string) ($_POST['message'] ?? ''));
 
-$allowedTypes = ['allgemein', 'termin_tipp', 'foto_vorschlag', 'kino_tipp', 'sprachnachricht'];
+$allowedTypes = ['allgemein', 'termin_tipp', 'foto_vorschlag', 'kino_tipp', 'sprachnachricht', 'frage'];
 if (!in_array($type, $allowedTypes, true)) {
     $type = 'allgemein';
 }
@@ -96,7 +96,43 @@ $maxAudioSizeBytes = 15 * 1024 * 1024;
 
 $imageUrl = null;
 $mediaType = 'image';
-if (!empty($_FILES['media']['name'])) {
+$additionalPhotoUrls = [];
+
+// Mehrere Fotos: das Formularfeld heisst dann "media[]", PHP liefert $_FILES['media']['name']
+// dann als Array statt als einzelnen String. Nur Fotos werden auf diesem Weg unterstuetzt
+// (kein Video/Audio) - jedes wird einzeln validiert und gespeichert, alle Pfade landen in
+// feedback_media; das erste zusaetzlich in image_path fuer Abwaertskompatibilitaet.
+if (!empty($_FILES['media']['name']) && is_array($_FILES['media']['name'])) {
+    $feedbackDir = UPLOAD_DIR . '/feedback';
+    if (!is_dir($feedbackDir)) {
+        mkdir($feedbackDir, 0755, true);
+    }
+    $fileCount = count($_FILES['media']['name']);
+    for ($i = 0; $i < $fileCount; $i++) {
+        if ($_FILES['media']['error'][$i] !== UPLOAD_ERR_OK) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Upload fehlgeschlagen.']);
+            exit;
+        }
+        $tmpName = $_FILES['media']['tmp_name'][$i];
+        $mime = mime_content_type($tmpName);
+        if (!isset($allowedImageTypes[$mime])) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Bei mehreren Dateien sind nur JPG, PNG oder WebP erlaubt.']);
+            exit;
+        }
+        if ($_FILES['media']['size'][$i] > $maxImageSizeBytes) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Ein Foto ist zu groß (max. 8 MB).']);
+            exit;
+        }
+        $filename = bin2hex(random_bytes(16)) . '.' . $allowedImageTypes[$mime];
+        move_uploaded_file($tmpName, $feedbackDir . '/' . $filename);
+        $additionalPhotoUrls[] = UPLOAD_URL_BASE . '/feedback/' . $filename;
+    }
+    $mediaType = 'image';
+    $imageUrl = $additionalPhotoUrls[0] ?? null;
+} elseif (!empty($_FILES['media']['name'])) {
     $file = $_FILES['media'];
 
     if ($file['error'] !== UPLOAD_ERR_OK) {
@@ -172,12 +208,21 @@ $stmt->execute([
     ':consent_publish' => $consentPublish ? 1 : 0,
 ]);
 
+if (!empty($additionalPhotoUrls)) {
+    $feedbackId = (int) $pdo->lastInsertId();
+    $mediaStmt = $pdo->prepare('INSERT INTO feedback_media (feedback_message_id, image_path) VALUES (:fid, :path)');
+    foreach ($additionalPhotoUrls as $photoUrl) {
+        $mediaStmt->execute([':fid' => $feedbackId, ':path' => $photoUrl]);
+    }
+}
+
 $typeLabels = [
-    'termin_tipp' => 'Termintipp',
+    'termin_tipp' => 'Veranstaltungstipp',
     'foto_vorschlag' => 'Fotoempfehlung',
-    'kino_tipp' => 'Kinotipp',
+    'kino_tipp' => 'Kino- und Filmtipp',
     'sprachnachricht' => 'Sprachnachricht',
     'allgemein' => 'Allgemeines Feedback',
+    'frage' => 'Frage',
 ];
 $displayName = $senderName !== '' ? $senderName : 'Anonym';
 $activityLink = APP_URL . '/admin/feedback.php';

@@ -37,6 +37,7 @@ $feedbackTypeLabels = [
     'kino_tipp' => 'Kino- und Filmtipp',
     'allgemein' => 'Allgemeines Feedback',
     'sprachnachricht' => 'Sprachnachricht',
+    'frage' => 'Frage',
 ];
 
 // Anonyme Nutzungsstatistik (siehe api/track-view.php): Aufrufe pro Bereich,
@@ -46,6 +47,7 @@ $screenLabels = [
     'episodes' => 'Folgen',
     'events' => 'Veranstaltungen',
     'movie_tips' => 'Kino- und Filmtipps',
+    'location_tips' => 'Locationtipps',
     'gallery' => 'Galerie',
     'feedback' => 'Feedback',
 ];

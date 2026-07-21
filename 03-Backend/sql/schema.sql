@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 CREATE TABLE IF NOT EXISTS feedback_messages (
   id INT PRIMARY KEY AUTO_INCREMENT,
   sender_name VARCHAR(100) NULL,
-  type ENUM('allgemein','termin_tipp','foto_vorschlag','kino_tipp','sprachnachricht') NOT NULL DEFAULT 'allgemein',
+  type ENUM('allgemein','termin_tipp','foto_vorschlag','kino_tipp','sprachnachricht','frage') NOT NULL DEFAULT 'allgemein',
   message TEXT NOT NULL,
   suggested_date DATE NULL,
   image_path VARCHAR(500) NULL,
@@ -197,4 +197,14 @@ CREATE TABLE IF NOT EXISTS feedback_messages (
   handled_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (handled_by) REFERENCES admins(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Zusaetzliche Fotos bei Mehrfach-Einreichungen (das erste Foto bleibt zusaetzlich
+-- in feedback_messages.image_path fuer Abwaertskompatibilitaet).
+CREATE TABLE IF NOT EXISTS feedback_media (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  feedback_message_id INT NOT NULL,
+  image_path VARCHAR(500) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (feedback_message_id) REFERENCES feedback_messages(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
