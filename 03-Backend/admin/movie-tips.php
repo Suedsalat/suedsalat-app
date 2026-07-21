@@ -297,6 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
             ':created_by' => $adminId,
             ':feedback_id' => $feedbackId,
         ]);
+        $newTipId = (int) $pdo->lastInsertId();
 
         if ($feedbackId) {
             $markDone = $pdo->prepare(
@@ -306,7 +307,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
         }
 
         FcmSender::sendToAllDevices("Neuer Kino- und Filmtipp: $title", 'Jenny hat einen neuen Filmtipp!');
-        header('Location: ' . BASE_PATH . '/admin/movie-tips.php');
+        // Direkt zur Bearbeiten-Ansicht des neuen Eintrags, damit sofort auch eine
+        // Rezension dazu eingetragen werden kann (braucht zwingend die neue ID).
+        header('Location: ' . BASE_PATH . '/admin/movie-tips.php?edit=' . $newTipId);
         exit;
     }
 }

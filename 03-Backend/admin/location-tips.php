@@ -269,9 +269,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             ':image_path' => $imagePath,
             ':created_by' => $adminId,
         ]);
+        $newTipId = (int) $pdo->lastInsertId();
 
         FcmSender::sendToAllDevices("Neuer Locationtipp: $name", 'Jenny hat einen neuen Ort empfohlen!');
-        header('Location: ' . BASE_PATH . '/admin/location-tips.php');
+        // Direkt zur Bearbeiten-Ansicht des neuen Eintrags, damit sofort auch eine
+        // Rezension dazu eingetragen werden kann (braucht zwingend die neue ID).
+        header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . $newTipId);
         exit;
     }
 }

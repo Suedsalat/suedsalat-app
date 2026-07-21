@@ -10,7 +10,9 @@ header('Content-Type: application/json; charset=utf-8');
 
 ApiAuth::requireDeviceToken();
 
-$allowedTipTypes = ['movie_tip', 'event', 'location_tip'];
+// Rezensionen gibt es bewusst nur fuer Kino-/Filmtipps und Locationtipps, nicht fuer
+// Veranstaltungen - dort ergibt eine Bewertung inhaltlich keinen Sinn.
+$allowedTipTypes = ['movie_tip', 'location_tip'];
 $tipType = (string) ($_GET['tip_type'] ?? '');
 $tipId = (int) ($_GET['tip_id'] ?? 0);
 

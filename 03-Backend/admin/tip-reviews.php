@@ -13,15 +13,15 @@ $currentAdminRole = $pdo->prepare('SELECT role FROM admins WHERE id = :id');
 $currentAdminRole->execute([':id' => $adminId]);
 $isOwner = $currentAdminRole->fetchColumn() === 'owner';
 
+// Rezensionen gibt es bewusst nur fuer Kino-/Filmtipps und Locationtipps, nicht fuer
+// Veranstaltungen - dort ergibt eine Bewertung inhaltlich keinen Sinn.
 $tipTypeLabels = [
     'movie_tip' => 'Kino- und Filmtipp',
-    'event' => 'Veranstaltung',
     'location_tip' => 'Locationtipp',
 ];
 
 $tipTypeTables = [
     'movie_tip' => ['table' => 'movie_tips', 'name_column' => 'title'],
-    'event' => ['table' => 'events', 'name_column' => 'title'],
     'location_tip' => ['table' => 'location_tips', 'name_column' => 'name'],
 ];
 
@@ -156,7 +156,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
 </nav>
 <main class="content-box">
     <h1>Rezensionen</h1>
-    <p style="font-size:0.9rem;color:#666;">Mikro-Bewertungen und Rezensionstexte, die Nutzer:innen zu Kino- und Filmtipps, Veranstaltungen und Locationtipps abgegeben haben. Neue Rezensionen erscheinen erst öffentlich in der App, nachdem sie hier freigegeben wurden.</p>
+    <p style="font-size:0.9rem;color:#666;">Mikro-Bewertungen und Rezensionstexte, die Nutzer:innen zu Kino- und Filmtipps und Locationtipps abgegeben haben. Neue Rezensionen erscheinen erst öffentlich in der App, nachdem sie hier freigegeben wurden.</p>
 
     <?php if ($error): ?>
         <p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
