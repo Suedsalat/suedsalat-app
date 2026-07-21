@@ -271,6 +271,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
         ]);
         $newTipId = (int) $pdo->lastInsertId();
 
+        // Rezension gleich beim Anlegen mit eintragen, falls das Haekchen gesetzt war.
+        if (!empty($_POST['add_review_now'])) {
+            $newRating = (int) ($_POST['new_rating'] ?? 0);
+            $newReviewText = trim((string) ($_POST['new_review_text'] ?? '')) ?: null;
+            if ($newRating >= 1 && $newRating <= 5) {
+                $stmt = $pdo->prepare(
+                    'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, approved, approved_at, approved_by)
+                     VALUES ("location_tip", :tip_id, :rating, :review_text, 1, NOW(), :admin_id)'
+                );
+                $stmt->execute([
+                    ':tip_id' => $newTipId,
+                    ':rating' => $newRating,
+                    ':review_text' => $newReviewText,
+                    ':admin_id' => $adminId,
+                ]);
+            }
+        }
+
         FcmSender::sendToAllDevices("Neuer Locationtipp: $name", 'Jenny hat einen neuen Ort empfohlen!');
         // Direkt zur Bearbeiten-Ansicht des neuen Eintrags, damit sofort auch eine
         // Rezension dazu eingetragen werden kann (braucht zwingend die neue ID).
@@ -389,6 +407,36 @@ $deleteError = isset($_GET['delete_error']);
                 <label style="font-weight:normal;"><input type="checkbox" name="remove_photo" value="1"> Foto entfernen</label>
             </p>
         <?php endif; ?>
+
+        <?php if (!$editTip): ?>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
+            <input type="checkbox" id="chk_new_review" name="add_review_now" style="width:auto;">
+            Gleich eine Rezension dazu eintragen
+        </label>
+        <div id="field_new_review" style="display:none;">
+            <label>Mikros
+                <div class="mikro-rating">
+                    <input type="radio" name="new_rating" value="5" id="new-rating-5"><label for="new-rating-5"></label>
+                    <input type="radio" name="new_rating" value="4" id="new-rating-4"><label for="new-rating-4"></label>
+                    <input type="radio" name="new_rating" value="3" id="new-rating-3"><label for="new-rating-3"></label>
+                    <input type="radio" name="new_rating" value="2" id="new-rating-2"><label for="new-rating-2"></label>
+                    <input type="radio" name="new_rating" value="1" id="new-rating-1"><label for="new-rating-1"></label>
+                </div>
+            </label>
+            <label>Rezensionstext (optional) <textarea name="new_review_text" rows="2"></textarea></label>
+        </div>
+        <script>
+            (function () {
+                var checkbox = document.getElementById('chk_new_review');
+                var field = document.getElementById('field_new_review');
+                if (!checkbox || !field) return;
+                function update() { field.style.display = checkbox.checked ? '' : 'none'; }
+                checkbox.addEventListener('change', update);
+                update();
+            })();
+        </script>
+        <?php endif; ?>
+
         <button type="submit"><?= $editTip ? 'Locationtipp aktualisieren' : 'Locationtipp anlegen' ?></button>
         <?php if ($editTip): ?>
             <a class="button" href="<?= BASE_PATH ?>/admin/location-tips.php">Abbrechen</a>
