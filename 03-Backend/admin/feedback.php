@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_id'])) {
         $update->execute([':admin_id' => $adminId, ':id' => $id]);
     } elseif ($currentStatus === 'erledigt') {
         // Wieder oeffnen setzt auch die "bereits uebernommen"-Markierungen zurueck,
-        // damit "Foto uebernehmen" / "Termin anlegen" / "Kinotipp anlegen" wieder angeboten werden.
+        // damit "Foto uebernehmen" / "Veranstaltung anlegen" / "Kino- und Filmtipp anlegen" wieder angeboten werden.
         $update = $pdo->prepare(
             'UPDATE feedback_messages SET status = "offen", handled_by = NULL, handled_at = NULL,
              photo_imported_at = NULL, event_created_at = NULL, movietip_created_at = NULL WHERE id = :id'
@@ -70,8 +70,8 @@ $currentAdminRole->execute([':id' => $adminId]);
 $isOwner = $currentAdminRole->fetchColumn() === 'owner';
 
 $typeLabels = [
-    'termin_tipp' => 'Termintipp',
-    'kino_tipp' => 'Kinotipp',
+    'termin_tipp' => 'Veranstaltungstipp',
+    'kino_tipp' => 'Kino- und Filmtipp',
     'foto_vorschlag' => 'Fotoempfehlung',
     'sprachnachricht' => 'Sprachnachricht',
     'allgemein' => 'Allgemeines Feedback',
@@ -90,9 +90,9 @@ $activity = [];
 foreach ($feedbackRows as $msg) {
     if ($msg['status'] === 'erledigt') {
         if (!empty($msg['event_created_at'])) {
-            $statusLabel = 'Termin übernommen';
+            $statusLabel = 'Veranstaltung übernommen';
         } elseif (!empty($msg['movietip_created_at'])) {
-            $statusLabel = 'Kinotipp übernommen';
+            $statusLabel = 'Kino- und Filmtipp übernommen';
         } elseif (!empty($msg['photo_imported_at'])) {
             $statusLabel = 'Foto übernommen';
         } else {
@@ -153,9 +153,9 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
 <nav class="admin-nav">
     <a href="<?= BASE_PATH ?>/admin/dashboard.php">Dashboard</a>
     <a href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
-    <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Termine</a>
+    <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
-    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino</a>
+    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino- u. Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
@@ -175,7 +175,7 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
         <div class="table-scroll">
         <table>
             <thead>
-                <tr><th>Herkunft</th><th>Datum</th><th>Status</th><th>Von</th><th>Typ</th><th>Nachricht</th><th>Termintipp</th><th>Info</th><th></th></tr>
+                <tr><th>Herkunft</th><th>Datum</th><th>Status</th><th>Von</th><th>Typ</th><th>Nachricht</th><th>Veranstaltungstipp</th><th>Info</th><th></th></tr>
             </thead>
             <tbody>
             <?php foreach ($activity as $item): ?>
@@ -213,10 +213,10 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                                     <a class="button" download href="<?= htmlspecialchars($msg['image_path'], ENT_QUOTES) ?>">Download</a>
                                 <?php endif; ?>
                                 <?php if ($msg['type'] === 'termin_tipp' && empty($msg['event_created_at'])): ?>
-                                    <a class="button" href="<?= BASE_PATH ?>/admin/events.php?prefill_title=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($msg['message']) ?>&prefill_date=<?= urlencode($msg['suggested_date'] ?? '') ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Termin daraus anlegen</a>
+                                    <a class="button" href="<?= BASE_PATH ?>/admin/events.php?prefill_title=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($msg['message']) ?>&prefill_date=<?= urlencode($msg['suggested_date'] ?? '') ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Veranstaltung daraus anlegen</a>
                                 <?php endif; ?>
                                 <?php if ($msg['type'] === 'kino_tipp' && empty($msg['movietip_created_at'])): ?>
-                                    <a class="button" href="<?= BASE_PATH ?>/admin/movie-tips.php?prefill_title=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($msg['message']) ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Kinotipp daraus anlegen</a>
+                                    <a class="button" href="<?= BASE_PATH ?>/admin/movie-tips.php?prefill_title=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($msg['message']) ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Kino- und Filmtipp daraus anlegen</a>
                                 <?php endif; ?>
                                 <form method="post">
                                     <input type="hidden" name="toggle_id" value="<?= (int) $msg['id'] ?>">
@@ -225,7 +225,7 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                                 <?php if ($msg['status'] === 'erledigt'): ?>
                                     <form method="post" onsubmit="return false;">
                                         <input type="hidden" name="delete_id" value="<?= (int) $msg['id'] ?>">
-                                        <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Es wird nur dieser Feedback-Eintrag gelöscht. Ein daraus bereits übernommener Termin, Kinotipp oder ein Foto bleibt erhalten.')">Löschen</button>
+                                        <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Es wird nur dieser Feedback-Eintrag gelöscht. Eine daraus bereits übernommene Veranstaltung, ein Kino- und Filmtipp oder ein Foto bleibt erhalten.')">Löschen</button>
                                     </form>
                                 <?php endif; ?>
                             </div>
@@ -235,7 +235,7 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                                 <?php if ($isOwner): ?>
                                     <form method="post" action="<?= BASE_PATH . htmlspecialchars($item['delete_action'], ENT_QUOTES) ?>" onsubmit="return false;">
                                         <input type="hidden" name="delete_id" value="<?= $item['entity_id'] ?>">
-                                        <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Achtung: Dabei wird auch <?= $item['entity'] === 'event' ? 'der Termin' : 'das Foto' ?> selbst dauerhaft gelöscht, nicht nur der Eintrag hier.')">Löschen</button>
+                                        <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Achtung: Dabei wird auch <?= $item['entity'] === 'event' ? 'die Veranstaltung' : 'das Foto' ?> selbst dauerhaft gelöscht, nicht nur der Eintrag hier.')">Löschen</button>
                                     </form>
                                 <?php endif; ?>
                             </div>

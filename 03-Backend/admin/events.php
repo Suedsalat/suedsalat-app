@@ -291,7 +291,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
             $markDone->execute([':admin_id' => $adminId, ':id' => $feedbackId]);
         }
 
-        FcmSender::sendToAllDevices("Neuer Termin: $title", date('d.m.Y', strtotime($eventDate)));
+        FcmSender::sendToAllDevices("Neue Veranstaltung: $title", date('d.m.Y', strtotime($eventDate)));
         header('Location: ' . BASE_PATH . '/admin/events.php');
         exit;
     }
@@ -307,7 +307,7 @@ if (isset($_GET['edit'])) {
     $editEvent = $stmt->fetch() ?: null;
 }
 
-// Vorbelegung aus einem Feedback-Termintipp (siehe feedback.php)
+// Vorbelegung aus einem Feedback-Veranstaltungstipp (siehe feedback.php)
 $prefillTitle = (string) ($_GET['prefill_title'] ?? '');
 $prefillDescription = (string) ($_GET['prefill_description'] ?? '');
 $prefillDate = (string) ($_GET['prefill_date'] ?? '');
@@ -340,7 +340,7 @@ $allEvents = $pdo->query(
      ORDER BY e.event_date ASC, e.event_time ASC'
 )->fetchAll();
 
-/** Kleine HTML-Zelle fuer die Durchschnittsbewertung, gemeinsam fuer kommende/vergangene Termine genutzt. */
+/** Kleine HTML-Zelle fuer die Durchschnittsbewertung, gemeinsam fuer kommende/vergangene Veranstaltungen genutzt. */
 function event_rating_cell(array $event): string
 {
     if ($event['avg_rating'] === null) {
@@ -369,7 +369,7 @@ $deleteError = isset($_GET['delete_error']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" href="https://www.xn--sdsalat-n2a.eu/favicon.png">
-    <title>Termine – Südsalat Admin</title>
+    <title>Veranstaltungen – Südsalat Admin</title>
     <link rel="stylesheet" href="<?= BASE_PATH ?>/admin/assets/admin.css?v=<?= @filemtime(__DIR__ . '/assets/admin.css') ?>">
 </head>
 <body>
@@ -380,9 +380,9 @@ $deleteError = isset($_GET['delete_error']);
 <nav class="admin-nav">
     <a href="<?= BASE_PATH ?>/admin/dashboard.php">Dashboard</a>
     <a href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
-    <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Termine</a>
+    <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
-    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino</a>
+    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino- u. Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
@@ -390,7 +390,7 @@ $deleteError = isset($_GET['delete_error']);
     <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
 </nav>
 <main class="content-box">
-    <h1>Termine</h1>
+    <h1>Veranstaltungen</h1>
 
     <?php if ($error): ?>
         <p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
@@ -445,7 +445,7 @@ $deleteError = isset($_GET['delete_error']);
                 <label style="font-weight:normal;"><input type="checkbox" name="remove_poster" value="1"> Poster entfernen</label>
             </p>
         <?php endif; ?>
-        <button type="submit"><?= $editEvent ? 'Termin aktualisieren' : 'Termin anlegen' ?></button>
+        <button type="submit"><?= $editEvent ? 'Veranstaltung aktualisieren' : 'Veranstaltung anlegen' ?></button>
         <?php if ($editEvent): ?>
             <a class="button" href="<?= BASE_PATH ?>/admin/events.php">Abbrechen</a>
         <?php endif; ?>
@@ -470,9 +470,9 @@ $deleteError = isset($_GET['delete_error']);
     </form>
     <?php endif; ?>
 
-    <h2>Kommende Termine</h2>
+    <h2>Kommende Veranstaltungen</h2>
     <?php if (empty($upcomingEvents)): ?>
-        <p>Aktuell keine kommenden Termine.</p>
+        <p>Aktuell keine kommenden Veranstaltungen.</p>
     <?php else: ?>
     <div class="table-scroll">
     <table>
@@ -499,7 +499,7 @@ $deleteError = isset($_GET['delete_error']);
                         <a class="button" href="<?= BASE_PATH ?>/admin/events.php?edit=<?= (int) $event['id'] ?>">Bearbeiten</a>
                         <form method="post" onsubmit="return false;">
                             <input type="hidden" name="delete_id" value="<?= (int) $event['id'] ?>">
-                            <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Der Termin „<?= htmlspecialchars(addslashes($event['title']), ENT_QUOTES) ?>“ wird dauerhaft gelöscht.')">Löschen</button>
+                            <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Die Veranstaltung „<?= htmlspecialchars(addslashes($event['title']), ENT_QUOTES) ?>“ wird dauerhaft gelöscht.')">Löschen</button>
                         </form>
                     </div>
                 </td>
@@ -510,9 +510,9 @@ $deleteError = isset($_GET['delete_error']);
     </div>
     <?php endif; ?>
 
-    <h2>Vergangene Termine</h2>
+    <h2>Vergangene Veranstaltungen</h2>
     <?php if (empty($pastEvents)): ?>
-        <p>Noch keine vergangenen Termine.</p>
+        <p>Noch keine vergangenen Veranstaltungen.</p>
     <?php else: ?>
     <div class="table-scroll">
     <table>
@@ -540,7 +540,7 @@ $deleteError = isset($_GET['delete_error']);
                         <a class="button" href="<?= BASE_PATH ?>/admin/events.php?edit=<?= (int) $event['id'] ?>">Bearbeiten</a>
                         <form method="post" onsubmit="return false;">
                             <input type="hidden" name="delete_id" value="<?= (int) $event['id'] ?>">
-                            <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Der Termin „<?= htmlspecialchars(addslashes($event['title']), ENT_QUOTES) ?>“ wird dauerhaft gelöscht.')">Löschen</button>
+                            <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Die Veranstaltung „<?= htmlspecialchars(addslashes($event['title']), ENT_QUOTES) ?>“ wird dauerhaft gelöscht.')">Löschen</button>
                         </form>
                     </div>
                 </td>

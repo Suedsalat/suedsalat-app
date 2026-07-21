@@ -27,13 +27,13 @@ $openFeedback = $pdo->query(
      ORDER BY f.created_at DESC"
 )->fetchAll();
 
-// Die letzten 10 direkten Admin-Aenderungen (Termine/Fotos, nicht aus Feedback uebernommen).
+// Die letzten 10 direkten Admin-Aenderungen (Veranstaltungen/Fotos, nicht aus Feedback uebernommen).
 $recentAdminActions = ActivityLog::adminActions($pdo, 10);
 
 $feedbackTypeLabels = [
-    'termin_tipp' => 'Termintipp',
+    'termin_tipp' => 'Veranstaltungstipp',
     'foto_vorschlag' => 'Fotoempfehlung',
-    'kino_tipp' => 'Kinotipp',
+    'kino_tipp' => 'Kino- und Filmtipp',
     'allgemein' => 'Allgemeines Feedback',
     'sprachnachricht' => 'Sprachnachricht',
 ];
@@ -44,7 +44,7 @@ $screenLabels = [
     'start' => 'Start',
     'episodes' => 'Folgen',
     'events' => 'Veranstaltungen',
-    'movie_tips' => 'Kinotipps',
+    'movie_tips' => 'Kino- und Filmtipps',
     'gallery' => 'Galerie',
     'feedback' => 'Feedback',
 ];
@@ -71,9 +71,9 @@ $recentViews = $pdo->query(
 <nav class="admin-nav">
     <a href="<?= BASE_PATH ?>/admin/dashboard.php">Dashboard</a>
     <a href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
-    <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Termine</a>
+    <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
-    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino</a>
+    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino- u. Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
@@ -92,7 +92,7 @@ $recentViews = $pdo->query(
 
     <p class="text-center">
         <strong><?= $episodeCount ?></strong> Folgen im Cache ·
-        <strong><?= $eventCount ?></strong> kommende Termine ·
+        <strong><?= $eventCount ?></strong> kommende Veranstaltungen ·
         <strong><?= $photoCount ?></strong> Fotos in der Galerie
     </p>
 </main>

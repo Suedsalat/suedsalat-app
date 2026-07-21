@@ -280,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
             $markDone->execute([':admin_id' => $adminId, ':id' => $feedbackId]);
         }
 
-        FcmSender::sendToAllDevices("Neuer Kinotipp: $title", 'Jenny hat einen neuen Filmtipp!');
+        FcmSender::sendToAllDevices("Neuer Kino- und Filmtipp: $title", 'Jenny hat einen neuen Filmtipp!');
         header('Location: ' . BASE_PATH . '/admin/movie-tips.php');
         exit;
     }
@@ -296,7 +296,7 @@ if (isset($_GET['edit'])) {
     $editTip = $stmt->fetch() ?: null;
 }
 
-// Vorbelegung aus einem Feedback-Kinotipp (siehe feedback.php)
+// Vorbelegung aus einem Feedback-Kinotipp (siehe feedback.php) - der Feedback-Typ selbst heisst intern weiter "kino_tipp"
 $prefillTitle = (string) ($_GET['prefill_title'] ?? '');
 $prefillDescription = (string) ($_GET['prefill_description'] ?? '');
 $prefillFeedbackId = (string) ($_GET['prefill_feedback_id'] ?? '');
@@ -336,7 +336,7 @@ $deleteError = isset($_GET['delete_error']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" href="https://www.xn--sdsalat-n2a.eu/favicon.png">
-    <title>Kinotipps – Südsalat Admin</title>
+    <title>Kino- und Filmtipps – Südsalat Admin</title>
     <link rel="stylesheet" href="<?= BASE_PATH ?>/admin/assets/admin.css?v=<?= @filemtime(__DIR__ . '/assets/admin.css') ?>">
 </head>
 <body>
@@ -347,9 +347,9 @@ $deleteError = isset($_GET['delete_error']);
 <nav class="admin-nav">
     <a href="<?= BASE_PATH ?>/admin/dashboard.php">Dashboard</a>
     <a href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
-    <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Termine</a>
+    <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
-    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino</a>
+    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino- u. Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
@@ -357,7 +357,7 @@ $deleteError = isset($_GET['delete_error']);
     <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
 </nav>
 <main class="content-box">
-    <h1>Kinotipps</h1>
+    <h1>Kino- und Filmtipps</h1>
 
     <?php if ($error): ?>
         <p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
@@ -407,7 +407,7 @@ $deleteError = isset($_GET['delete_error']);
                 <label style="font-weight:normal;"><input type="checkbox" name="remove_poster" value="1"> Poster entfernen</label>
             </p>
         <?php endif; ?>
-        <button type="submit"><?= $editTip ? 'Kinotipp aktualisieren' : 'Kinotipp anlegen' ?></button>
+        <button type="submit"><?= $editTip ? 'Kino- und Filmtipp aktualisieren' : 'Kino- und Filmtipp anlegen' ?></button>
         <?php if ($editTip): ?>
             <a class="button" href="<?= BASE_PATH ?>/admin/movie-tips.php">Abbrechen</a>
         <?php endif; ?>
@@ -432,9 +432,9 @@ $deleteError = isset($_GET['delete_error']);
     </form>
     <?php endif; ?>
 
-    <h2>Alle Kinotipps</h2>
+    <h2>Alle Kino- und Filmtipps</h2>
     <?php if (empty($allTips)): ?>
-        <p>Noch keine Kinotipps vorhanden.</p>
+        <p>Noch keine Kino- und Filmtipps vorhanden.</p>
     <?php else: ?>
     <div class="table-scroll">
     <table>
@@ -457,7 +457,7 @@ $deleteError = isset($_GET['delete_error']);
                         <a class="button" href="<?= BASE_PATH ?>/admin/movie-tips.php?edit=<?= (int) $tip['id'] ?>">Bearbeiten</a>
                         <form method="post" onsubmit="return false;">
                             <input type="hidden" name="delete_id" value="<?= (int) $tip['id'] ?>">
-                            <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Der Kinotipp „<?= htmlspecialchars(addslashes($tip['title']), ENT_QUOTES) ?>“ wird dauerhaft gelöscht.')">Löschen</button>
+                            <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Der Kino- und Filmtipp „<?= htmlspecialchars(addslashes($tip['title']), ENT_QUOTES) ?>“ wird dauerhaft gelöscht.')">Löschen</button>
                         </form>
                     </div>
                 </td>
