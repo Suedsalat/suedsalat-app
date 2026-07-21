@@ -20,4 +20,13 @@ $stmt = $pdo->query(
      ORDER BY lt.created_at DESC'
 );
 
-echo json_encode($stmt->fetchAll(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+// PDO liefert AVG()/COUNT() standardmaessig als String statt als Zahl - ohne diesen
+// Cast wuerde die App beim JSON-Parsen scheitern, sobald ein Eintrag eine Bewertung hat.
+$tips = $stmt->fetchAll();
+foreach ($tips as &$tip) {
+    $tip['avg_rating'] = $tip['avg_rating'] !== null ? round((float) $tip['avg_rating'], 1) : null;
+    $tip['review_count'] = (int) $tip['review_count'];
+}
+unset($tip);
+
+echo json_encode($tips, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

@@ -188,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   isLabelVisible: _hasNewMovieTips,
                   child: Image.asset('assets/images/kino.png', width: 32, height: 32),
                 ),
-                label: 'Kino- und Filmtipps',
+                label: 'Kino- und Filme',
               ),
               NavigationDestination(
                 icon: Badge(
@@ -196,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   isLabelVisible: _hasNewLocationTips,
                   child: Image.asset('assets/images/location.png', width: 32, height: 32),
                 ),
-                label: 'Locationtipps',
+                label: 'Locations',
               ),
               NavigationDestination(
                 icon: Badge(

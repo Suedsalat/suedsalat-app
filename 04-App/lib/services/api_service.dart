@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/episode.dart';
 import '../models/event.dart';
+import '../models/json_helpers.dart';
 import '../models/location_tip.dart';
 import '../models/movie_tip.dart';
 import '../models/photo.dart';
@@ -97,8 +98,8 @@ class ApiService {
         .map((e) => TipReview.fromJson(e as Map<String, dynamic>))
         .toList();
     return (
-      avgRating: (data['avg_rating'] as num?)?.toDouble(),
-      reviewCount: (data['review_count'] as num?)?.toInt() ?? 0,
+      avgRating: parseNullableDouble(data['avg_rating']),
+      reviewCount: parseIntOrZero(data['review_count']),
       reviews: reviews,
     );
   }

@@ -1,3 +1,5 @@
+import 'json_helpers.dart';
+
 class LocationTip {
   final int id;
   final String name;
@@ -36,8 +38,8 @@ class LocationTip {
       episodeTimestampSeconds: json['episode_timestamp_seconds'] as int?,
       imagePath: json['image_path'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
-      avgRating: (json['avg_rating'] as num?)?.toDouble(),
-      reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
+      avgRating: parseNullableDouble(json['avg_rating']),
+      reviewCount: parseIntOrZero(json['review_count']),
     );
   }
 }
