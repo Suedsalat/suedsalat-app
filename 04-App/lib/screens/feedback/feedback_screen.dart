@@ -26,16 +26,18 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   static const _typeLabels = {
     'allgemein': 'Allgemeines Feedback',
     'termin_tipp': 'Veranstaltungstipp',
-    'kino_tipp': 'Kinotipp',
+    'kino_tipp': 'Kino- und Filmtipp',
     'foto_vorschlag': 'Fotoempfehlung',
     'sprachnachricht': 'Sprachnachricht',
+    'frage': 'Frage einreichen',
   };
 
   static const _messageLabels = {
     'allgemein': 'Deine Nachricht',
     'termin_tipp': 'Beschreibe deinen Veranstaltungstipp',
-    'kino_tipp': 'Beschreibe deinen Kinotipp',
+    'kino_tipp': 'Beschreibe deinen Kino- und Filmtipp',
     'foto_vorschlag': 'Fotobeschreibung',
+    'frage': 'Deine Frage',
   };
 
   static const _maxPhotoBytes = 8 * 1024 * 1024;
@@ -45,7 +47,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   String _type = 'allgemein';
   DateTime? _suggestedDate;
   File? _media;
-  bool _isVideo = false;
+  List<File> _photos = [];
   bool _submitting = false;
   String? _photoError;
   bool _showDateError = false;
@@ -219,33 +221,54 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     );
     if (choice == null) return;
 
-    File? file;
     if (choice.isVideo) {
       final picked = await _picker.pickVideo(
         source: choice.source,
         maxDuration: const Duration(seconds: 60),
       );
-      if (picked != null) file = File(picked.path);
-    } else {
-      final picked = await _picker.pickImage(source: choice.source, maxWidth: 1600, imageQuality: 85);
-      if (picked != null) file = File(picked.path);
-    }
-    if (file == null) return;
-
-    final sizeBytes = await file.length();
-    final maxBytes = choice.isVideo ? _maxVideoBytes : _maxPhotoBytes;
-    if (sizeBytes > maxBytes) {
+      if (picked == null) return;
+      final file = File(picked.path);
+      if (await file.length() > _maxVideoBytes) {
+        setState(() => _photoError = 'Video ist zu groß (max. 20 MB).');
+        return;
+      }
       setState(() {
-        _photoError = choice.isVideo ? 'Video ist zu groß (max. 20 MB).' : 'Foto ist zu groß (max. 8 MB).';
+        _media = file;
+        _photos = [];
+        _photoError = null;
       });
       return;
     }
 
+    // Fotos: aus der Galerie koennen mehrere auf einmal ausgewaehlt werden,
+    // die Kamera liefert immer nur eines - beides wird an bereits ausgewaehlte
+    // Fotos angehaengt statt sie zu ersetzen.
+    final List<File> newPhotos;
+    if (choice.source == ImageSource.gallery) {
+      final picked = await _picker.pickMultiImage(maxWidth: 1600, imageQuality: 85);
+      newPhotos = picked.map((p) => File(p.path)).toList();
+    } else {
+      final picked = await _picker.pickImage(source: choice.source, maxWidth: 1600, imageQuality: 85);
+      newPhotos = picked != null ? [File(picked.path)] : [];
+    }
+    if (newPhotos.isEmpty) return;
+
+    for (final photo in newPhotos) {
+      if (await photo.length() > _maxPhotoBytes) {
+        setState(() => _photoError = 'Ein Foto ist zu groß (max. 8 MB).');
+        return;
+      }
+    }
+
     setState(() {
-      _media = file;
-      _isVideo = choice.isVideo;
+      _photos = [..._photos, ...newPhotos];
+      _media = null;
       _photoError = null;
     });
+  }
+
+  void _removePhotoAt(int index) {
+    setState(() => _photos = [..._photos]..removeAt(index));
   }
 
   Future<void> _submit() async {
@@ -257,7 +280,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
     if (!_formKey.currentState!.validate()) return;
 
-    if (_type == 'foto_vorschlag' && _media == null) {
+    if (_type == 'foto_vorschlag' && _media == null && _photos.isEmpty) {
       setState(() => _photoError = 'Bitte füge ein Foto oder Video hinzu.');
       return;
     }
@@ -284,6 +307,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         type: _type,
         senderName: _nameController.text,
         media: _type == 'sprachnachricht' ? _audioFile : _media,
+        photos: _type == 'sprachnachricht' ? null : _photos,
         suggestedDate: _type == 'termin_tipp' ? _suggestedDate : null,
         consentPublish: consentPublish,
       );
@@ -324,7 +348,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             const Text(
-              'Hast du einen Veranstaltungstipp, einen Kinotipp, einen Fotovorschlag oder einfach Feedback für uns? '
+              'Hast du einen Veranstaltungstipp, einen Kino- und Filmtipp, einen Fotovorschlag, eine Frage oder einfach Feedback für uns? '
               'Schreib uns direkt – Jenny und Thorsten lesen jede Nachricht.',
             ),
             const SizedBox(height: 20),
@@ -435,21 +459,19 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: _isVideo
-                        ? Container(
-                            height: 160,
-                            width: double.infinity,
-                            color: Colors.black87,
-                            child: const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.videocam, color: Colors.white, size: 40),
-                                SizedBox(height: 8),
-                                Text('Video ausgewählt', style: TextStyle(color: Colors.white)),
-                              ],
-                            ),
-                          )
-                        : Image.file(_media!, height: 160, width: double.infinity, fit: BoxFit.cover),
+                    child: Container(
+                      height: 160,
+                      width: double.infinity,
+                      color: Colors.black87,
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.videocam, color: Colors.white, size: 40),
+                          SizedBox(height: 8),
+                          Text('Video ausgewählt', style: TextStyle(color: Colors.white)),
+                        ],
+                      ),
+                    ),
                   ),
                   Positioned(
                     top: 4,
@@ -457,15 +479,46 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     child: IconButton(
                       icon: const Icon(Icons.cancel, color: Colors.white),
                       style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                      onPressed: () => setState(() {
-                        _media = null;
-                        _isVideo = false;
-                      }),
+                      onPressed: () => setState(() => _media = null),
                     ),
                   ),
                 ],
               )
-            else if (!isSprachnachricht)
+            else if (!isSprachnachricht && _photos.isNotEmpty) ...[
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _photos.length,
+                  itemBuilder: (context, index) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.file(_photos[index], width: 100, height: 100, fit: BoxFit.cover),
+                        ),
+                        Positioned(
+                          top: 2,
+                          right: 2,
+                          child: IconButton(
+                            icon: const Icon(Icons.cancel, color: Colors.white),
+                            style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                            onPressed: () => _removePhotoAt(index),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: _pickMedia,
+                icon: const Icon(Icons.add_a_photo),
+                label: const Text('Weiteres Foto hinzufügen'),
+              ),
+            ] else if (!isSprachnachricht)
               OutlinedButton.icon(
                 onPressed: _pickMedia,
                 icon: const Icon(Icons.add_a_photo),

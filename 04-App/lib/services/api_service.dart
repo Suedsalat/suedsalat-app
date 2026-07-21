@@ -5,9 +5,15 @@ import 'package:http/http.dart' as http;
 
 import '../models/episode.dart';
 import '../models/event.dart';
+import '../models/location_tip.dart';
 import '../models/movie_tip.dart';
 import '../models/photo.dart';
+import '../models/tip_review.dart';
 import 'auth_service.dart';
+
+/// Zusammenfassung der Rezensionen zu einem Kino-/Filmtipp oder Locationtipp:
+/// Durchschnittsbewertung (nur aus freigegebenen Rezensionen), Anzahl, Einzelrezensionen.
+typedef TipReviewSummary = ({double? avgRating, int reviewCount, List<TipReview> reviews});
 
 /// Zugriff auf die öffentliche Lese-API des Backends (siehe 03-Backend).
 ///
@@ -57,10 +63,73 @@ class ApiService {
       (headers) => http.get(Uri.parse('$baseUrl/movie-tips.php'), headers: headers),
     );
     if (response.statusCode != 200) {
-      throw Exception('Kinotipps konnten nicht geladen werden (${response.statusCode})');
+      throw Exception('Kino- und Filmtipps konnten nicht geladen werden (${response.statusCode})');
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data.map((e) => MovieTip.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<LocationTip>> fetchLocationTips() async {
+    final response = await _authorizedRequest(
+      (headers) => http.get(Uri.parse('$baseUrl/location-tips.php'), headers: headers),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Locationtipps konnten nicht geladen werden (${response.statusCode})');
+    }
+    final data = jsonDecode(response.body) as List<dynamic>;
+    return data.map((e) => LocationTip.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// Laedt Durchschnittsbewertung + freigegebene Einzelrezensionen zu einem Kino-/Filmtipp
+  /// oder Locationtipp. [tipType] ist entweder 'movie_tip' oder 'location_tip'.
+  Future<TipReviewSummary> fetchTipReviews(String tipType, int tipId) async {
+    final response = await _authorizedRequest(
+      (headers) => http.get(
+        Uri.parse('$baseUrl/tip-reviews.php?tip_type=$tipType&tip_id=$tipId'),
+        headers: headers,
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Rezensionen konnten nicht geladen werden (${response.statusCode})');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final reviews = (data['reviews'] as List<dynamic>)
+        .map((e) => TipReview.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return (
+      avgRating: (data['avg_rating'] as num?)?.toDouble(),
+      reviewCount: (data['review_count'] as num?)?.toInt() ?? 0,
+      reviews: reviews,
+    );
+  }
+
+  /// Reicht eine Mikro-Bewertung (1-5) + optionalen Text ein. Die Rezension erscheint
+  /// erst oeffentlich, nachdem sie im Adminbereich freigegeben wurde.
+  Future<void> submitReview(String tipType, int tipId, int rating, String? reviewText) async {
+    final response = await _authorizedRequest(
+      (headers) => http.post(
+        Uri.parse('$baseUrl/submit-review.php'),
+        headers: headers,
+        body: {
+          'tip_type': tipType,
+          'tip_id': tipId.toString(),
+          'rating': rating.toString(),
+          if (reviewText != null && reviewText.trim().isNotEmpty) 'review_text': reviewText.trim(),
+        },
+      ),
+    );
+    if (response.statusCode != 200) {
+      String errorMessage = 'Rezension konnte nicht gesendet werden (${response.statusCode})';
+      try {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        if (data['error'] is String) {
+          errorMessage = data['error'] as String;
+        }
+      } catch (_) {
+        // Antwort war kein JSON - Standardfehlermeldung verwenden.
+      }
+      throw Exception(errorMessage);
+    }
   }
 
   Future<List<Photo>> fetchGallery() async {
@@ -74,12 +143,16 @@ class ApiService {
     return data.map((e) => Photo.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  /// Schickt eine Nachricht (optional mit Foto/Video/Terminvorschlag) an Jenny und Thorsten.
+  /// Schickt eine Nachricht (optional mit Foto(s)/Video/Terminvorschlag) an Jenny und Thorsten.
+  /// [media] ist fuer Video oder ein einzelnes Foto gedacht, [photos] fuer mehrere Fotos
+  /// (werden als wiederholtes Formularfeld "media[]" gesendet, das Backend erkennt daran
+  /// die Mehrfach-Einreichung).
   Future<void> submitFeedback({
     required String message,
     String type = 'allgemein',
     String? senderName,
     File? media,
+    List<File>? photos,
     DateTime? suggestedDate,
     bool consentPublish = false,
   }) async {
@@ -98,7 +171,11 @@ class ApiService {
             '${suggestedDate.month.toString().padLeft(2, '0')}-'
             '${suggestedDate.day.toString().padLeft(2, '0')}';
       }
-      if (media != null) {
+      if (photos != null && photos.isNotEmpty) {
+        for (final photo in photos) {
+          request.files.add(await http.MultipartFile.fromPath('media[]', photo.path));
+        }
+      } else if (media != null) {
         request.files.add(await http.MultipartFile.fromPath('media', media.path));
       }
       return request.send();

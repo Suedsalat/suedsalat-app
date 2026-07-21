@@ -1,6 +1,7 @@
-class MovieTip {
+class LocationTip {
   final int id;
-  final String title;
+  final String name;
+  final String location;
   final String? description;
   final String? link;
   final String? episodeGuid;
@@ -10,9 +11,10 @@ class MovieTip {
   final double? avgRating;
   final int reviewCount;
 
-  const MovieTip({
+  const LocationTip({
     required this.id,
-    required this.title,
+    required this.name,
+    required this.location,
     this.description,
     this.link,
     this.episodeGuid,
@@ -23,10 +25,11 @@ class MovieTip {
     this.reviewCount = 0,
   });
 
-  factory MovieTip.fromJson(Map<String, dynamic> json) {
-    return MovieTip(
+  factory LocationTip.fromJson(Map<String, dynamic> json) {
+    return LocationTip(
       id: json['id'] as int,
-      title: json['title'] as String,
+      name: json['name'] as String,
+      location: json['location'] as String,
       description: json['description'] as String?,
       link: json['link'] as String?,
       episodeGuid: json['episode_guid'] as String?,

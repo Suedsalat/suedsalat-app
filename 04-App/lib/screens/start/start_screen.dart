@@ -11,6 +11,7 @@ class StartScreen extends StatelessWidget {
   final bool hasNewEvents;
   final bool hasNewPhotos;
   final bool hasNewMovieTips;
+  final bool hasNewLocationTips;
 
   const StartScreen({
     super.key,
@@ -20,6 +21,7 @@ class StartScreen extends StatelessWidget {
     this.hasNewEvents = false,
     this.hasNewPhotos = false,
     this.hasNewMovieTips = false,
+    this.hasNewLocationTips = false,
   });
 
   @override
@@ -48,7 +50,7 @@ class StartScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Hier findest du alle Folgen, Veranstaltungen, Kinotipps und Fotos rund um den Podcast.',
+            'Hier findest du alle Folgen, Veranstaltungen, Kino- und Filmtipps, Locationtipps und Fotos rund um den Podcast.',
             style: Theme.of(context).textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
@@ -71,10 +73,18 @@ class StartScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _StartTile(
             leading: Image.asset('assets/images/kino.png', width: 40, height: 40),
-            title: 'Kinotipps',
+            title: 'Kino- und Filmtipps',
             subtitle: 'Unsere Filmempfehlungen',
             showNewDot: hasNewMovieTips,
             onTap: () => onNavigateToTab(3),
+          ),
+          const SizedBox(height: 12),
+          _StartTile(
+            leading: Image.asset('assets/images/location.png', width: 40, height: 40),
+            title: 'Locationtipps',
+            subtitle: 'Orte, die Jenny und Thorsten empfehlen',
+            showNewDot: hasNewLocationTips,
+            onTap: () => onNavigateToTab(4),
           ),
           const SizedBox(height: 12),
           _StartTile(
@@ -82,7 +92,7 @@ class StartScreen extends StatelessWidget {
             title: 'Galerie',
             subtitle: 'Die neuesten Fotos',
             showNewDot: hasNewPhotos,
-            onTap: () => onNavigateToTab(4),
+            onTap: () => onNavigateToTab(5),
           ),
           const SizedBox(height: 12),
           _StartTile(

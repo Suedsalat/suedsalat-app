@@ -48,7 +48,11 @@ class _GalleryScreenState extends State<GalleryScreen> {
       MaterialPageRoute(
         builder: (_) => photo.isVideo
             ? VideoPlayerScreen(videoUrl: photo.imagePath)
-            : PhotoViewerScreen(imageUrl: photo.imagePath),
+            : PhotoViewerScreen(
+                imageUrl: photo.imagePath,
+                description: photo.description,
+                publishedAt: photo.publishedAt,
+              ),
       ),
     );
   }

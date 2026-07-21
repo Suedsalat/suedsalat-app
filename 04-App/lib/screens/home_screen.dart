@@ -7,6 +7,7 @@ import 'episodes/episodes_list_screen.dart';
 import 'events/events_list_screen.dart';
 import 'feedback/feedback_screen.dart';
 import 'gallery/gallery_screen.dart';
+import 'location_tips/location_tips_list_screen.dart';
 import 'movie_tips/movie_tips_list_screen.dart';
 import 'settings/settings_screen.dart';
 import 'start/start_screen.dart';
@@ -26,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _hasNewEvents = false;
   bool _hasNewPhotos = false;
   bool _hasNewMovieTips = false;
+  bool _hasNewLocationTips = false;
 
   // Wird bei jedem Rueckkehren aus dem Hintergrund erhoeht, damit der aktuell
   // sichtbare Tab als neues Widget behandelt wird und seine Daten neu laedt
@@ -33,8 +35,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // App-Resume ohne Tab-Wechsel bisher nicht).
   int _refreshEpoch = 0;
 
-  static const _titles = ['Start', 'Folgen', 'Veranstaltungen', 'Kinotipps', 'Galerie'];
-  static const _screenKeys = ['start', 'episodes', 'events', 'movie_tips', 'gallery'];
+  static const _titles = ['Start', 'Folgen', 'Veranstaltungen', 'Kino- und Filmtipps', 'Locationtipps', 'Galerie'];
+  static const _screenKeys = ['start', 'episodes', 'events', 'movie_tips', 'location_tips', 'gallery'];
 
   @override
   void initState() {
@@ -73,11 +75,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final events = await _api.fetchEvents();
       final photos = await _api.fetchGallery();
       final movieTips = await _api.fetchMovieTips();
+      final locationTips = await _api.fetchLocationTips();
 
       final hasNewEpisodes = await _hasNew('episode', episodes.map((e) => e.guid).toList());
       final hasNewEvents = await _hasNew('event', events.map((e) => e.id.toString()).toList());
       final hasNewPhotos = await _hasNew('photo', photos.map((p) => p.id.toString()).toList());
       final hasNewMovieTips = await _hasNew('movie_tip', movieTips.map((t) => t.id.toString()).toList());
+      final hasNewLocationTips = await _hasNew('location_tip', locationTips.map((t) => t.id.toString()).toList());
 
       if (!mounted) return;
       setState(() {
@@ -85,6 +89,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _hasNewEvents = hasNewEvents;
         _hasNewPhotos = hasNewPhotos;
         _hasNewMovieTips = hasNewMovieTips;
+        _hasNewLocationTips = hasNewLocationTips;
       });
     } catch (_) {
       // Netzwerkfehler hier ignorieren - Badges bleiben einfach wie zuvor.
@@ -108,10 +113,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         hasNewEvents: _hasNewEvents,
         hasNewPhotos: _hasNewPhotos,
         hasNewMovieTips: _hasNewMovieTips,
+        hasNewLocationTips: _hasNewLocationTips,
       ),
       EpisodesListScreen(key: ValueKey('episodes-$_refreshEpoch')),
       EventsListScreen(key: ValueKey('events-$_refreshEpoch')),
       MovieTipsListScreen(key: ValueKey('movie-tips-$_refreshEpoch')),
+      LocationTipsListScreen(key: ValueKey('location-tips-$_refreshEpoch')),
       GalleryScreen(key: ValueKey('gallery-$_refreshEpoch')),
     ];
 
@@ -181,7 +188,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   isLabelVisible: _hasNewMovieTips,
                   child: Image.asset('assets/images/kino.png', width: 32, height: 32),
                 ),
-                label: 'Kinotipps',
+                label: 'Kino- und Filmtipps',
+              ),
+              NavigationDestination(
+                icon: Badge(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  isLabelVisible: _hasNewLocationTips,
+                  child: Image.asset('assets/images/location.png', width: 32, height: 32),
+                ),
+                label: 'Locationtipps',
               ),
               NavigationDestination(
                 icon: Badge(
