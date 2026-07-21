@@ -63,7 +63,7 @@ nav.admin-nav a.nav-gap { margin-left: 20px; }
   border-radius: var(--radius-container);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
-.content-box { max-width: 1200px; }
+.content-box { max-width: 1600px; }
 
 h1 { font-size: 1.5rem; margin-top: 0; text-align: center; }
 .content-box h2 { font-size: 1.2rem; margin: 24px 0 8px; }
@@ -135,6 +135,16 @@ button:hover, .button:hover { background: var(--color-primary-hover); }
 table { width: 100%; min-width: 640px; border-collapse: collapse; margin-top: 20px; }
 th, td { text-align: left; padding: 6px; border-bottom: 1px solid rgba(0, 0, 0, 0.1); font-size: 0.92rem; }
 tr.is-done { background: rgba(0, 0, 0, 0.08); }
+
+/* Letzte Spalte (Aktionen: Bearbeiten/Loeschen/Freigeben etc.) bleibt beim horizontalen
+   Scrollen immer sichtbar am rechten Rand fixiert, statt bei breiten Tabellen
+   abgeschnitten zu werden. */
+.table-scroll td:last-child, .table-scroll th:last-child {
+  position: sticky;
+  right: 0;
+  background: var(--color-secondary);
+  box-shadow: -4px 0 6px -4px rgba(0, 0, 0, 0.25);
+}
 
 .actions { display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 128px; }
 .actions form { width: 100%; }
@@ -239,6 +249,7 @@ tr[id]:target { outline: 3px solid var(--color-primary); outline-offset: -3px; }
   .feedback-list li { background: rgba(255, 255, 255, 0.07); }
   tr.is-done { background: rgba(255, 255, 255, 0.06); }
   .modal-box { background: #1f1f1f; color: #eee; }
+  .table-scroll td:last-child, .table-scroll th:last-child { background: #1f1f1f; }
 }
 
 @media (max-width: 480px) {
