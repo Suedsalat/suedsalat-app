@@ -124,6 +124,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_id'])
     }
 }
 
+// Aus einer Mehrfach-Foto-Einreichung EIN bestimmtes Foto uebernehmen (siehe feedback_media) -
+// jedes Foto einzeln trackbar ueber imported_at, statt wie beim Einzel-Foto-Pfad oben nur
+// einmal pro Feedback-Nachricht.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_media_id'])) {
+    $mediaId = (int) $_POST['import_feedback_media_id'];
+    $description = trim((string) ($_POST['description'] ?? '')) ?: null;
+
+    $stmt = $pdo->prepare('SELECT * FROM feedback_media WHERE id = :id');
+    $stmt->execute([':id' => $mediaId]);
+    $mediaRow = $stmt->fetch();
+
+    if (!$mediaRow || !empty($mediaRow['imported_at'])) {
+        $error = 'Dieses Foto wurde bereits übernommen oder existiert nicht mehr.';
+    } else {
+        $sourceLocal = UPLOAD_DIR . '/feedback/' . basename($mediaRow['image_path']);
+        $galleryDir = UPLOAD_DIR . '/gallery';
+        if (!is_dir($galleryDir)) {
+            mkdir($galleryDir, 0755, true);
+        }
+        $extension = pathinfo($sourceLocal, PATHINFO_EXTENSION);
+        $newFilename = bin2hex(random_bytes(16)) . '.' . $extension;
+        $destLocal = $galleryDir . '/' . $newFilename;
+
+        if (!is_file($sourceLocal) || !copy($sourceLocal, $destLocal)) {
+            $error = 'Datei konnte nicht übernommen werden.';
+        } else {
+            $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $newFilename;
+            $insert = $pdo->prepare(
+                'INSERT INTO photos (image_path, media_type, description, created_by, created_via_feedback_id)
+                 VALUES (:path, "photo", :description, :created_by, :feedback_id)'
+            );
+            $insert->execute([
+                ':path' => $imageUrl,
+                ':description' => $description,
+                ':created_by' => $adminId,
+                ':feedback_id' => $mediaRow['feedback_message_id'],
+            ]);
+
+            $update = $pdo->prepare('UPDATE feedback_media SET imported_at = NOW() WHERE id = :id');
+            $update->execute([':id' => $mediaId]);
+
+            // War das das letzte noch offene Foto dieser Nachricht, die Nachricht selbst
+            // ebenfalls als erledigt markieren (konsistent zum Einzel-Foto-Pfad oben).
+            $remaining = $pdo->prepare(
+                'SELECT COUNT(*) FROM feedback_media WHERE feedback_message_id = :fid AND imported_at IS NULL'
+            );
+            $remaining->execute([':fid' => $mediaRow['feedback_message_id']]);
+            if ((int) $remaining->fetchColumn() === 0) {
+                $markDone = $pdo->prepare(
+                    'UPDATE feedback_messages SET photo_imported_at = NOW(), status = "erledigt", handled_by = :admin_id, handled_at = NOW() WHERE id = :id'
+                );
+                $markDone->execute([':admin_id' => $adminId, ':id' => $mediaRow['feedback_message_id']]);
+            }
+
+            FcmSender::sendToAllDevices('Neues Foto in der Galerie', 'Schau es dir an!');
+            header('Location: ' . BASE_PATH . '/admin/gallery.php');
+            exit;
+        }
+    }
+}
+
 // Bearbeiten (Beschreibung aendern, optional Foto ersetzen)
 $editPhoto = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
@@ -228,6 +289,26 @@ if ($editPhoto === null && isset($_GET['import_feedback_id'])) {
     }
 }
 
+// Aus einer Mehrfach-Foto-Einreichung EIN bestimmtes Foto vorausfuellen (GET)
+$importFeedbackMedia = null;
+if ($editPhoto === null && $importFeedback === null && isset($_GET['import_feedback_media_id'])) {
+    $stmt = $pdo->prepare(
+        'SELECT fm.*, f.sender_name, f.message
+         FROM feedback_media fm
+         JOIN feedback_messages f ON f.id = fm.feedback_message_id
+         WHERE fm.id = :id'
+    );
+    $stmt->execute([':id' => (int) $_GET['import_feedback_media_id']]);
+    $importFeedbackMedia = $stmt->fetch() ?: null;
+    if ($importFeedbackMedia && !empty($importFeedbackMedia['imported_at'])) {
+        $importFeedbackMedia = null;
+    }
+    if ($importFeedbackMedia) {
+        $senderLabel = $importFeedbackMedia['sender_name'] ?: 'Anonym';
+        $suggestedDescription = "Vorschlag von {$senderLabel}: {$importFeedbackMedia['message']}";
+    }
+}
+
 $photos = $pdo->query('SELECT * FROM photos ORDER BY published_at DESC')->fetchAll();
 $deleteError = isset($_GET['delete_error']);
 ?>
@@ -289,6 +370,14 @@ $deleteError = isset($_GET['delete_error']);
                 <?php else: ?>
                     <img src="<?= htmlspecialchars($importFeedback['image_path'], ENT_QUOTES) ?>" alt="" style="width:160px;border-radius:6px;">
                 <?php endif; ?>
+            </p>
+            <label>Beschreibung <textarea name="description" rows="3"><?= htmlspecialchars($suggestedDescription, ENT_QUOTES) ?></textarea></label>
+            <button type="submit">In Galerie übernehmen</button>
+            <a class="button" href="<?= BASE_PATH ?>/admin/feedback.php">Abbrechen</a>
+        <?php elseif ($importFeedbackMedia): ?>
+            <input type="hidden" name="import_feedback_media_id" value="<?= (int) $importFeedbackMedia['id'] ?>">
+            <p>
+                <img src="<?= htmlspecialchars($importFeedbackMedia['image_path'], ENT_QUOTES) ?>" alt="" style="width:160px;border-radius:6px;">
             </p>
             <label>Beschreibung <textarea name="description" rows="3"><?= htmlspecialchars($suggestedDescription, ENT_QUOTES) ?></textarea></label>
             <button type="submit">In Galerie übernehmen</button>

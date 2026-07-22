@@ -199,7 +199,7 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _reviewTextController,
-                        decoration: const InputDecoration(labelText: 'Rezensionstext'),
+                        decoration: const InputDecoration(labelText: 'Deine Meinung'),
                         maxLines: 3,
                         maxLength: 500,
                         validator: (value) => (value == null || value.trim().isEmpty)

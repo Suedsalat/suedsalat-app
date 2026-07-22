@@ -88,10 +88,12 @@ $feedbackRows = $pdo->query(
 )->fetchAll();
 
 // Zusaetzliche Fotos bei Mehrfach-Einreichungen (siehe feedback_media) - einmal komplett
-// laden und nach Feedback-ID gruppieren, statt pro Zeile einzeln nachzufragen.
+// laden und nach Feedback-ID gruppieren, statt pro Zeile einzeln nachzufragen. Jede Zeile
+// (nicht nur der Pfad) wird gebraucht, damit jedes Foto einzeln in die Galerie uebernommen
+// werden kann (imported_at trackt das pro Foto statt nur einmal pro Nachricht).
 $feedbackMediaByMessage = [];
-foreach ($pdo->query('SELECT feedback_message_id, image_path FROM feedback_media ORDER BY id ASC')->fetchAll() as $mediaRow) {
-    $feedbackMediaByMessage[$mediaRow['feedback_message_id']][] = $mediaRow['image_path'];
+foreach ($pdo->query('SELECT id, feedback_message_id, image_path, imported_at FROM feedback_media ORDER BY id ASC')->fetchAll() as $mediaRow) {
+    $feedbackMediaByMessage[$mediaRow['feedback_message_id']][] = $mediaRow;
 }
 
 $activity = [];
@@ -211,8 +213,8 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                             <audio src="<?= htmlspecialchars($item['image_path'], ENT_QUOTES) ?>" controls style="width:170px;height:32px;"></audio>
                         <?php elseif (!empty($item['extra_photos']) && count($item['extra_photos']) > 1): ?>
                             <div style="display:flex;flex-wrap:wrap;gap:4px;max-width:130px;">
-                                <?php foreach ($item['extra_photos'] as $photoUrl): ?>
-                                    <img class="thumb" src="<?= htmlspecialchars($photoUrl, ENT_QUOTES) ?>" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;" onclick="openLightbox('<?= htmlspecialchars($photoUrl, ENT_QUOTES) ?>')">
+                                <?php foreach ($item['extra_photos'] as $photoRow): ?>
+                                    <img class="thumb" src="<?= htmlspecialchars($photoRow['image_path'], ENT_QUOTES) ?>" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;" onclick="openLightbox('<?= htmlspecialchars($photoRow['image_path'], ENT_QUOTES) ?>')">
                                 <?php endforeach; ?>
                             </div>
                         <?php elseif (!empty($item['image_path'])): ?>
@@ -222,7 +224,13 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                     <td>
                         <?php if ($item['source'] === 'user'): $msg = $item['row']; ?>
                             <div class="actions">
-                                <?php if (!empty($msg['image_path']) && empty($msg['photo_imported_at']) && ($msg['media_type'] ?? 'image') !== 'audio'): ?>
+                                <?php if (!empty($item['extra_photos'])): ?>
+                                    <?php foreach ($item['extra_photos'] as $i => $photoRow): ?>
+                                        <?php if (empty($photoRow['imported_at'])): ?>
+                                            <a class="button" href="<?= BASE_PATH ?>/admin/gallery.php?import_feedback_media_id=<?= (int) $photoRow['id'] ?>">Foto <?= $i + 1 ?> in Galerie übernehmen</a>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                <?php elseif (!empty($msg['image_path']) && empty($msg['photo_imported_at']) && ($msg['media_type'] ?? 'image') !== 'audio'): ?>
                                     <a class="button" href="<?= BASE_PATH ?>/admin/gallery.php?import_feedback_id=<?= (int) $msg['id'] ?>">Foto in Galerie übernehmen</a>
                                 <?php endif; ?>
                                 <?php if (!empty($msg['image_path'])): ?>

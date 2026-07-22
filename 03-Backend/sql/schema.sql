@@ -206,6 +206,7 @@ CREATE TABLE IF NOT EXISTS feedback_media (
   id INT PRIMARY KEY AUTO_INCREMENT,
   feedback_message_id INT NOT NULL,
   image_path VARCHAR(500) NOT NULL,
+  imported_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (feedback_message_id) REFERENCES feedback_messages(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
