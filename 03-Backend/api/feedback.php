@@ -30,7 +30,7 @@ $senderName = trim((string) ($_POST['sender_name'] ?? ''));
 $type = trim((string) ($_POST['type'] ?? 'allgemein'));
 $message = trim((string) ($_POST['message'] ?? ''));
 
-$allowedTypes = ['allgemein', 'termin_tipp', 'foto_vorschlag', 'kino_tipp', 'sprachnachricht', 'frage'];
+$allowedTypes = ['allgemein', 'termin_tipp', 'foto_vorschlag', 'kino_tipp', 'sprachnachricht', 'frage', 'location_tipp'];
 if (!in_array($type, $allowedTypes, true)) {
     $type = 'allgemein';
 }
@@ -223,6 +223,7 @@ $typeLabels = [
     'sprachnachricht' => 'Sprachnachricht',
     'allgemein' => 'Allgemeines Feedback',
     'frage' => 'Frage',
+    'location_tipp' => 'Locationtipp',
 ];
 $displayName = $senderName !== '' ? $senderName : 'Anonym';
 $activityLink = APP_URL . '/admin/feedback.php';

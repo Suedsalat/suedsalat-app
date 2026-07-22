@@ -38,6 +38,7 @@ $feedbackTypeLabels = [
     'allgemein' => 'Allgemeines Feedback',
     'sprachnachricht' => 'Sprachnachricht',
     'frage' => 'Frage',
+    'location_tipp' => 'Locationtipp',
 ];
 
 // Anonyme Nutzungsstatistik (siehe api/track-view.php): Aufrufe pro Bereich,

@@ -76,6 +76,7 @@ $typeLabels = [
     'sprachnachricht' => 'Sprachnachricht',
     'allgemein' => 'Allgemeines Feedback',
     'frage' => 'Frage',
+    'location_tipp' => 'Locationtipp',
 ];
 
 // Nutzer-Feedback
