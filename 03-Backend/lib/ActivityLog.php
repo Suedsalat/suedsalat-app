@@ -28,6 +28,20 @@ final class ActivityLog
              WHERE p.created_via_feedback_id IS NULL"
         )->fetchAll();
 
+        $movieTips = $pdo->query(
+            "SELECT mt.*, a.name AS created_by_name
+             FROM movie_tips mt
+             LEFT JOIN admins a ON a.id = mt.created_by
+             WHERE mt.created_via_feedback_id IS NULL"
+        )->fetchAll();
+
+        $locationTips = $pdo->query(
+            "SELECT lt.*, a.name AS created_by_name
+             FROM location_tips lt
+             LEFT JOIN admins a ON a.id = lt.created_by
+             WHERE lt.created_via_feedback_id IS NULL"
+        )->fetchAll();
+
         $items = [];
 
         foreach ($events as $event) {
@@ -61,6 +75,40 @@ final class ActivityLog
                 'edit_link' => '/admin/gallery.php?edit=' . (int) $photo['id'],
                 'delete_action' => '/admin/gallery.php',
                 'entity_id' => (int) $photo['id'],
+            ];
+        }
+
+        foreach ($movieTips as $tip) {
+            $items[] = [
+                'source' => 'admin',
+                'entity' => 'movie_tip',
+                'sort_date' => $tip['created_at'],
+                'date' => $tip['created_at'],
+                'status_label' => 'Filmtipp erstellt',
+                'from' => $tip['created_by_name'] ?? '—',
+                'type' => 'Filmtipp',
+                'content' => $tip['title'],
+                'image_path' => $tip['image_path'],
+                'edit_link' => '/admin/movie-tips.php?edit=' . (int) $tip['id'],
+                'delete_action' => '/admin/movie-tips.php',
+                'entity_id' => (int) $tip['id'],
+            ];
+        }
+
+        foreach ($locationTips as $tip) {
+            $items[] = [
+                'source' => 'admin',
+                'entity' => 'location_tip',
+                'sort_date' => $tip['created_at'],
+                'date' => $tip['created_at'],
+                'status_label' => 'Locationtipp erstellt',
+                'from' => $tip['created_by_name'] ?? '—',
+                'type' => 'Locationtipp',
+                'content' => $tip['name'] . ' (' . $tip['location'] . ')',
+                'image_path' => $tip['image_path'],
+                'edit_link' => '/admin/location-tips.php?edit=' . (int) $tip['id'],
+                'delete_action' => '/admin/location-tips.php',
+                'entity_id' => (int) $tip['id'],
             ];
         }
 

@@ -259,7 +259,15 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                                 <?php if ($isOwner): ?>
                                     <form method="post" action="<?= BASE_PATH . htmlspecialchars($item['delete_action'], ENT_QUOTES) ?>" onsubmit="return false;">
                                         <input type="hidden" name="delete_id" value="<?= $item['entity_id'] ?>">
-                                        <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Achtung: Dabei wird auch <?= $item['entity'] === 'event' ? 'die Veranstaltung' : 'das Foto' ?> selbst dauerhaft gelöscht, nicht nur der Eintrag hier.')">Löschen</button>
+                                        <?php
+                                        $entityDeleteLabels = [
+                                            'event' => 'die Veranstaltung',
+                                            'photo' => 'das Foto',
+                                            'movie_tip' => 'der Filmtipp',
+                                            'location_tip' => 'der Locationtipp',
+                                        ];
+                                    ?>
+                                    <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Achtung: Dabei wird auch <?= $entityDeleteLabels[$item['entity']] ?? 'der Eintrag' ?> selbst dauerhaft gelöscht, nicht nur der Eintrag hier.')">Löschen</button>
                                     </form>
                                 <?php endif; ?>
                             </div>

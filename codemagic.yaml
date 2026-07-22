@@ -1,0 +1,69 @@
+workflows:
+  ios-release:
+    name: Suedsalat iOS Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      # Name der App-Store-Connect-API-Key-Integration, die unter
+      # Codemagic > Teams > Integrations > Apple Developer Portal hinterlegt wird.
+      # Muss GENAU so heissen wie hier, sonst schlaegt der Build beim Signieren fehl.
+      app_store_connect: suedsalat_appstore
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: eu.suedsalat.suedsalatApp
+      groups:
+        # Enthaelt APP_SECRET (gleicher Wert wie in 03-Backend/.env) - als
+        # verschluesselte Variablengruppe unter Codemagic > App > Environment
+        # variables anlegen, NICHT im Klartext in dieser Datei.
+        - suedsalat_secrets
+      vars:
+        BUNDLE_ID: "eu.suedsalat.suedsalatApp"
+        XCODE_WORKSPACE: "Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+
+    working_directory: 04-App
+
+    scripts:
+      - name: Signierungsdateien von App Store Connect holen
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+
+      - name: Zertifikat in den Keychain-Schluesselbund laden
+        script: keychain initialize
+
+      - name: Xcode-Projekt mit den geholten Profilen konfigurieren
+        script: xcode-project use-profiles
+
+      - name: Flutter-Pakete laden
+        script: flutter packages pub get
+
+      - name: CocoaPods installieren
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+
+      - name: IPA bauen (obfuskiert, mit APP_SECRET)
+        script: |
+          flutter build ipa --release \
+            --obfuscate --split-debug-info=build/debug-info \
+            --dart-define=APP_SECRET=$APP_SECRET \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - 04-App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Laedt jeden Build automatisch zu TestFlight hoch, reicht ihn aber
+        # NICHT automatisch zur App-Store-Pruefung ein - das bleibt ein
+        # bewusster manueller Schritt in App Store Connect.
+        submit_to_testflight: true
+        submit_to_app_store: false

@@ -30,7 +30,7 @@ if (RateLimiter::tooMany('track_view', $ip, 60, 60)) {
 }
 RateLimiter::record('track_view', $ip);
 
-$allowedScreens = ['start', 'episodes', 'events', 'movie_tips', 'gallery', 'feedback'];
+$allowedScreens = ['start', 'episodes', 'events', 'movie_tips', 'location_tips', 'gallery', 'feedback'];
 $screen = trim((string) ($_POST['screen'] ?? ''));
 
 if (!in_array($screen, $allowedScreens, true)) {
