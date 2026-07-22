@@ -96,7 +96,7 @@ define('UPLOAD_URL_BASE', APP_URL . '/uploads');
 define('LOGIN_MAX_ATTEMPTS', 5);
 define('LOGIN_LOCKOUT_MINUTES', 15);
 define('PASSWORD_RESET_TTL_MINUTES', 60);
-define('ADMIN_IDLE_TIMEOUT_MINUTES', 5);
+define('ADMIN_IDLE_TIMEOUT_MINUTES', 8);
 
 // --- API-Auth fuer die App (anonyme Geraete-Tokens, siehe lib/Jwt.php, lib/ApiAuth.php) ---
 define('JWT_SECRET', env('JWT_SECRET'));
