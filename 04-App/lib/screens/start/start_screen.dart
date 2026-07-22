@@ -58,7 +58,7 @@ class StartScreen extends StatelessWidget {
           _StartTile(
             leading: Image.asset('assets/images/folgen.png', width: 40, height: 40),
             title: 'Folgen',
-            subtitle: 'Alle Episoden zum Nachhören',
+            subtitle: 'Alle Episoden direkt zum Anhören',
             showNewDot: hasNewEpisodes,
             onTap: () => onNavigateToTab(1),
           ),
@@ -66,7 +66,7 @@ class StartScreen extends StatelessWidget {
           _StartTile(
             leading: Image.asset('assets/images/kalender.png', width: 40, height: 40),
             title: 'Veranstaltungen',
-            subtitle: 'Was als Nächstes ansteht',
+            subtitle: 'Termine, die als nächstes anstehen',
             showNewDot: hasNewEvents,
             onTap: () => onNavigateToTab(2),
           ),
@@ -74,7 +74,7 @@ class StartScreen extends StatelessWidget {
           _StartTile(
             leading: Image.asset('assets/images/kino.png', width: 40, height: 40),
             title: 'Kino- und Filmtipps',
-            subtitle: 'Unsere Filmempfehlungen',
+            subtitle: 'Unsere Empfehlungen für den nächsten Filmabend oder Kinobesuch',
             showNewDot: hasNewMovieTips,
             onTap: () => onNavigateToTab(3),
           ),
@@ -82,7 +82,7 @@ class StartScreen extends StatelessWidget {
           _StartTile(
             leading: Image.asset('assets/images/location.png', width: 40, height: 40),
             title: 'Locationtipps',
-            subtitle: 'Orte, die Jenny und Thorsten empfehlen',
+            subtitle: 'Restaurants, Museen und Ausflugsziele',
             showNewDot: hasNewLocationTips,
             onTap: () => onNavigateToTab(4),
           ),
@@ -90,29 +90,29 @@ class StartScreen extends StatelessWidget {
           _StartTile(
             leading: Image.asset('assets/images/galerie.png', width: 40, height: 40),
             title: 'Galerie',
-            subtitle: 'Die neuesten Fotos',
+            subtitle: 'Eure und unsere Fotos zu unserem Podcast',
             showNewDot: hasNewPhotos,
             onTap: () => onNavigateToTab(5),
           ),
           const SizedBox(height: 12),
           _StartTile(
-            leading: Image.asset('assets/images/feedback.png', width: 40, height: 40),
-            title: 'Feedback',
-            subtitle: 'Schreib uns direkt eine Nachricht',
+            leading: Image.asset('assets/images/newsletter.png', width: 40, height: 40),
+            title: 'Newsletter',
+            subtitle: 'Erhalte die neuesten Infos direkt aus erster Hand',
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const FeedbackScreen()),
+                MaterialPageRoute(builder: (_) => const NewsletterScreen()),
               );
             },
           ),
           const SizedBox(height: 12),
           _StartTile(
-            leading: Image.asset('assets/images/newsletter.png', width: 40, height: 40),
-            title: 'Newsletter',
-            subtitle: 'Bleib informiert',
+            leading: Image.asset('assets/images/feedback.png', width: 40, height: 40),
+            title: 'Feedback',
+            subtitle: 'Schreib oder sprich uns eine Nachricht',
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const NewsletterScreen()),
+                MaterialPageRoute(builder: (_) => const FeedbackScreen()),
               );
             },
           ),
@@ -140,22 +140,27 @@ class _StartTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: leading,
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (showNewDot) ...[
-              const NewDot(),
-              const SizedBox(width: 8),
+    // Feste Hoehe, damit alle Kacheln gleich gross sind, egal ob der Untertitel
+    // ein- oder zweizeilig ist (manche Beschreibungen sind deutlich laenger).
+    return SizedBox(
+      height: 88,
+      child: Card(
+        child: ListTile(
+          leading: leading,
+          title: Text(title),
+          subtitle: Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showNewDot) ...[
+                const NewDot(),
+                const SizedBox(width: 8),
+              ],
+              const Icon(Icons.chevron_right),
             ],
-            const Icon(Icons.chevron_right),
-          ],
+          ),
+          onTap: onTap,
         ),
-        onTap: onTap,
       ),
     );
   }

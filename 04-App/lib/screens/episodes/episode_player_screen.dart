@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../services/audio_player_service.dart';
+import '../feedback/feedback_screen.dart';
 
 class EpisodePlayerScreen extends StatelessWidget {
   const EpisodePlayerScreen({super.key});
@@ -77,6 +78,16 @@ class EpisodePlayerScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                             Text(description, textAlign: TextAlign.center),
                           ],
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const FeedbackScreen()),
+                              );
+                            },
+                            icon: const Icon(Icons.feedback_outlined),
+                            label: const Text('Feedback zu dieser Folge geben'),
+                          ),
                         ],
                       ),
                     ),

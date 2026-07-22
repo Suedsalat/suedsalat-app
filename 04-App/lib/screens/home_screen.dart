@@ -165,11 +165,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     return Scaffold(
       appBar: AppBar(
+        // Bewusst ein Home-Symbol statt eines Pfeils: dieser Button springt
+        // immer zur Startseite (Tab 0), er stellt keine echte Zurueck-Navigation
+        // dar. Mit einem Pfeil-Icon wurde das faelschlich fuer "zurueck zur
+        // vorherigen Seite" gehalten, obwohl das eigentliche Zurueck (z.B. vom
+        // Episoden-Player) bereits korrekt ueber den automatischen Flutter-
+        // Zurueck-Button der jeweiligen Seite funktioniert.
         leading: _currentIndex == 0
             ? null
             : IconButton(
-                icon: const Icon(Icons.arrow_back),
-                tooltip: 'Zurück zur Startseite',
+                icon: const Icon(Icons.home_outlined),
+                tooltip: 'Zur Startseite',
                 onPressed: () => _navigateToTab(0),
               ),
         title: Text(_titles[_currentIndex]),

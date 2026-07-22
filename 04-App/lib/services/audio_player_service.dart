@@ -100,7 +100,15 @@ class AudioPlayerService extends ChangeNotifier {
     }
   }
 
-  Future<void> seek(Duration newPosition) => _player.seek(newPosition);
+  /// Springt zu [newPosition]. Aktualisiert `position` sofort selbst, statt nur
+  /// auf das naechste `onPositionChanged`-Event vom Player zu warten - sonst
+  /// springt die Wiedergabe zwar sofort hoerbar, die Zeitleiste in der UI zeigt
+  /// aber noch kurz (oder je nach Plattform dauerhaft sichtbar falsch) 00:00 an.
+  Future<void> seek(Duration newPosition) async {
+    await _player.seek(newPosition);
+    position = newPosition;
+    notifyListeners();
+  }
 
   Future<void> stop() async {
     await _player.stop();

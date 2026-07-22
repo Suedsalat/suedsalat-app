@@ -10,6 +10,9 @@ class MikroRatingDisplay extends StatelessWidget {
   final int reviewCount;
   final double iconSize;
   final VoidCallback? onTap;
+  /// false fuer die Anzeige einer einzelnen Rezension (dort gibt es keine
+  /// sinnvolle "Anzahl", das waere immer 0/"Noch keine Bewertungen").
+  final bool showCountLabel;
 
   const MikroRatingDisplay({
     super.key,
@@ -17,6 +20,7 @@ class MikroRatingDisplay extends StatelessWidget {
     required this.reviewCount,
     this.iconSize = 18,
     this.onTap,
+    this.showCountLabel = true,
   });
 
   @override
@@ -27,13 +31,15 @@ class MikroRatingDisplay extends StatelessWidget {
       children: [
         for (var i = 0; i < 5; i++) ...[
           _MikroIcon(fill: (rating - i).clamp(0, 1).toDouble(), size: iconSize),
-          if (i < 4) SizedBox(width: iconSize * 0.1),
+          if (i < 4) const SizedBox(width: 1),
         ],
-        SizedBox(width: iconSize * 0.35),
-        Text(
-          reviewCount > 0 ? '($reviewCount)' : 'Noch keine Bewertungen',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+        if (showCountLabel) ...[
+          SizedBox(width: iconSize * 0.35),
+          Text(
+            reviewCount > 0 ? '($reviewCount)' : 'Noch keine Bewertungen',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
       ],
     );
 

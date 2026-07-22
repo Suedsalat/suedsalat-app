@@ -104,9 +104,10 @@ class ApiService {
     );
   }
 
-  /// Reicht eine Mikro-Bewertung (1-5) + optionalen Text ein. Die Rezension erscheint
-  /// erst oeffentlich, nachdem sie im Adminbereich freigegeben wurde.
-  Future<void> submitReview(String tipType, int tipId, int rating, String? reviewText) async {
+  /// Reicht eine Mikro-Bewertung (1-5) + Name + Rezensionstext ein (beides Pflicht).
+  /// Die Rezension erscheint erst oeffentlich, nachdem sie im Adminbereich
+  /// freigegeben wurde.
+  Future<void> submitReview(String tipType, int tipId, int rating, String reviewerName, String reviewText) async {
     final response = await _authorizedRequest(
       (headers) => http.post(
         Uri.parse('$baseUrl/submit-review.php'),
@@ -115,7 +116,8 @@ class ApiService {
           'tip_type': tipType,
           'tip_id': tipId.toString(),
           'rating': rating.toString(),
-          if (reviewText != null && reviewText.trim().isNotEmpty) 'review_text': reviewText.trim(),
+          'reviewer_name': reviewerName.trim(),
+          'review_text': reviewText.trim(),
         },
       ),
     );
