@@ -38,20 +38,26 @@ DAS BIETET DIR DIE APP
 • Folgen
 Alle Episoden zum Nachhören direkt in der App, inklusive eigenem Player. Du siehst auf einen Blick, welche Folgen du schon gehört hast und welche neu sind.
 
-• Termine
+• Veranstaltungen
 Alle Termine rund um den Podcast auf einen Blick – mit Poster, Beschreibung und Datum. Wurde ein Termin in einer Folge besprochen, springst du mit einem Tipp direkt an die passende Stelle im Player.
 
 • Filmtipps
 Jennys Filmempfehlungen mit Poster, Beschreibung und Link zum Film – ebenfalls verknüpft mit der Folge, in der der Tipp gefallen ist.
 
+• Locationtipps
+Restaurants, Museen und Ausflugsziele, die im Podcast empfohlen wurden – mit Beschreibung, Foto und Link.
+
+• Mikro-Bewertungen
+Bewerte Film- und Locationtipps mit 1 bis 5 Mikros und lies, was andere Hörer:innen dazu geschrieben haben. Jede Rezension wird vor der Veröffentlichung kurz geprüft.
+
 • Galerie
 Fotos und kurze Videos rund um den Podcast, von Jenny & Thorsten und aus der Community.
 
 • Feedback
-Schreib uns direkt aus der App: einen Termin- oder Filmtipp, einen Fotovorschlag oder einfach eine Nachricht – optional mit Foto oder Video. Wir lesen jede Nachricht persönlich.
+Schreib oder sprich uns direkt aus der App: einen Veranstaltungs-, Film- oder Locationtipp, einen Fotovorschlag, eine Frage oder einfach eine Nachricht – optional mit mehreren Fotos, einem Video oder einer Sprachnachricht. Wir lesen und hören jede Nachricht persönlich.
 
 • Push-Benachrichtigungen
-Verpasse keine neue Folge, keinen neuen Termin und keinen neuen Filmtipp – die App informiert dich automatisch, sobald es etwas Neues gibt.
+Verpasse keine neue Folge, keinen neuen Termin und keinen neuen Tipp – die App informiert dich automatisch, sobald es etwas Neues gibt.
 
 • Newsletter
 Wer's klassisch mag: bleib zusätzlich per E-Mail auf dem Laufenden.
