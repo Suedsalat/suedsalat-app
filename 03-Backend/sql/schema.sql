@@ -114,6 +114,7 @@ CREATE TABLE IF NOT EXISTS tip_reviews (
   tip_id INT NOT NULL,
   rating TINYINT UNSIGNED NOT NULL,
   review_text TEXT NULL,
+  reviewer_name VARCHAR(100) NULL,
   device_id INT NULL,
   approved TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

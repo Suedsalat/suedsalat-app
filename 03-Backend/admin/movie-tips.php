@@ -166,15 +166,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_r
     $reviewTipId = (int) ($_POST['tip_id'] ?? 0);
     $reviewRating = (int) ($_POST['rating'] ?? 0);
     $reviewText = trim((string) ($_POST['review_text'] ?? '')) ?: null;
+    $reviewerName = trim((string) ($_POST['reviewer_name'] ?? '')) ?: null;
     if ($reviewTipId > 0 && $reviewRating >= 1 && $reviewRating <= 5) {
         $stmt = $pdo->prepare(
-            'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, approved, approved_at, approved_by)
-             VALUES ("movie_tip", :tip_id, :rating, :review_text, 1, NOW(), :admin_id)'
+            'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, reviewer_name, approved, approved_at, approved_by)
+             VALUES ("movie_tip", :tip_id, :rating, :review_text, :reviewer_name, 1, NOW(), :admin_id)'
         );
         $stmt->execute([
             ':tip_id' => $reviewTipId,
             ':rating' => $reviewRating,
             ':review_text' => $reviewText,
+            ':reviewer_name' => $reviewerName,
             ':admin_id' => $adminId,
         ]);
     }
@@ -508,11 +510,12 @@ $deleteError = isset($_GET['delete_error']);
         <p><strong>Ausstehend:</strong></p>
         <div class="table-scroll">
         <table>
-            <thead><tr><th>Mikros</th><th>Rezension</th><th>Eingereicht</th><th></th></tr></thead>
+            <thead><tr><th>Mikros</th><th>Name</th><th>Rezension</th><th>Eingereicht</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($tipPendingReviews as $review): ?>
                 <tr>
                     <td><?= (int) $review['rating'] ?> / 5</td>
+                    <td><?= htmlspecialchars($review['reviewer_name'] ?? '—', ENT_QUOTES) ?></td>
                     <td><?= $review['review_text'] !== null ? nl2br(htmlspecialchars($review['review_text'], ENT_QUOTES)) : '<em>(kein Text)</em>' ?></td>
                     <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime($review['created_at'])), ENT_QUOTES) ?></td>
                     <td>
@@ -523,6 +526,7 @@ $deleteError = isset($_GET['delete_error']);
                                 <input type="hidden" name="tip_id" value="<?= (int) $editTip['id'] ?>">
                                 <button type="submit">Freigeben</button>
                             </form>
+                            <a class="button" href="<?= BASE_PATH ?>/admin/tip-reviews.php?edit_review=<?= (int) $review['id'] ?>">Bearbeiten</a>
                             <form method="post" onsubmit="return false;">
                                 <input type="hidden" name="action" value="reject_review">
                                 <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
@@ -542,20 +546,24 @@ $deleteError = isset($_GET['delete_error']);
         <p><strong>Freigegeben:</strong></p>
         <div class="table-scroll">
         <table>
-            <thead><tr><th>Mikros</th><th>Rezension</th><th>Freigegeben</th><th></th></tr></thead>
+            <thead><tr><th>Mikros</th><th>Name</th><th>Rezension</th><th>Freigegeben</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($tipApprovedReviews as $review): ?>
                 <tr>
                     <td><?= (int) $review['rating'] ?> / 5</td>
+                    <td><?= htmlspecialchars($review['reviewer_name'] ?? '—', ENT_QUOTES) ?></td>
                     <td><?= $review['review_text'] !== null ? nl2br(htmlspecialchars($review['review_text'], ENT_QUOTES)) : '<em>(kein Text)</em>' ?></td>
                     <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $review['approved_at'])), ENT_QUOTES) ?></td>
                     <td>
-                        <form method="post">
-                            <input type="hidden" name="action" value="revoke_review">
-                            <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
-                            <input type="hidden" name="tip_id" value="<?= (int) $editTip['id'] ?>">
-                            <button type="submit" class="button">Freigabe zurückziehen</button>
-                        </form>
+                        <div class="actions">
+                            <a class="button" href="<?= BASE_PATH ?>/admin/tip-reviews.php?edit_review=<?= (int) $review['id'] ?>">Bearbeiten</a>
+                            <form method="post">
+                                <input type="hidden" name="action" value="revoke_review">
+                                <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
+                                <input type="hidden" name="tip_id" value="<?= (int) $editTip['id'] ?>">
+                                <button type="submit" class="button">Freigabe zurückziehen</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -581,6 +589,7 @@ $deleteError = isset($_GET['delete_error']);
                 <input type="radio" name="rating" value="1" id="add-rating-1"><label for="add-rating-1"></label>
             </div>
         </label>
+        <label>Name (optional) <input type="text" name="reviewer_name"></label>
         <label>Rezensionstext (optional) <textarea name="review_text" rows="2"></textarea></label>
         <button type="submit">Rezension eintragen</button>
     </form>

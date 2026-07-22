@@ -35,7 +35,8 @@ $tipTypeTables = [
 $tipType = (string) ($_POST['tip_type'] ?? '');
 $tipId = (int) ($_POST['tip_id'] ?? 0);
 $rating = (int) ($_POST['rating'] ?? 0);
-$reviewText = trim((string) ($_POST['review_text'] ?? '')) ?: null;
+$reviewText = trim((string) ($_POST['review_text'] ?? ''));
+$reviewerName = trim((string) ($_POST['reviewer_name'] ?? ''));
 
 if (!isset($tipTypeTables[$tipType]) || $tipId <= 0) {
     http_response_code(422);
@@ -47,10 +48,23 @@ if ($rating < 1 || $rating > 5) {
     echo json_encode(['error' => 'rating muss zwischen 1 und 5 liegen.']);
     exit;
 }
-if ($reviewText !== null && mb_strlen($reviewText) > 1000) {
+if ($reviewText === '') {
+    http_response_code(422);
+    echo json_encode(['error' => 'review_text ist erforderlich.']);
+    exit;
+}
+if (mb_strlen($reviewText) > 1000) {
     http_response_code(422);
     echo json_encode(['error' => 'Rezensionstext ist zu lang (max. 1000 Zeichen).']);
     exit;
+}
+if ($reviewerName === '') {
+    http_response_code(422);
+    echo json_encode(['error' => 'reviewer_name ist erforderlich.']);
+    exit;
+}
+if (mb_strlen($reviewerName) > 100) {
+    $reviewerName = mb_substr($reviewerName, 0, 100);
 }
 
 $pdo = Database::connection();
@@ -68,14 +82,15 @@ if ($existsStmt->fetchColumn() === false) {
 $deviceId = $claims['sub'] ?? null;
 
 $stmt = $pdo->prepare(
-    'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, device_id)
-     VALUES (:tip_type, :tip_id, :rating, :review_text, :device_id)'
+    'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, reviewer_name, device_id)
+     VALUES (:tip_type, :tip_id, :rating, :review_text, :reviewer_name, :device_id)'
 );
 $stmt->execute([
     ':tip_type' => $tipType,
     ':tip_id' => $tipId,
     ':rating' => $rating,
     ':review_text' => $reviewText,
+    ':reviewer_name' => $reviewerName,
     ':device_id' => $deviceId,
 ]);
 

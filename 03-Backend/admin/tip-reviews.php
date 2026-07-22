@@ -35,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'manua
     $tipRef = (string) ($_POST['tip_ref'] ?? '');
     $rating = (int) ($_POST['rating'] ?? 0);
     $reviewText = trim((string) ($_POST['review_text'] ?? '')) ?: null;
+    $reviewerName = trim((string) ($_POST['reviewer_name'] ?? '')) ?: null;
 
     [$tipType, $tipIdRaw] = array_pad(explode(':', $tipRef, 2), 2, null);
     $tipId = $tipIdRaw !== null ? (int) $tipIdRaw : 0;
@@ -45,19 +46,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'manua
         $error = 'Bitte 1 bis 5 Mikros auswählen.';
     } else {
         $stmt = $pdo->prepare(
-            'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, approved, approved_at, approved_by)
-             VALUES (:tip_type, :tip_id, :rating, :review_text, 1, NOW(), :admin_id)'
+            'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, reviewer_name, approved, approved_at, approved_by)
+             VALUES (:tip_type, :tip_id, :rating, :review_text, :reviewer_name, 1, NOW(), :admin_id)'
         );
         $stmt->execute([
             ':tip_type' => $tipType,
             ':tip_id' => $tipId,
             ':rating' => $rating,
             ':review_text' => $reviewText,
+            ':reviewer_name' => $reviewerName,
             ':admin_id' => $adminId,
         ]);
         header('Location: ' . BASE_PATH . '/admin/tip-reviews.php');
         exit;
     }
+}
+
+// Name + Rezensionstext nachtraeglich korrigieren (z.B. Rechtschreibfehler) - bewusst
+// OHNE die Bewertung selbst aendern zu koennen, die stammt von der Person, die
+// bewertet hat und soll inhaltlich unangetastet bleiben.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_review') {
+    $reviewId = (int) ($_POST['review_id'] ?? 0);
+    $reviewerName = trim((string) ($_POST['reviewer_name'] ?? '')) ?: null;
+    $reviewText = trim((string) ($_POST['review_text'] ?? '')) ?: null;
+    $stmt = $pdo->prepare('UPDATE tip_reviews SET reviewer_name = :reviewer_name, review_text = :review_text WHERE id = :id');
+    $stmt->execute([':reviewer_name' => $reviewerName, ':review_text' => $reviewText, ':id' => $reviewId]);
+    header('Location: ' . BASE_PATH . '/admin/tip-reviews.php');
+    exit;
 }
 
 // Freigeben
@@ -89,6 +104,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rejec
 }
 
 $deleteError = isset($_GET['delete_error']);
+
+// Zum Bearbeiten (Name/Text) laden
+$editReview = null;
+if (isset($_GET['edit_review'])) {
+    $stmt = $pdo->prepare('SELECT * FROM tip_reviews WHERE id = :id');
+    $stmt->execute([':id' => (int) $_GET['edit_review']]);
+    $editReview = $stmt->fetch() ?: null;
+}
 
 /** Laedt Rezensionen (pending oder approved) inkl. eines lesbaren Namens fuer den bewerteten Tipp. */
 function load_tip_reviews(\PDO $pdo, bool $approved, array $tipTypeTables): array
@@ -194,9 +217,26 @@ foreach ($tipTypeTables as $tipType => $meta) {
                 <input type="radio" name="rating" value="1" id="manual-rating-1"><label for="manual-rating-1"></label>
             </div>
         </label>
+        <label>Name (optional) <input type="text" name="reviewer_name"></label>
         <label>Rezensionstext (optional) <textarea name="review_text" rows="3"></textarea></label>
         <button type="submit">Rezension eintragen</button>
     </form>
+
+    <?php if ($editReview): ?>
+    <h2>Rezension bearbeiten</h2>
+    <p style="font-size:0.9rem;color:#666;">Nur Name und Rezensionstext lassen sich hier korrigieren (z. B. Rechtschreibfehler) - die Mikro-Bewertung selbst kommt von der bewertenden Person und bleibt unverändert.</p>
+    <form method="post">
+        <input type="hidden" name="action" value="update_review">
+        <input type="hidden" name="review_id" value="<?= (int) $editReview['id'] ?>">
+        <label>Mikros (nicht änderbar) <input type="text" value="<?= (int) $editReview['rating'] ?> / 5" disabled></label>
+        <label>Name <input type="text" name="reviewer_name" value="<?= htmlspecialchars($editReview['reviewer_name'] ?? '', ENT_QUOTES) ?>"></label>
+        <label>Rezensionstext <textarea name="review_text" rows="3"><?= htmlspecialchars($editReview['review_text'] ?? '', ENT_QUOTES) ?></textarea></label>
+        <div class="button-row">
+            <button type="submit">Speichern</button>
+            <a class="button" href="<?= BASE_PATH ?>/admin/tip-reviews.php">Abbrechen</a>
+        </div>
+    </form>
+    <?php endif; ?>
 
     <h2>Ausstehende Rezensionen (<?= count($pendingReviews) ?>)</h2>
     <?php if (empty($pendingReviews)): ?>
@@ -205,7 +245,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
     <div class="table-scroll">
     <table>
         <thead>
-            <tr><th>Bereich</th><th>Eintrag</th><th>Mikros</th><th>Rezension</th><th>Eingereicht</th><th></th></tr>
+            <tr><th>Bereich</th><th>Eintrag</th><th>Mikros</th><th>Name</th><th>Rezension</th><th>Eingereicht</th><th></th></tr>
         </thead>
         <tbody>
         <?php foreach ($pendingReviews as $review): ?>
@@ -213,6 +253,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
                 <td><?= htmlspecialchars($tipTypeLabels[$review['tip_type']] ?? $review['tip_type'], ENT_QUOTES) ?></td>
                 <td><?= htmlspecialchars($review['tip_label'], ENT_QUOTES) ?></td>
                 <td><?= (int) $review['rating'] ?> / 5</td>
+                <td><?= htmlspecialchars($review['reviewer_name'] ?? '—', ENT_QUOTES) ?></td>
                 <td><?= $review['review_text'] !== null ? nl2br(htmlspecialchars($review['review_text'], ENT_QUOTES)) : '<em>(kein Text)</em>' ?></td>
                 <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime($review['created_at'])), ENT_QUOTES) ?></td>
                 <td>
@@ -222,6 +263,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
                             <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
                             <button type="submit">Freigeben</button>
                         </form>
+                        <a class="button" href="<?= BASE_PATH ?>/admin/tip-reviews.php?edit_review=<?= (int) $review['id'] ?>">Bearbeiten</a>
                         <form method="post" onsubmit="return false;">
                             <input type="hidden" name="action" value="reject">
                             <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
@@ -243,7 +285,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
     <div class="table-scroll">
     <table>
         <thead>
-            <tr><th>Bereich</th><th>Eintrag</th><th>Mikros</th><th>Rezension</th><th>Freigegeben</th><th></th></tr>
+            <tr><th>Bereich</th><th>Eintrag</th><th>Mikros</th><th>Name</th><th>Rezension</th><th>Freigegeben</th><th></th></tr>
         </thead>
         <tbody>
         <?php foreach ($approvedReviews as $review): ?>
@@ -251,10 +293,12 @@ foreach ($tipTypeTables as $tipType => $meta) {
                 <td><?= htmlspecialchars($tipTypeLabels[$review['tip_type']] ?? $review['tip_type'], ENT_QUOTES) ?></td>
                 <td><?= htmlspecialchars($review['tip_label'], ENT_QUOTES) ?></td>
                 <td><?= (int) $review['rating'] ?> / 5</td>
+                <td><?= htmlspecialchars($review['reviewer_name'] ?? '—', ENT_QUOTES) ?></td>
                 <td><?= $review['review_text'] !== null ? nl2br(htmlspecialchars($review['review_text'], ENT_QUOTES)) : '<em>(kein Text)</em>' ?></td>
                 <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $review['approved_at'])), ENT_QUOTES) ?></td>
                 <td>
                     <div class="actions">
+                        <a class="button" href="<?= BASE_PATH ?>/admin/tip-reviews.php?edit_review=<?= (int) $review['id'] ?>">Bearbeiten</a>
                         <form method="post" style="display:inline;">
                             <input type="hidden" name="action" value="revoke">
                             <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">

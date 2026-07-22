@@ -32,7 +32,7 @@ $summaryStmt->execute([':tip_type' => $tipType, ':tip_id' => $tipId]);
 $summary = $summaryStmt->fetch();
 
 $reviewsStmt = $pdo->prepare(
-    'SELECT id, rating, review_text, created_at
+    'SELECT id, rating, review_text, reviewer_name, created_at
      FROM tip_reviews WHERE tip_type = :tip_type AND tip_id = :tip_id AND approved = 1
      ORDER BY created_at DESC'
 );
