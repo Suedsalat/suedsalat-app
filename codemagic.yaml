@@ -7,7 +7,7 @@ workflows:
       # Name der App-Store-Connect-API-Key-Integration, die unter
       # Codemagic > Teams > Integrations > Apple Developer Portal hinterlegt wird.
       # Muss GENAU so heissen wie hier, sonst schlaegt der Build beim Signieren fehl.
-      app_store_connect: suedsalat_appstore
+      app_store_connect: Südsalat App Store Connect
 
     environment:
       ios_signing:
