@@ -358,7 +358,7 @@ $deleteError = isset($_GET['delete_error']);
     <a href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
     <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
-    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino- u. Filmtipps</a>
+    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
@@ -379,7 +379,7 @@ $deleteError = isset($_GET['delete_error']);
         <?php if ($editTip): ?>
             <input type="hidden" name="edit_id" value="<?= (int) $editTip['id'] ?>">
         <?php endif; ?>
-        <label>Name <input type="text" name="name" required value="<?= htmlspecialchars($editTip['name'] ?? '', ENT_QUOTES) ?>"></label>
+        <label>Name der Location <input type="text" name="name" required value="<?= htmlspecialchars($editTip['name'] ?? '', ENT_QUOTES) ?>"></label>
         <label>Ort <input type="text" name="location" required value="<?= htmlspecialchars($editTip['location'] ?? '', ENT_QUOTES) ?>"></label>
         <label>Beschreibung (optional) <textarea name="description" rows="3"><?= htmlspecialchars($editTip['description'] ?? '', ENT_QUOTES) ?></textarea></label>
         <label>Link (optional, z. B. Homepage/Karte) <input type="text" name="link" placeholder="www.beispiel.de" value="<?= htmlspecialchars($editTip['link'] ?? '', ENT_QUOTES) ?>"></label>

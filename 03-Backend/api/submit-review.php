@@ -25,7 +25,7 @@ if (RateLimiter::tooMany('review_submit', $ip, 20, 60)) {
 }
 RateLimiter::record('review_submit', $ip);
 
-// Rezensionen gibt es bewusst nur fuer Kino-/Filmtipps und Locationtipps, nicht fuer
+// Rezensionen gibt es bewusst nur fuer Filmtipps und Locationtipps, nicht fuer
 // Veranstaltungen - dort ergibt eine Bewertung inhaltlich keinen Sinn.
 $tipTypeTables = [
     'movie_tip' => 'movie_tips',

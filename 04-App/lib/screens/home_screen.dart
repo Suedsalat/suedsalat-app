@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // App-Resume ohne Tab-Wechsel bisher nicht).
   int _refreshEpoch = 0;
 
-  static const _titles = ['Start', 'Folgen', 'Veranstaltungen', 'Kino- und Filmtipps', 'Locationtipps', 'Galerie'];
+  static const _titles = ['Start', 'Folgen', 'Veranstaltungen', 'Filmtipps', 'Locationtipps', 'Galerie'];
   static const _screenKeys = ['start', 'episodes', 'events', 'movie_tips', 'location_tips', 'gallery'];
 
   @override
@@ -124,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return FloatingActionButton.extended(
           onPressed: () => _openFeedbackWithType('kino_tipp'),
           icon: const Icon(Icons.add),
-          label: const Text('Kino- und Filmtipp einreichen'),
+          label: const Text('Filmtipp einreichen'),
         );
       case 4:
         return FloatingActionButton.extended(
@@ -236,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   isLabelVisible: _hasNewMovieTips,
                   child: Image.asset('assets/images/kino.png', width: 32, height: 32),
                 ),
-                label: 'Kino- und Filme',
+                label: 'Filmtipps',
               ),
               AppBottomNavItem(
                 icon: Badge(

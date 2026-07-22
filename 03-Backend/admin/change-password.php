@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <a href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
     <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
-    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino- u. Filmtipps</a>
+    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>

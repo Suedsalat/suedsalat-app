@@ -5,7 +5,7 @@ Stand: 2026-07-14
 ## Kurzbeschreibung (max. 80 Zeichen, genutzt: 72)
 
 ```
-Folgen, Termine & Kinotipps zum Südsalat-Podcast – kostenlos & werbefrei
+Folgen, Termine & Filmtipps zum Südsalat-Podcast – kostenlos & werbefrei
 ```
 
 ## Vollständige Beschreibung (max. 4000 Zeichen, genutzt: 1522)
@@ -23,17 +23,17 @@ Alle Episoden zum Nachhören direkt in der App, inklusive eigenem Player. Du sie
 • Termine
 Alle Termine rund um den Podcast auf einen Blick – mit Poster, Beschreibung und Datum. Wurde ein Termin in einer Folge besprochen, springst du mit einem Tipp direkt an die passende Stelle im Player.
 
-• Kinotipps
+• Filmtipps
 Jennys Filmempfehlungen mit Poster, Beschreibung und Link zum Film – ebenfalls verknüpft mit der Folge, in der der Tipp gefallen ist.
 
 • Galerie
 Fotos und kurze Videos rund um den Podcast, von Jenny & Thorsten und aus der Community.
 
 • Feedback
-Schreib uns direkt aus der App: einen Termin- oder Kinotipp, einen Fotovorschlag oder einfach eine Nachricht – optional mit Foto oder Video. Wir lesen jede Nachricht persönlich.
+Schreib uns direkt aus der App: einen Termin- oder Filmtipp, einen Fotovorschlag oder einfach eine Nachricht – optional mit Foto oder Video. Wir lesen jede Nachricht persönlich.
 
 • Push-Benachrichtigungen
-Verpasse keine neue Folge, keinen neuen Termin und keinen neuen Kinotipp – die App informiert dich automatisch, sobald es etwas Neues gibt.
+Verpasse keine neue Folge, keinen neuen Termin und keinen neuen Filmtipp – die App informiert dich automatisch, sobald es etwas Neues gibt.
 
 • Newsletter
 Wer's klassisch mag: bleib zusätzlich per E-Mail auf dem Laufenden.
@@ -47,8 +47,8 @@ Hör direkt rein und werde Teil der Südsalat-Community!
 
 ## Weitere Fragebogen-Antworten
 
-- **Werbung enthalten?** Nein — ein Termin-/Kinotipp-Poster zählt nicht als Werbung im Play-Store-Sinn (das meint nur monetarisierte Drittanbieter-Ads).
-- **Inhaltseinstufung (IARC):** App-Funktionen selbst enthalten keine Gewalt/sexuelle Inhalte/Glücksspiel/Nutzer-Chat. Nutzergenerierte Inhalte (Feedback → Galerie/Termine/Kino) werden manuell von Jenny/Thorsten moderiert, bevor sie öffentlich sichtbar werden — das bei der entsprechenden Frage angeben. Fragen zu Alkohol-/Kraftausdrücken hängen vom tatsächlichen Podcast-Inhalt ab, das muss Thorsten selbst anhand der Episoden einschätzen.
+- **Werbung enthalten?** Nein — ein Termin-/Filmtipp-Poster zählt nicht als Werbung im Play-Store-Sinn (das meint nur monetarisierte Drittanbieter-Ads).
+- **Inhaltseinstufung (IARC):** App-Funktionen selbst enthalten keine Gewalt/sexuelle Inhalte/Glücksspiel/Nutzer-Chat. Nutzergenerierte Inhalte (Feedback → Galerie/Termine/Filme) werden manuell von Jenny/Thorsten moderiert, bevor sie öffentlich sichtbar werden — das bei der entsprechenden Frage angeben. Fragen zu Alkohol-/Kraftausdrücken hängen vom tatsächlichen Podcast-Inhalt ab, das muss Thorsten selbst anhand der Episoden einschätzen.
 - **Feature-Grafik ("Vorstellungsgrafik"):** 1024×500 px Banner oben auf der Store-Seite, kein Screenshot, kein Fake-UI/Bewertungssterne. Noch nicht erstellt (Stand 2026-07-14).
 
 ## Closed Testing Pflicht (neue Entwicklerkonten)

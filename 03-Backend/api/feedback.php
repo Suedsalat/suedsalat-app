@@ -219,7 +219,7 @@ if (!empty($additionalPhotoUrls)) {
 $typeLabels = [
     'termin_tipp' => 'Veranstaltungstipp',
     'foto_vorschlag' => 'Fotoempfehlung',
-    'kino_tipp' => 'Kino- und Filmtipp',
+    'kino_tipp' => 'Filmtipp',
     'sprachnachricht' => 'Sprachnachricht',
     'allgemein' => 'Allgemeines Feedback',
     'frage' => 'Frage',

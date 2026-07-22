@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS location_tips (
   CONSTRAINT location_tips_episode_guid_fk FOREIGN KEY (episode_guid) REFERENCES episodes_cache(guid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Nutzer-Rezensionen (Mikro-Bewertung 1-5 + optionaler Text) fuer Kino-/Filmtipps,
+-- Nutzer-Rezensionen (Mikro-Bewertung 1-5 + optionaler Text) fuer Filmtipps,
 -- Termine und Locationtipps. Polymorph ueber tip_type+tip_id statt echtem FK, da
 -- tip_id je nach Typ in eine andere Tabelle zeigt. Muss vor der oeffentlichen
 -- Anzeige von einem Admin freigegeben werden (approved).

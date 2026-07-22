@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_id'])) {
         $update->execute([':admin_id' => $adminId, ':id' => $id]);
     } elseif ($currentStatus === 'erledigt') {
         // Wieder oeffnen setzt auch die "bereits uebernommen"-Markierungen zurueck,
-        // damit "Foto uebernehmen" / "Veranstaltung anlegen" / "Kino- und Filmtipp anlegen" wieder angeboten werden.
+        // damit "Foto uebernehmen" / "Veranstaltung anlegen" / "Filmtipp anlegen" wieder angeboten werden.
         $update = $pdo->prepare(
             'UPDATE feedback_messages SET status = "offen", handled_by = NULL, handled_at = NULL,
              photo_imported_at = NULL, event_created_at = NULL, movietip_created_at = NULL WHERE id = :id'
@@ -71,7 +71,7 @@ $isOwner = $currentAdminRole->fetchColumn() === 'owner';
 
 $typeLabels = [
     'termin_tipp' => 'Veranstaltungstipp',
-    'kino_tipp' => 'Kino- und Filmtipp',
+    'kino_tipp' => 'Filmtipp',
     'foto_vorschlag' => 'Fotoempfehlung',
     'sprachnachricht' => 'Sprachnachricht',
     'allgemein' => 'Allgemeines Feedback',
@@ -103,7 +103,7 @@ foreach ($feedbackRows as $msg) {
         if (!empty($msg['event_created_at'])) {
             $statusLabel = 'Veranstaltung übernommen';
         } elseif (!empty($msg['movietip_created_at'])) {
-            $statusLabel = 'Kino- und Filmtipp übernommen';
+            $statusLabel = 'Filmtipp übernommen';
         } elseif (!empty($msg['photo_imported_at'])) {
             $statusLabel = 'Foto übernommen';
         } else {
@@ -167,7 +167,7 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
     <a href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
     <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
-    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino- u. Filmtipps</a>
+    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
@@ -240,7 +240,7 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                                     <a class="button" href="<?= BASE_PATH ?>/admin/events.php?prefill_title=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($msg['message']) ?>&prefill_date=<?= urlencode($msg['suggested_date'] ?? '') ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Veranstaltung daraus anlegen</a>
                                 <?php endif; ?>
                                 <?php if ($msg['type'] === 'kino_tipp' && empty($msg['movietip_created_at'])): ?>
-                                    <a class="button" href="<?= BASE_PATH ?>/admin/movie-tips.php?prefill_title=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($msg['message']) ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Kino- und Filmtipp daraus anlegen</a>
+                                    <a class="button" href="<?= BASE_PATH ?>/admin/movie-tips.php?prefill_title=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($msg['message']) ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Filmtipp daraus anlegen</a>
                                 <?php endif; ?>
                                 <form method="post">
                                     <input type="hidden" name="toggle_id" value="<?= (int) $msg['id'] ?>">
@@ -249,7 +249,7 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                                 <?php if ($msg['status'] === 'erledigt'): ?>
                                     <form method="post" onsubmit="return false;">
                                         <input type="hidden" name="delete_id" value="<?= (int) $msg['id'] ?>">
-                                        <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Es wird nur dieser Feedback-Eintrag gelöscht. Eine daraus bereits übernommene Veranstaltung, ein Kino- und Filmtipp oder ein Foto bleibt erhalten.')">Löschen</button>
+                                        <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Es wird nur dieser Feedback-Eintrag gelöscht. Eine daraus bereits übernommene Veranstaltung, ein Filmtipp oder ein Foto bleibt erhalten.')">Löschen</button>
                                     </form>
                                 <?php endif; ?>
                             </div>

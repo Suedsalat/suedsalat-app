@@ -34,7 +34,7 @@ $recentAdminActions = ActivityLog::adminActions($pdo, 10);
 $feedbackTypeLabels = [
     'termin_tipp' => 'Veranstaltungstipp',
     'foto_vorschlag' => 'Fotoempfehlung',
-    'kino_tipp' => 'Kino- und Filmtipp',
+    'kino_tipp' => 'Filmtipp',
     'allgemein' => 'Allgemeines Feedback',
     'sprachnachricht' => 'Sprachnachricht',
     'frage' => 'Frage',
@@ -47,7 +47,7 @@ $screenLabels = [
     'start' => 'Start',
     'episodes' => 'Folgen',
     'events' => 'Veranstaltungen',
-    'movie_tips' => 'Kino- und Filmtipps',
+    'movie_tips' => 'Filmtipps',
     'location_tips' => 'Locationtipps',
     'gallery' => 'Galerie',
     'feedback' => 'Feedback',
@@ -77,7 +77,7 @@ $recentViews = $pdo->query(
     <a href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
     <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
-    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino- u. Filmtipps</a>
+    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>

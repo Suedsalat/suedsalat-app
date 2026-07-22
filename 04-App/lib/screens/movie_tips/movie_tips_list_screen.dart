@@ -206,7 +206,7 @@ class _MovieTipsListScreenState extends State<MovieTipsListScreen> {
           }
           final tips = snapshot.data ?? const [];
           if (tips.isEmpty) {
-            return const EmptyStateView(message: 'Noch keine Kino- und Filmtipps vorhanden.');
+            return const EmptyStateView(message: 'Noch keine Filmtipps vorhanden.');
           }
           return ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),

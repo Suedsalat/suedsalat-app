@@ -11,7 +11,7 @@ Südsalat
 ## Untertitel (max. 30 Zeichen, genutzt: 27)
 
 ```
-Folgen, Termine & Kinotipps
+Folgen, Termine & Filmtipps
 ```
 
 Erscheint direkt unter dem App-Namen auf der Store-Seite — Apple-spezifisches Feld, gibt es bei Google Play nicht in dieser Form.
@@ -19,7 +19,7 @@ Erscheint direkt unter dem App-Namen auf der Store-Seite — Apple-spezifisches 
 ## Werbetext / Promotional Text (max. 170 Zeichen, optional)
 
 ```
-Die offizielle Begleit-App zum Südsalat-Podcast: keine Folge, keinen Termin und keinen Kinotipp mehr verpassen. Kostenlos & werbefrei.
+Die offizielle Begleit-App zum Südsalat-Podcast: keine Folge, keinen Termin und keinen Filmtipp mehr verpassen. Kostenlos & werbefrei.
 ```
 
 Kann jederzeit ohne neue Review geändert werden (z. B. für Hinweise auf eine neue Staffel) — anders als Name/Untertitel/Beschreibung, für die eine neue Version eingereicht werden muss.
@@ -41,17 +41,17 @@ Alle Episoden zum Nachhören direkt in der App, inklusive eigenem Player. Du sie
 • Termine
 Alle Termine rund um den Podcast auf einen Blick – mit Poster, Beschreibung und Datum. Wurde ein Termin in einer Folge besprochen, springst du mit einem Tipp direkt an die passende Stelle im Player.
 
-• Kinotipps
+• Filmtipps
 Jennys Filmempfehlungen mit Poster, Beschreibung und Link zum Film – ebenfalls verknüpft mit der Folge, in der der Tipp gefallen ist.
 
 • Galerie
 Fotos und kurze Videos rund um den Podcast, von Jenny & Thorsten und aus der Community.
 
 • Feedback
-Schreib uns direkt aus der App: einen Termin- oder Kinotipp, einen Fotovorschlag oder einfach eine Nachricht – optional mit Foto oder Video. Wir lesen jede Nachricht persönlich.
+Schreib uns direkt aus der App: einen Termin- oder Filmtipp, einen Fotovorschlag oder einfach eine Nachricht – optional mit Foto oder Video. Wir lesen jede Nachricht persönlich.
 
 • Push-Benachrichtigungen
-Verpasse keine neue Folge, keinen neuen Termin und keinen neuen Kinotipp – die App informiert dich automatisch, sobald es etwas Neues gibt.
+Verpasse keine neue Folge, keinen neuen Termin und keinen neuen Filmtipp – die App informiert dich automatisch, sobald es etwas Neues gibt.
 
 • Newsletter
 Wer's klassisch mag: bleib zusätzlich per E-Mail auf dem Laufenden.
@@ -64,7 +64,7 @@ Hör direkt rein und werde Teil der Südsalat-Community!
 ## Keywords (max. 100 Zeichen gesamt, kommagetrennt, keine Leerzeichen nach Komma sparen Platz)
 
 ```
-podcast,südsalat,folgen,termine,kino,kinotipps,galerie,newsletter,alltag,verein
+podcast,südsalat,folgen,termine,film,filmtipps,galerie,newsletter,alltag,verein
 ```
 
 (79 Zeichen — Reserve für Anpassungen vorhanden. Keywords sind bei Apple nicht öffentlich sichtbar, nur für die Suche relevant.)

@@ -30,7 +30,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   static const _typeLabels = {
     'allgemein': 'Allgemeines Feedback',
     'termin_tipp': 'Veranstaltungstipp',
-    'kino_tipp': 'Kino- und Filmtipp',
+    'kino_tipp': 'Filmtipp',
     'location_tipp': 'Locationtipp',
     'foto_vorschlag': 'Fotoempfehlung',
     'sprachnachricht': 'Sprachnachricht',
@@ -40,7 +40,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   static const _messageLabels = {
     'allgemein': 'Deine Nachricht',
     'termin_tipp': 'Beschreibe deinen Veranstaltungstipp',
-    'kino_tipp': 'Beschreibe deinen Kino- und Filmtipp',
+    'kino_tipp': 'Beschreibe deinen Filmtipp',
     'location_tipp': 'Beschreibe deinen Locationtipp',
     'foto_vorschlag': 'Fotobeschreibung',
     'frage': 'Deine Frage',
@@ -357,7 +357,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             const Text(
-              'Hast du einen Veranstaltungstipp, einen Kino- und Filmtipp, einen Fotovorschlag, eine Frage oder einfach Feedback für uns? '
+              'Hast du einen Veranstaltungstipp, einen Filmtipp, einen Fotovorschlag, eine Frage oder einfach Feedback für uns? '
               'Schreib uns direkt – Jenny und Thorsten lesen jede Nachricht.',
             ),
             const SizedBox(height: 20),

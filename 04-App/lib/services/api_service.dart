@@ -12,7 +12,7 @@ import '../models/photo.dart';
 import '../models/tip_review.dart';
 import 'auth_service.dart';
 
-/// Zusammenfassung der Rezensionen zu einem Kino-/Filmtipp oder Locationtipp:
+/// Zusammenfassung der Rezensionen zu einem Filmtipp oder Locationtipp:
 /// Durchschnittsbewertung (nur aus freigegebenen Rezensionen), Anzahl, Einzelrezensionen.
 typedef TipReviewSummary = ({double? avgRating, int reviewCount, List<TipReview> reviews});
 
@@ -64,7 +64,7 @@ class ApiService {
       (headers) => http.get(Uri.parse('$baseUrl/movie-tips.php'), headers: headers),
     );
     if (response.statusCode != 200) {
-      throw Exception('Kino- und Filmtipps konnten nicht geladen werden (${response.statusCode})');
+      throw Exception('Filmtipps konnten nicht geladen werden (${response.statusCode})');
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data.map((e) => MovieTip.fromJson(e as Map<String, dynamic>)).toList();
@@ -81,7 +81,7 @@ class ApiService {
     return data.map((e) => LocationTip.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  /// Laedt Durchschnittsbewertung + freigegebene Einzelrezensionen zu einem Kino-/Filmtipp
+  /// Laedt Durchschnittsbewertung + freigegebene Einzelrezensionen zu einem Filmtipp
   /// oder Locationtipp. [tipType] ist entweder 'movie_tip' oder 'location_tip'.
   Future<TipReviewSummary> fetchTipReviews(String tipType, int tipId) async {
     final response = await _authorizedRequest(

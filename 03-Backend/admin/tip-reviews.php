@@ -13,10 +13,10 @@ $currentAdminRole = $pdo->prepare('SELECT role FROM admins WHERE id = :id');
 $currentAdminRole->execute([':id' => $adminId]);
 $isOwner = $currentAdminRole->fetchColumn() === 'owner';
 
-// Rezensionen gibt es bewusst nur fuer Kino-/Filmtipps und Locationtipps, nicht fuer
+// Rezensionen gibt es bewusst nur fuer Filmtipps und Locationtipps, nicht fuer
 // Veranstaltungen - dort ergibt eine Bewertung inhaltlich keinen Sinn.
 $tipTypeLabels = [
-    'movie_tip' => 'Kino- und Filmtipp',
+    'movie_tip' => 'Filmtipp',
     'location_tip' => 'Locationtipp',
 ];
 
@@ -170,7 +170,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
     <a href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
     <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
-    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino- u. Filmtipps</a>
+    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
@@ -179,7 +179,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
 </nav>
 <main class="content-box">
     <h1>Rezensionen</h1>
-    <p style="font-size:0.9rem;color:#666;">Mikro-Bewertungen und Rezensionstexte, die Nutzer:innen zu Kino- und Filmtipps und Locationtipps abgegeben haben. Neue Rezensionen erscheinen erst öffentlich in der App, nachdem sie hier freigegeben wurden.</p>
+    <p style="font-size:0.9rem;color:#666;">Mikro-Bewertungen und Rezensionstexte, die Nutzer:innen zu Filmtipps und Locationtipps abgegeben haben. Neue Rezensionen erscheinen erst öffentlich in der App, nachdem sie hier freigegeben wurden.</p>
 
     <?php if ($error): ?>
         <p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>

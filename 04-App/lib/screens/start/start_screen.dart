@@ -50,7 +50,7 @@ class StartScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Hier findest du alle Folgen, Veranstaltungen, Kino- und Filmtipps, Locationtipps und Fotos rund um den Podcast.',
+            'Hier findest du alle Folgen, Veranstaltungen, Filmtipps, Locationtipps und Fotos rund um den Podcast.',
             style: Theme.of(context).textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
@@ -73,7 +73,7 @@ class StartScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _StartTile(
             leading: Image.asset('assets/images/kino.png', width: 40, height: 40),
-            title: 'Kino- und Filmtipps',
+            title: 'Filmtipps',
             subtitle: 'Empfehlungen für einen Film- oder Kinoabend',
             showNewDot: hasNewMovieTips,
             onTap: () => onNavigateToTab(3),

@@ -7,7 +7,7 @@ import '../../widgets/rating/mikro_rating_display.dart';
 import '../../widgets/rating/mikro_rating_input.dart';
 
 /// Zeigt Durchschnittsbewertung + freigegebene Einzelrezensionen zu einem
-/// Kino-/Filmtipp oder Locationtipp und erlaubt das Einreichen einer eigenen
+/// Filmtipp oder Locationtipp und erlaubt das Einreichen einer eigenen
 /// Rezension. [tipType] ist 'movie_tip' oder 'location_tip'.
 class TipReviewsScreen extends StatefulWidget {
   final String tipType;

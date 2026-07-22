@@ -285,7 +285,7 @@ if ($editPhoto === null && isset($_GET['import_feedback_id'])) {
     }
     if ($importFeedback) {
         $senderLabel = $importFeedback['sender_name'] ?: 'Anonym';
-        $suggestedDescription = "Vorschlag von {$senderLabel}: {$importFeedback['message']}";
+        $suggestedDescription = "Eingereicht von {$senderLabel}: {$importFeedback['message']}";
     }
 }
 
@@ -305,7 +305,7 @@ if ($editPhoto === null && $importFeedback === null && isset($_GET['import_feedb
     }
     if ($importFeedbackMedia) {
         $senderLabel = $importFeedbackMedia['sender_name'] ?: 'Anonym';
-        $suggestedDescription = "Vorschlag von {$senderLabel}: {$importFeedbackMedia['message']}";
+        $suggestedDescription = "Eingereicht von {$senderLabel}: {$importFeedbackMedia['message']}";
     }
 }
 
@@ -331,7 +331,7 @@ $deleteError = isset($_GET['delete_error']);
     <a href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
     <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
     <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
-    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Kino- u. Filmtipps</a>
+    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
