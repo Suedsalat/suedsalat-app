@@ -10,7 +10,11 @@ import 'package:record/record.dart';
 import '../../services/api_service.dart';
 
 class FeedbackScreen extends StatefulWidget {
-  const FeedbackScreen({super.key});
+  /// Wenn ein Bildschirm ueber einen eigenen "XY-Tipp einreichen"-Button hierher
+  /// verlinkt, ist die passende Kategorie schon vorausgewaehlt (z.B. 'termin_tipp').
+  final String? initialType;
+
+  const FeedbackScreen({super.key, this.initialType});
 
   @override
   State<FeedbackScreen> createState() => _FeedbackScreenState();
@@ -27,6 +31,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     'allgemein': 'Allgemeines Feedback',
     'termin_tipp': 'Veranstaltungstipp',
     'kino_tipp': 'Kino- und Filmtipp',
+    'location_tipp': 'Locationtipp',
     'foto_vorschlag': 'Fotoempfehlung',
     'sprachnachricht': 'Sprachnachricht',
     'frage': 'Frage einreichen',
@@ -36,6 +41,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     'allgemein': 'Deine Nachricht',
     'termin_tipp': 'Beschreibe deinen Veranstaltungstipp',
     'kino_tipp': 'Beschreibe deinen Kino- und Filmtipp',
+    'location_tipp': 'Beschreibe deinen Locationtipp',
     'foto_vorschlag': 'Fotobeschreibung',
     'frage': 'Deine Frage',
   };
@@ -64,6 +70,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialType != null && _typeLabels.containsKey(widget.initialType)) {
+      _type = widget.initialType!;
+    }
     _apiService.trackView('feedback');
   }
 

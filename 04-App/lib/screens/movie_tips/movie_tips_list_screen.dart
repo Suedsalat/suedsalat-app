@@ -158,10 +158,8 @@ class _MovieTipsListScreenState extends State<MovieTipsListScreen> {
                 MikroRatingDisplay(
                   avgRating: tip.avgRating,
                   reviewCount: tip.reviewCount,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _openReviews(tip);
-                  },
+                  onTap: () => _openReviews(tip),
+                  iconSize: 28,
                 ),
                 const SizedBox(height: 12),
                 if (tip.description != null && tip.description!.isNotEmpty)
@@ -259,7 +257,7 @@ class _MovieTipsListScreenState extends State<MovieTipsListScreen> {
                               MikroRatingDisplay(
                                 avgRating: tip.avgRating,
                                 reviewCount: tip.reviewCount,
-                                iconSize: 14,
+                                iconSize: 18,
                                 onTap: () => _openReviews(tip),
                               ),
                             ],

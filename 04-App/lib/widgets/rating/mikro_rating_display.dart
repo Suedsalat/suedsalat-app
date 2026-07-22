@@ -38,7 +38,16 @@ class MikroRatingDisplay extends StatelessWidget {
     );
 
     if (onTap == null) return row;
-    return GestureDetector(onTap: onTap, behavior: HitTestBehavior.opaque, child: row);
+    // Mindest-Tippbereich (Material-Empfehlung ~48dp Hoehe), damit die Bewertung auch bei
+    // kleiner Icon-Groesse zuverlaessig antippbar bleibt, nicht nur exakt auf den Icons.
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: (48 - iconSize).clamp(8, 24) / 2),
+        child: row,
+      ),
+    );
   }
 }
 

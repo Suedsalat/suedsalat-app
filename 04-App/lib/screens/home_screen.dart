@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../services/seen_items_service.dart';
+import '../widgets/app_bottom_nav_bar.dart';
 import '../widgets/mini_player_bar.dart';
 import 'episodes/episodes_list_screen.dart';
 import 'events/events_list_screen.dart';
@@ -102,6 +103,40 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _api.trackView(_screenKeys[index]);
   }
 
+  void _openFeedbackWithType(String type) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => FeedbackScreen(initialType: type)),
+    );
+  }
+
+  /// Direkter Einreichen-Button auf den Bildschirmen, die eine passende
+  /// Feedback-Kategorie haben - erspart den Umweg ueber das Dropdown im
+  /// allgemeinen Feedback-Formular.
+  Widget? _buildTipFab() {
+    switch (_currentIndex) {
+      case 2:
+        return FloatingActionButton.extended(
+          onPressed: () => _openFeedbackWithType('termin_tipp'),
+          icon: const Icon(Icons.add),
+          label: const Text('Termintipp abgeben'),
+        );
+      case 3:
+        return FloatingActionButton.extended(
+          onPressed: () => _openFeedbackWithType('kino_tipp'),
+          icon: const Icon(Icons.add),
+          label: const Text('Kino- und Filmtipp einreichen'),
+        );
+      case 4:
+        return FloatingActionButton.extended(
+          onPressed: () => _openFeedbackWithType('location_tipp'),
+          icon: const Icon(Icons.add),
+          label: const Text('Locationtipp einreichen'),
+        );
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screens = [
@@ -154,19 +189,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ],
       ),
       body: screens[_currentIndex],
+      floatingActionButton: _buildTipFab(),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const MiniPlayerBar(),
-          NavigationBar(
+          AppBottomNavBar(
             selectedIndex: _currentIndex,
             onDestinationSelected: _navigateToTab,
-            destinations: [
-              NavigationDestination(
+            items: [
+              AppBottomNavItem(
                 icon: Image.asset('assets/images/home.png', width: 32, height: 32),
                 label: 'Start',
               ),
-              NavigationDestination(
+              AppBottomNavItem(
                 icon: Badge(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   isLabelVisible: _hasNewEpisodes,
@@ -174,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
                 label: 'Folgen',
               ),
-              NavigationDestination(
+              AppBottomNavItem(
                 icon: Badge(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   isLabelVisible: _hasNewEvents,
@@ -182,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
                 label: 'Veranstaltungen',
               ),
-              NavigationDestination(
+              AppBottomNavItem(
                 icon: Badge(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   isLabelVisible: _hasNewMovieTips,
@@ -190,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
                 label: 'Kino- und Filme',
               ),
-              NavigationDestination(
+              AppBottomNavItem(
                 icon: Badge(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   isLabelVisible: _hasNewLocationTips,
@@ -198,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
                 label: 'Locations',
               ),
-              NavigationDestination(
+              AppBottomNavItem(
                 icon: Badge(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   isLabelVisible: _hasNewPhotos,
