@@ -19,10 +19,29 @@ Erscheint direkt unter dem App-Namen auf der Store-Seite — Apple-spezifisches 
 ## Werbetext / Promotional Text (max. 170 Zeichen, optional)
 
 ```
-Die offizielle Begleit-App zum Südsalat-Podcast: keine Folge, keinen Termin und keinen Filmtipp mehr verpassen. Kostenlos & werbefrei.
+Die App zum Südsalat-Podcast: Folgen, Termine, Film- und Locationtipps mit Mikro-Bewertungen – alles an einem Ort. Kostenlos, werbefrei, ohne Tracking.
 ```
 
-Kann jederzeit ohne neue Review geändert werden (z. B. für Hinweise auf eine neue Staffel) — anders als Name/Untertitel/Beschreibung, für die eine neue Version eingereicht werden muss.
+(154 von 170 Zeichen.) Kann jederzeit ohne neue Review geändert werden (z. B. für Hinweise auf eine neue Staffel) — anders als Name/Untertitel/Beschreibung, für die eine neue Version eingereicht werden muss.
+
+## Release Notes / "Neuerungen in dieser Version" (Version 1.3.1, kein Zeichenlimit bei Apple)
+
+Letzte tatsächlich im Store live gewesene Version war 1.2.3 — diese Liste deckt daher alles seit 1.2.3 ab, nicht nur den Unterschied zu 1.3.0.
+
+```
+Neu in dieser Version:
+
+• Locationtipps: Restaurants, Museen und Ausflugsziele aus dem Podcast, jetzt auch in der App
+• Bewerte Film- und Locationtipps mit 1 bis 5 Mikros und lies Rezensionen anderer Hörer:innen
+• Feedback: neue Kategorie "Frage einreichen" sowie mehrere Fotos auf einmal einreichen
+• Direkter Button zum Einreichen eines Tipps auf jedem passenden Bereich (Termine, Filmtipps, Locations, Galerie)
+• Galerie: Bildunterschriften werden jetzt vollständig angezeigt
+• Startseite überarbeitet und übersichtlicher
+• Navigationsleiste verbessert
+• Diverse kleinere Fehlerbehebungen
+
+Danke, dass du Teil der Südsalat-Community bist!
+```
 
 ## Beschreibung (max. 4000 Zeichen)
 

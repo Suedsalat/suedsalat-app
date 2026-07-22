@@ -51,6 +51,16 @@ Hör direkt rein und werde Teil der Südsalat-Community!
 
 (Bewusst ohne Emojis geschrieben — bei Bedarf vor den Stichpunkten selbst ergänzen, in der Play-Store-Praxis durchaus üblich.)
 
+## Release Notes / "Was ist neu" (Version 1.3.1, Google-Limit: 500 Zeichen)
+
+Letzte tatsächlich im Store live gewesene Version war 1.2.3 — diese Liste deckt daher alles seit 1.2.3 ab, nicht nur den Unterschied zu 1.3.0.
+
+```
+Neu: Locationtipps (Restaurants, Museen, Ausflüge) mit Mikro-Bewertungen. Feedback: Frage einreichen + mehrere Fotos auf einmal. Direkter "Tipp einreichen"-Button in jedem Bereich. Galerie zeigt Bildunterschriften jetzt vollständig. Startseite und Navigation überarbeitet. Kleinere Fehlerbehebungen.
+```
+
+(ca. 300 von 500 Zeichen.)
+
 ## Weitere Fragebogen-Antworten
 
 - **Werbung enthalten?** Nein — ein Termin-/Filmtipp-Poster zählt nicht als Werbung im Play-Store-Sinn (das meint nur monetarisierte Drittanbieter-Ads).
