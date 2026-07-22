@@ -74,7 +74,7 @@ class StartScreen extends StatelessWidget {
           _StartTile(
             leading: Image.asset('assets/images/kino.png', width: 40, height: 40),
             title: 'Kino- und Filmtipps',
-            subtitle: 'Unsere Empfehlungen für den nächsten Filmabend oder Kinobesuch',
+            subtitle: 'Empfehlungen für einen Film- oder Kinoabend',
             showNewDot: hasNewMovieTips,
             onTap: () => onNavigateToTab(3),
           ),
