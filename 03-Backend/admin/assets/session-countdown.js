@@ -40,8 +40,10 @@
         lastPing = now;
         // Relativer Pfad statt BASE_PATH, da dieses Skript eine statische Datei ist
         // (kein PHP) - laeuft aber immer auf einer Seite innerhalb von admin/, daher
-        // loest der Browser "keep-alive.php" automatisch relativ zum aktuellen Ordner auf.
-        fetch('keep-alive.php', { credentials: 'same-origin' })
+        // loest der Browser "activity-ping.php" automatisch relativ zum aktuellen Ordner auf.
+        // Bewusst nicht "keep-alive.php" genannt: manche Werbe-/Trackingblocker filtern
+        // Anfragen mit "keep-alive" im Pfad als bekanntes Tracking-Beacon-Muster.
+        fetch('activity-ping.php', { credentials: 'same-origin' })
             .then(function (response) {
                 if (response.ok) {
                     remaining = totalSeconds;
