@@ -132,6 +132,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           icon: const Icon(Icons.add),
           label: const Text('Locationtipp einreichen'),
         );
+      case 5:
+        return FloatingActionButton.extended(
+          onPressed: () => _openFeedbackWithType('foto_vorschlag'),
+          icon: const Icon(Icons.add_a_photo),
+          label: const Text('Foto einreichen'),
+        );
       default:
         return null;
     }

@@ -50,7 +50,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   static const _maxVideoBytes = 20 * 1024 * 1024;
   static const _maxRecordDuration = Duration(minutes: 5);
 
-  String _type = 'allgemein';
+  String? _type;
   DateTime? _suggestedDate;
   File? _media;
   List<File> _photos = [];
@@ -313,7 +313,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     try {
       await _apiService.submitFeedback(
         message: _messageController.text.trim(),
-        type: _type,
+        type: _type ?? 'allgemein',
         senderName: _nameController.text,
         media: _type == 'sprachnachricht' ? _audioFile : _media,
         photos: _type == 'sprachnachricht' ? null : _photos,
@@ -364,11 +364,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             DropdownButtonFormField<String>(
               initialValue: _type,
               decoration: const InputDecoration(labelText: 'Worum geht es?'),
+              hint: const Text('Bitte hier auswählen'),
               items: _typeLabels.entries
                   .map((entry) => DropdownMenuItem(value: entry.key, child: Text(entry.value)))
                   .toList(),
+              validator: (value) => value == null ? 'Bitte eine Kategorie auswählen.' : null,
               onChanged: (value) => setState(() {
-                _type = value ?? 'allgemein';
+                _type = value;
                 _photoError = null;
               }),
             ),

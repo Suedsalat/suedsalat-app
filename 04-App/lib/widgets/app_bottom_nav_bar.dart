@@ -10,10 +10,11 @@ class AppBottomNavItem {
 
 /// Ersetzt Flutters Standard-`NavigationBar`, weil dessen Icon+Label-Block als
 /// Ganzes vertikal zentriert wird - bei sechs Tabs mit unterschiedlich langen
-/// Beschriftungen (manche brechen in zwei Zeilen um, andere nicht) "tanzen" die
-/// Icons dadurch je nach Tab auf und ab. Hier bekommt das Icon eine feste
-/// Position oben, die Beschriftung darunter einen fest hohen, zentrierten
-/// Bereich - unabhaengig davon, ob der Text ein- oder zweizeilig ist.
+/// Beschriftungen (manche brechen in zwei Zeilen um, andere nicht) "tanzen"
+/// sowohl Icons als auch Text je nach Tab auf und ab. Hier sitzen Icon UND
+/// die erste Textzeile beide an einer festen Position oben (Icon fix
+/// platziert, Text per `Align(topCenter)` statt `Center` in einem fest hohen
+/// Bereich) - unabhaengig davon, ob der Text ein- oder zweizeilig ist.
 class AppBottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
@@ -34,7 +35,7 @@ class AppBottomNavBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 76,
+          height: 92,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -58,8 +59,9 @@ class AppBottomNavBar extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         SizedBox(
-                          height: 28,
-                          child: Center(
+                          height: 36,
+                          child: Align(
+                            alignment: Alignment.topCenter,
                             child: Text(
                               items[i].label,
                               textAlign: TextAlign.center,
