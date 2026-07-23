@@ -300,6 +300,10 @@ if ($action === 'preview') {
     $useEpisodeLink = true;
     $usePhoto = false;
 }
+
+// Formular standardmaessig eingeklappt, ausser nach einem Fehler - dann direkt
+// offen, damit die bereits eingegebenen Daten nicht verloren gehen.
+$showCreateForm = $error !== null;
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -354,6 +358,8 @@ if ($action === 'preview') {
             </div>
         </form>
     <?php else: ?>
+        <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Newsletter verfassen</button>
+        <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="action" value="preview">
             <label>Betreff
@@ -417,8 +423,10 @@ if ($action === 'preview') {
                 bind('chk_photo', 'field_photo');
             })();
         </script>
+        </div>
     <?php endif; ?>
 </main>
+<script src="<?= BASE_PATH ?>/admin/assets/toggle-create-form.js?v=<?= @filemtime(__DIR__ . '/assets/toggle-create-form.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
 </body>
 </html>

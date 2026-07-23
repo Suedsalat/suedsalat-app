@@ -291,7 +291,7 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                                         <input type="hidden" name="action" value="dismiss_activity">
                                         <input type="hidden" name="entity" value="<?= htmlspecialchars($item['entity'], ENT_QUOTES) ?>">
                                         <input type="hidden" name="entity_id" value="<?= $item['entity_id'] ?>">
-                                        <button type="submit" class="button">Aus Liste entfernen</button>
+                                        <button type="submit" class="button-danger">Aus Liste entfernen</button>
                                     </form>
                                 <?php endif; ?>
                             </div>

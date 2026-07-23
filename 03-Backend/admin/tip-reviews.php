@@ -108,6 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rejec
 
 $deleteError = isset($_GET['delete_error']);
 
+// Formular standardmaessig eingeklappt, ausser nach einem Fehler - dann direkt offen.
+$showCreateForm = $error !== null;
+
 // Zum Bearbeiten (Name/Text) laden
 $editReview = null;
 if (isset($_GET['edit_review'])) {
@@ -191,6 +194,8 @@ foreach ($tipTypeTables as $tipType => $meta) {
         <p class="error text-center">Falsches Passwort — nichts wurde abgelehnt.</p>
     <?php endif; ?>
 
+    <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Rezension eintragen</button>
+    <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
     <h2>Rezension manuell eintragen</h2>
     <p style="font-size:0.9rem;color:#666;">Zum Testen oder wenn euch jemand eine Bewertung mündlich/per Nachricht mitteilt statt über die App. Wird sofort freigegeben.</p>
     <form method="post">
@@ -224,6 +229,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
         <label>Rezensionstext (optional) <textarea name="review_text" rows="3"></textarea></label>
         <button type="submit">Rezension eintragen</button>
     </form>
+    </div>
 
     <?php if ($editReview): ?>
     <h2>Rezension bearbeiten</h2>
@@ -340,6 +346,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
 </div>
 <script src="<?= BASE_PATH ?>/admin/assets/confirm-delete.js?v=<?= @filemtime(__DIR__ . '/assets/confirm-delete.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/table-scroll-sync.js?v=<?= @filemtime(__DIR__ . '/assets/table-scroll-sync.js') ?>"></script>
+<script src="<?= BASE_PATH ?>/admin/assets/toggle-create-form.js?v=<?= @filemtime(__DIR__ . '/assets/toggle-create-form.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
 </body>
 </html>
