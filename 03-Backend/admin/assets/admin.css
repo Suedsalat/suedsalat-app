@@ -192,7 +192,7 @@ tr.is-done { background: rgba(0, 0, 0, 0.08); }
 /* Anderer Farbton als der normale Anlegen/Speichern-Button (var(--color-primary)) -
    fuer den "- ... minimieren"-Button, damit er sich optisch davon abhebt, aber
    nicht wie eine destruktive Loesch-Aktion (button-danger) aussieht. */
-.button-secondary { background: #8a8f1f; }
+.button-secondary { background: #8a8f1f; margin-bottom: 16px; }
 .button-secondary:hover { background: #6f7318; }
 
 .modal-overlay {

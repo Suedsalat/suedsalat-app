@@ -41,6 +41,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
 // entfernen, OHNE den eigentlichen Eintrag zu loeschen (anders als beim "echten"
 // Loeschen ueber die jeweilige Seite selbst, siehe delete_action in ActivityLog).
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'dismiss_activity') {
+    if (!verify_admin_password($pdo, $adminId, (string) ($_POST['confirm_password'] ?? ''))) {
+        header('Location: ' . BASE_PATH . '/admin/feedback.php?delete_error=1');
+        exit;
+    }
     $activityDismissTables = [
         'event' => 'events',
         'photo' => 'photos',
@@ -287,11 +291,11 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                             <div class="actions">
                                 <a class="button" href="<?= BASE_PATH . htmlspecialchars($item['edit_link'], ENT_QUOTES) ?>">Bearbeiten</a>
                                 <?php if ($isOwner): ?>
-                                    <form method="post" onsubmit="return confirm('Nur aus der Aktivitäten-Liste entfernen? <?= $entityDismissLabels[$item['entity']] ?? 'Der Eintrag' ?> bleibt bestehen.');">
+                                    <form method="post" onsubmit="return false;">
                                         <input type="hidden" name="action" value="dismiss_activity">
                                         <input type="hidden" name="entity" value="<?= htmlspecialchars($item['entity'], ENT_QUOTES) ?>">
                                         <input type="hidden" name="entity_id" value="<?= $item['entity_id'] ?>">
-                                        <button type="submit" class="button-danger">Aus Liste entfernen</button>
+                                        <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Nur aus der Aktivitäten-Liste entfernen? <?= $entityDismissLabels[$item['entity']] ?? 'Der Eintrag' ?> bleibt bestehen.')">Aus Liste entfernen</button>
                                     </form>
                                 <?php endif; ?>
                             </div>
