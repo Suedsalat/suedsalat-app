@@ -288,7 +288,7 @@ if ($editPhoto === null && isset($_GET['import_feedback_id'])) {
     }
     if ($importFeedback) {
         $senderLabel = $importFeedback['sender_name'] ?: 'Anonym';
-        $suggestedDescription = "Eingereicht von {$senderLabel}: {$importFeedback['message']}";
+        $suggestedDescription = "von {$senderLabel}: {$importFeedback['message']}";
     }
 }
 
@@ -308,7 +308,7 @@ if ($editPhoto === null && $importFeedback === null && isset($_GET['import_feedb
     }
     if ($importFeedbackMedia) {
         $senderLabel = $importFeedbackMedia['sender_name'] ?: 'Anonym';
-        $suggestedDescription = "Eingereicht von {$senderLabel}: {$importFeedbackMedia['message']}";
+        $suggestedDescription = "von {$senderLabel}: {$importFeedbackMedia['message']}";
     }
 }
 
