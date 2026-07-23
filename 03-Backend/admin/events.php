@@ -452,6 +452,9 @@ $showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !
                 <td>
                     <div class="actions">
                         <a class="button" href="<?= BASE_PATH ?>/admin/events.php?edit=<?= (int) $event['id'] ?>">Bearbeiten</a>
+                        <?php if (!empty($event['image_path'])): ?>
+                            <a class="button" download href="<?= htmlspecialchars($event['image_path'], ENT_QUOTES) ?>">Download</a>
+                        <?php endif; ?>
                         <form method="post" onsubmit="return false;">
                             <input type="hidden" name="delete_id" value="<?= (int) $event['id'] ?>">
                             <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Die Veranstaltung „<?= htmlspecialchars(addslashes($event['title']), ENT_QUOTES) ?>“ wird dauerhaft gelöscht.')">Löschen</button>
@@ -492,6 +495,9 @@ $showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !
                 <td>
                     <div class="actions">
                         <a class="button" href="<?= BASE_PATH ?>/admin/events.php?edit=<?= (int) $event['id'] ?>">Bearbeiten</a>
+                        <?php if (!empty($event['image_path'])): ?>
+                            <a class="button" download href="<?= htmlspecialchars($event['image_path'], ENT_QUOTES) ?>">Download</a>
+                        <?php endif; ?>
                         <form method="post" onsubmit="return false;">
                             <input type="hidden" name="delete_id" value="<?= (int) $event['id'] ?>">
                             <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Die Veranstaltung „<?= htmlspecialchars(addslashes($event['title']), ENT_QUOTES) ?>“ wird dauerhaft gelöscht.')">Löschen</button>

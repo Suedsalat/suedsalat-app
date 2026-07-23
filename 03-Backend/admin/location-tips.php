@@ -568,23 +568,27 @@ $showCreateForm = $editTip !== null || $error !== null;
         <p>Noch keine Rezensionen zu diesem Eintrag.</p>
     <?php endif; ?>
 
-    <h3>Rezension eintragen</h3>
-    <form method="post">
-        <input type="hidden" name="action" value="add_review">
-        <input type="hidden" name="tip_id" value="<?= (int) $editTip['id'] ?>">
-        <label>Mikros
-            <div class="mikro-rating">
-                <input type="radio" name="rating" value="5" id="add-rating-5" required><label for="add-rating-5"></label>
-                <input type="radio" name="rating" value="4" id="add-rating-4"><label for="add-rating-4"></label>
-                <input type="radio" name="rating" value="3" id="add-rating-3"><label for="add-rating-3"></label>
-                <input type="radio" name="rating" value="2" id="add-rating-2"><label for="add-rating-2"></label>
-                <input type="radio" name="rating" value="1" id="add-rating-1"><label for="add-rating-1"></label>
-            </div>
-        </label>
-        <label>Name (optional) <input type="text" name="reviewer_name"></label>
-        <label>Rezensionstext (optional) <textarea name="review_text" rows="2"></textarea></label>
-        <button type="submit">Rezension eintragen</button>
-    </form>
+    <button type="button" class="button" data-show-create-form="review-form">+ Rezension eintragen</button>
+    <div id="review-form" style="display:none;">
+        <button type="button" class="button-secondary" data-hide-create-form="review-form" style="margin-bottom:0;">- Rezension eintragen</button>
+        <h3>Rezension eintragen</h3>
+        <form method="post">
+            <input type="hidden" name="action" value="add_review">
+            <input type="hidden" name="tip_id" value="<?= (int) $editTip['id'] ?>">
+            <label>Mikros
+                <div class="mikro-rating">
+                    <input type="radio" name="rating" value="5" id="add-rating-5" required><label for="add-rating-5"></label>
+                    <input type="radio" name="rating" value="4" id="add-rating-4"><label for="add-rating-4"></label>
+                    <input type="radio" name="rating" value="3" id="add-rating-3"><label for="add-rating-3"></label>
+                    <input type="radio" name="rating" value="2" id="add-rating-2"><label for="add-rating-2"></label>
+                    <input type="radio" name="rating" value="1" id="add-rating-1"><label for="add-rating-1"></label>
+                </div>
+            </label>
+            <label>Name (optional) <input type="text" name="reviewer_name"></label>
+            <label>Rezensionstext (optional) <textarea name="review_text" rows="2"></textarea></label>
+            <button type="submit">Rezension eintragen</button>
+        </form>
+    </div>
     <?php endif; ?>
 
     <h2>Alle Locationtipps</h2>
@@ -629,6 +633,9 @@ $showCreateForm = $editTip !== null || $error !== null;
                 <td>
                     <div class="actions">
                         <a class="button" href="<?= BASE_PATH ?>/admin/location-tips.php?edit=<?= (int) $tip['id'] ?>">Bearbeiten</a>
+                        <?php if (!empty($tip['image_path'])): ?>
+                            <a class="button" download href="<?= htmlspecialchars($tip['image_path'], ENT_QUOTES) ?>">Download</a>
+                        <?php endif; ?>
                         <form method="post" onsubmit="return false;">
                             <input type="hidden" name="delete_id" value="<?= (int) $tip['id'] ?>">
                             <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Der Locationtipp „<?= htmlspecialchars(addslashes($tip['name']), ENT_QUOTES) ?>“ wird dauerhaft gelöscht.')">Löschen</button>

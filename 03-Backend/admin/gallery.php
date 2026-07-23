@@ -422,6 +422,7 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                 <td>
                     <div class="actions">
                         <a class="button" href="<?= BASE_PATH ?>/admin/gallery.php?edit=<?= (int) $photo['id'] ?>">Bearbeiten</a>
+                        <a class="button" download href="<?= htmlspecialchars($photo['image_path'], ENT_QUOTES) ?>">Download</a>
                         <form method="post" onsubmit="return false;">
                             <input type="hidden" name="delete_id" value="<?= (int) $photo['id'] ?>">
                             <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Das Foto wird dauerhaft gelöscht.')">Löschen</button>
