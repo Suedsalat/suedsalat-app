@@ -133,6 +133,14 @@ button:hover, .button:hover { background: var(--color-primary-hover); }
 
 .table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; min-width: 640px; border-collapse: collapse; margin-top: 20px; }
+
+/* Duplizierte Scrollleiste direkt ueber breiten Tabellen (siehe table-scroll-sync.js) -
+   ohne sie muesste man bis ganz nach unten scrollen, um die untere Scrollleiste zu
+   erreichen, dann seitwaerts scrollen und wieder nach oben, um die oberste Zeile
+   vollstaendig zu sehen. Wird per JS nur eingeblendet, wenn wirklich seitlich
+   gescrollt werden muss. */
+.table-scroll-top { overflow-x: auto; overflow-y: hidden; height: 16px; display: none; }
+.table-scroll-top-inner { height: 1px; }
 th, td { text-align: left; padding: 6px; border-bottom: 1px solid rgba(0, 0, 0, 0.1); font-size: 0.92rem; }
 tr.is-done { background: rgba(0, 0, 0, 0.08); }
 
