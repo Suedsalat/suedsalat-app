@@ -370,6 +370,9 @@ $showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !
 
     <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Veranstaltungstermin anlegen</button>
     <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
+    <?php if (!$editEvent): ?>
+        <button type="button" class="button" data-hide-create-form="create-form">- Veranstaltungstermin anlegen</button>
+    <?php endif; ?>
     <form method="post" enctype="multipart/form-data">
         <?php if ($editEvent): ?>
             <input type="hidden" name="edit_id" value="<?= (int) $editEvent['id'] ?>">
@@ -416,7 +419,7 @@ $showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !
                 <label style="font-weight:normal;"><input type="checkbox" name="remove_poster" value="1"> Poster entfernen</label>
             </p>
         <?php endif; ?>
-        <button type="submit"><?= $editEvent ? 'Veranstaltung aktualisieren' : 'Veranstaltung anlegen' ?></button>
+        <button type="submit"><?= $editEvent ? 'Veranstaltung aktualisieren' : 'Veranstaltungstermin anlegen' ?></button>
         <?php if ($editEvent): ?>
             <a class="button" href="<?= BASE_PATH ?>/admin/events.php">Abbrechen</a>
         <?php endif; ?>

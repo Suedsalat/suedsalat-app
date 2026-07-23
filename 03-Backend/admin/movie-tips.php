@@ -473,6 +473,9 @@ $showCreateForm = $editTip !== null || $error !== null || $prefillFeedbackId !==
 
     <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Filmtipp anlegen</button>
     <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
+    <?php if (!$editTip): ?>
+        <button type="button" class="button" data-hide-create-form="create-form">- Filmtipp anlegen</button>
+    <?php endif; ?>
     <form method="post" enctype="multipart/form-data">
         <?php if ($editTip): ?>
             <input type="hidden" name="edit_id" value="<?= (int) $editTip['id'] ?>">
