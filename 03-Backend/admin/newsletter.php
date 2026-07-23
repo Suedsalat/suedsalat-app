@@ -360,6 +360,7 @@ $showCreateForm = $error !== null;
     <?php else: ?>
         <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Newsletter verfassen</button>
         <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
+        <button type="button" class="button-secondary" data-hide-create-form="create-form">- Newsletter verfassen</button>
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="action" value="preview">
             <label>Betreff

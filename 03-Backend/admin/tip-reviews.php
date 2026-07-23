@@ -196,6 +196,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
 
     <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Rezension eintragen</button>
     <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
+    <button type="button" class="button-secondary" data-hide-create-form="create-form">- Rezension eintragen</button>
     <h2>Rezension manuell eintragen</h2>
     <p style="font-size:0.9rem;color:#666;">Zum Testen oder wenn euch jemand eine Bewertung mündlich/per Nachricht mitteilt statt über die App. Wird sofort freigegeben.</p>
     <form method="post">
