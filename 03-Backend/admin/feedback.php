@@ -37,6 +37,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     exit;
 }
 
+// Selbst angelegten Termin/Foto/Filmtipp/Locationtipp nur aus der Aktivitaeten-Liste
+// entfernen, OHNE den eigentlichen Eintrag zu loeschen (anders als beim "echten"
+// Loeschen ueber die jeweilige Seite selbst, siehe delete_action in ActivityLog).
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'dismiss_activity') {
+    $activityDismissTables = [
+        'event' => 'events',
+        'photo' => 'photos',
+        'movie_tip' => 'movie_tips',
+        'location_tip' => 'location_tips',
+    ];
+    $entity = (string) ($_POST['entity'] ?? '');
+    $entityId = (int) ($_POST['entity_id'] ?? 0);
+    if (isset($activityDismissTables[$entity]) && $entityId > 0) {
+        $table = $activityDismissTables[$entity];
+        $stmt = $pdo->prepare("UPDATE {$table} SET dismissed_from_activity_at = NOW() WHERE id = :id");
+        $stmt->execute([':id' => $entityId]);
+    }
+    header('Location: ' . BASE_PATH . '/admin/feedback.php');
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_id'])) {
     $id = (int) $_POST['toggle_id'];
     $stmt = $pdo->prepare('SELECT status FROM feedback_messages WHERE id = :id');
@@ -255,20 +276,22 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                                 <?php endif; ?>
                             </div>
                         <?php else: ?>
+                            <?php
+                                $entityDismissLabels = [
+                                    'event' => 'die Veranstaltung',
+                                    'photo' => 'das Foto',
+                                    'movie_tip' => 'der Filmtipp',
+                                    'location_tip' => 'der Locationtipp',
+                                ];
+                            ?>
                             <div class="actions">
                                 <a class="button" href="<?= BASE_PATH . htmlspecialchars($item['edit_link'], ENT_QUOTES) ?>">Bearbeiten</a>
                                 <?php if ($isOwner): ?>
-                                    <form method="post" action="<?= BASE_PATH . htmlspecialchars($item['delete_action'], ENT_QUOTES) ?>" onsubmit="return false;">
-                                        <input type="hidden" name="delete_id" value="<?= $item['entity_id'] ?>">
-                                        <?php
-                                        $entityDeleteLabels = [
-                                            'event' => 'die Veranstaltung',
-                                            'photo' => 'das Foto',
-                                            'movie_tip' => 'der Filmtipp',
-                                            'location_tip' => 'der Locationtipp',
-                                        ];
-                                    ?>
-                                    <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Achtung: Dabei wird auch <?= $entityDeleteLabels[$item['entity']] ?? 'der Eintrag' ?> selbst dauerhaft gelöscht, nicht nur der Eintrag hier.')">Löschen</button>
+                                    <form method="post" onsubmit="return confirm('Nur aus der Aktivitäten-Liste entfernen? <?= $entityDismissLabels[$item['entity']] ?? 'Der Eintrag' ?> bleibt bestehen.');">
+                                        <input type="hidden" name="action" value="dismiss_activity">
+                                        <input type="hidden" name="entity" value="<?= htmlspecialchars($item['entity'], ENT_QUOTES) ?>">
+                                        <input type="hidden" name="entity_id" value="<?= $item['entity_id'] ?>">
+                                        <button type="submit" class="button">Aus Liste entfernen</button>
                                     </form>
                                 <?php endif; ?>
                             </div>

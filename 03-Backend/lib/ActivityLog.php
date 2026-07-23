@@ -18,28 +18,28 @@ final class ActivityLog
             "SELECT e.*, a.name AS created_by_name
              FROM events e
              LEFT JOIN admins a ON a.id = e.created_by
-             WHERE e.created_via_feedback_id IS NULL"
+             WHERE e.created_via_feedback_id IS NULL AND e.dismissed_from_activity_at IS NULL"
         )->fetchAll();
 
         $photos = $pdo->query(
             "SELECT p.*, a.name AS created_by_name
              FROM photos p
              LEFT JOIN admins a ON a.id = p.created_by
-             WHERE p.created_via_feedback_id IS NULL"
+             WHERE p.created_via_feedback_id IS NULL AND p.dismissed_from_activity_at IS NULL"
         )->fetchAll();
 
         $movieTips = $pdo->query(
             "SELECT mt.*, a.name AS created_by_name
              FROM movie_tips mt
              LEFT JOIN admins a ON a.id = mt.created_by
-             WHERE mt.created_via_feedback_id IS NULL"
+             WHERE mt.created_via_feedback_id IS NULL AND mt.dismissed_from_activity_at IS NULL"
         )->fetchAll();
 
         $locationTips = $pdo->query(
             "SELECT lt.*, a.name AS created_by_name
              FROM location_tips lt
              LEFT JOIN admins a ON a.id = lt.created_by
-             WHERE lt.created_via_feedback_id IS NULL"
+             WHERE lt.created_via_feedback_id IS NULL AND lt.dismissed_from_activity_at IS NULL"
         )->fetchAll();
 
         $items = [];

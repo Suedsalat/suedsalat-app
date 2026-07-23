@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS events (
   image_path VARCHAR(500) NULL,
   created_by INT NOT NULL,
   created_via_feedback_id INT NULL,
+  dismissed_from_activity_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL,
   FOREIGN KEY (created_by) REFERENCES admins(id),
@@ -82,6 +83,7 @@ CREATE TABLE IF NOT EXISTS movie_tips (
   created_by INT NOT NULL,
   created_via_feedback_id INT NULL,
   sort_order INT NOT NULL DEFAULT 0,
+  dismissed_from_activity_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL,
   FOREIGN KEY (created_by) REFERENCES admins(id),
@@ -100,6 +102,7 @@ CREATE TABLE IF NOT EXISTS location_tips (
   created_by INT NOT NULL,
   created_via_feedback_id INT NULL,
   sort_order INT NOT NULL DEFAULT 0,
+  dismissed_from_activity_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL,
   FOREIGN KEY (created_by) REFERENCES admins(id),
@@ -135,6 +138,7 @@ CREATE TABLE IF NOT EXISTS photos (
   published_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_by INT NOT NULL,
   created_via_feedback_id INT NULL,
+  dismissed_from_activity_at DATETIME NULL,
   FOREIGN KEY (created_by) REFERENCES admins(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
