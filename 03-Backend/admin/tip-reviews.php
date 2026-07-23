@@ -312,7 +312,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
                         <form method="post" style="display:inline;">
                             <input type="hidden" name="action" value="revoke">
                             <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
-                            <button type="submit" class="button">Freigabe zurückziehen</button>
+                            <button type="submit" class="button-danger">Freigabe zurückziehen</button>
                         </form>
                     </div>
                 </td>

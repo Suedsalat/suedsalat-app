@@ -553,7 +553,7 @@ $showCreateForm = $editTip !== null || $error !== null;
                                 <input type="hidden" name="action" value="revoke_review">
                                 <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
                                 <input type="hidden" name="tip_id" value="<?= (int) $editTip['id'] ?>">
-                                <button type="submit" class="button">Freigabe zurückziehen</button>
+                                <button type="submit" class="button-danger">Freigabe zurückziehen</button>
                             </form>
                         </div>
                     </td>
