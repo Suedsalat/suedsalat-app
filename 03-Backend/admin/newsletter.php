@@ -98,22 +98,14 @@ function load_recipients(string $emailsFile): array
     return $recipients;
 }
 
-// Baut aus dem Fliesstext-Feld (eine Leerzeile = neuer Absatz, einfacher Zeilenumbruch
-// = <br>) den [EMAIL_BODY]-Ersatz, im selben Absatz-Stil wie die bisherigen fest
-// eingetragenen Absaetze in email_template.html.
+// Baut aus dem Fliesstext-Feld den [EMAIL_BODY]-Ersatz. Bewusst 1:1 so, wie im
+// Eingabefeld getippt - jeder Zeilenumbruch (auch mehrere hintereinander fuer
+// groesseren Abstand) wird als <br> uebernommen, statt Leerzeilen zu "Absaetzen"
+// zusammenzufassen (das hat zuvor dazu gefuehrt, dass bewusste Abstaende verloren gingen).
 function build_email_body_html(string $bodyText): string
 {
-    $paragraphs = preg_split('/\R\s*\R/', trim($bodyText));
-    $html = '';
-    foreach ($paragraphs as $paragraph) {
-        $paragraph = trim($paragraph);
-        if ($paragraph === '') {
-            continue;
-        }
-        $escaped = nl2br(htmlspecialchars($paragraph, ENT_QUOTES));
-        $html .= '<p style="margin: 0 0 20px; font-size: 16px; line-height: 1.5; color: #102024;">' . $escaped . '</p>' . "\n";
-    }
-    return $html;
+    $escaped = nl2br(htmlspecialchars(trim($bodyText), ENT_QUOTES));
+    return '<p style="margin: 0 0 20px; font-size: 16px; line-height: 1.5; color: #102024;">' . $escaped . '</p>';
 }
 
 function build_email_headline_html(string $headline): string
@@ -125,13 +117,24 @@ function build_email_headline_html(string $headline): string
         . htmlspecialchars($headline, ENT_QUOTES) . '</h2>';
 }
 
-function build_email_photo_html(?string $photoUrl): string
+// Begrenzt die vom Formular kommende Fotobreite auf einen sinnvollen Bereich
+// (100-560px, Standard 560px = volle Vorlagenbreite).
+function normalize_photo_width($value): int
+{
+    $width = (int) $value;
+    if ($width <= 0) {
+        return 560;
+    }
+    return max(100, min(560, $width));
+}
+
+function build_email_photo_html(?string $photoUrl, int $photoWidth = 560): string
 {
     if ($photoUrl === null || $photoUrl === '') {
         return '';
     }
     return '<img src="' . htmlspecialchars($photoUrl, ENT_QUOTES) . '" alt="" '
-        . 'style="display:block;width:100%;max-width:560px;height:auto;margin:0 0 20px;border-radius:8px;">';
+        . 'style="display:block;width:100%;max-width:' . $photoWidth . 'px;height:auto;margin:0 0 20px;border-radius:8px;">';
 }
 
 // Der "Jetzt reinhören"-Button erscheint nur, wenn ein Episoden-Link angegeben ist -
@@ -150,13 +153,13 @@ function build_episode_button_html(string $episodeLink): string
         . '</td></tr></table>';
 }
 
-function render_email_html(string $templateFile, string $headline, string $episodeLink, string $bodyText, ?string $photoUrl): string
+function render_email_html(string $templateFile, string $headline, string $episodeLink, string $bodyText, ?string $photoUrl, int $photoWidth = 560): string
 {
     $template = file_get_contents($templateFile);
     $search = ['[EMAIL_HEADLINE_BLOCK]', '[EMAIL_PHOTO]', '[EMAIL_BODY]', '[EPISODE_BUTTON]', '[UNSUBSCRIBE_LINK]'];
     $replace = [
         build_email_headline_html($headline),
-        build_email_photo_html($photoUrl),
+        build_email_photo_html($photoUrl, $photoWidth),
         build_email_body_html($bodyText),
         build_episode_button_html($episodeLink),
         '#', // Platzhalter fuer die Vorschau - der echte Abmeldelink wird erst pro Empfaenger im Versand gesetzt.
@@ -179,6 +182,7 @@ if ($action === 'send') {
     $episodeLink = trim((string) ($_POST['episode_link'] ?? ''));
     $bodyText = (string) ($_POST['body_text'] ?? '');
     $photoUrl = trim((string) ($_POST['photo_url'] ?? '')) ?: null;
+    $photoWidth = normalize_photo_width($_POST['photo_width'] ?? 560);
 
     $recipients = load_recipients($emailsFile);
     $template = file_get_contents($templateFile);
@@ -190,7 +194,7 @@ if ($action === 'send') {
     $encodedSubject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
 
     $headlineHtml = build_email_headline_html($headline);
-    $photoHtml = build_email_photo_html($photoUrl);
+    $photoHtml = build_email_photo_html($photoUrl, $photoWidth);
     $bodyHtml = build_email_body_html($bodyText);
     $episodeButtonHtml = build_episode_button_html($episodeLink);
 
@@ -229,8 +233,8 @@ if ($action === 'send') {
     }
 
     $logStmt = $pdo->prepare(
-        'INSERT INTO newsletter_sends (subject, headline, episode_link, body_text, photo_url, recipient_count, sent_by)
-         VALUES (:subject, :headline, :episode_link, :body_text, :photo_url, :recipient_count, :sent_by)'
+        'INSERT INTO newsletter_sends (subject, headline, episode_link, body_text, photo_url, photo_width, recipient_count, sent_by)
+         VALUES (:subject, :headline, :episode_link, :body_text, :photo_url, :photo_width, :recipient_count, :sent_by)'
     );
     $logStmt->execute([
         ':subject' => $subject,
@@ -238,6 +242,7 @@ if ($action === 'send') {
         ':episode_link' => $episodeLink !== '' ? $episodeLink : null,
         ':body_text' => $bodyText,
         ':photo_url' => $photoUrl,
+        ':photo_width' => $photoUrl !== null ? $photoWidth : null,
         ':recipient_count' => $countSent,
         ':sent_by' => $adminId,
     ]);
@@ -276,6 +281,7 @@ if ($action === 'preview') {
     $episodeLink = $useEpisodeLink ? trim((string) ($_POST['episode_link'] ?? '')) : '';
 
     $usePhoto = isset($_POST['use_photo']);
+    $photoWidth = normalize_photo_width($_POST['photo_width'] ?? 560);
 
     $bodyText = trim((string) ($_POST['body_text'] ?? ''));
     $photoUrl = null;
@@ -309,7 +315,7 @@ if ($action === 'preview') {
     if ($error === null) {
         $recipients = load_recipients($emailsFile);
         $recipientCount = count($recipients);
-        $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photoUrl);
+        $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photoUrl, $photoWidth);
     }
 } else {
     // Aus einem alten Newsletter uebernehmen (siehe "Fuer neuen Newsletter
@@ -332,6 +338,7 @@ if ($action === 'preview') {
         $episodeLink = $reusedSend['episode_link'] ?? '';
         $bodyText = $reusedSend['body_text'];
         $photoUrl = null;
+        $photoWidth = 560;
         $useHeadline = $headline !== '';
         $useEpisodeLink = $episodeLink !== '';
         $usePhoto = false;
@@ -341,6 +348,7 @@ if ($action === 'preview') {
         $episodeLink = $defaultEpisodeLink;
         $bodyText = '';
         $photoUrl = null;
+        $photoWidth = 560;
         // Anfangszustand der Modul-Checkboxen: Ueberschrift und Folgen-Link meist gewuenscht
         // (typischer Fall: neue Folge), Foto ist die Ausnahme und startet daher abgehakt-frei.
         $useHeadline = true;
@@ -396,7 +404,7 @@ $pastSends = $pdo->query(
     <?php if ($viewingSend !== null): ?>
         <h2>Vorschau: <?= htmlspecialchars($viewingSend['subject'], ENT_QUOTES) ?></h2>
         <p>Verschickt am <?= htmlspecialchars(date('d.m.Y', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> um <?= htmlspecialchars(date('H:i', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> Uhr an <strong><?= (int) $viewingSend['recipient_count'] ?></strong> Empfänger.</p>
-        <iframe srcdoc="<?= htmlspecialchars(render_email_html($templateFile, $viewingSend['headline'] ?? '', $viewingSend['episode_link'] ?? '', $viewingSend['body_text'], $viewingSend['photo_url']), ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
+        <iframe srcdoc="<?= htmlspecialchars(render_email_html($templateFile, $viewingSend['headline'] ?? '', $viewingSend['episode_link'] ?? '', $viewingSend['body_text'], $viewingSend['photo_url'], normalize_photo_width($viewingSend['photo_width'] ?? 560)), ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
         <div class="button-row" style="margin-top:16px;">
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?reuse_id=<?= (int) $viewingSend['id'] ?>">Für neuen Newsletter übernehmen</a>
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php">Zurück</a>
@@ -414,6 +422,7 @@ $pastSends = $pdo->query(
             <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
             <?php if ($photoUrl !== null): ?>
                 <input type="hidden" name="photo_url" value="<?= htmlspecialchars($photoUrl, ENT_QUOTES) ?>">
+                <input type="hidden" name="photo_width" value="<?= (int) $photoWidth ?>">
             <?php endif; ?>
             <div class="button-row">
                 <button type="submit">Jetzt an <?= $recipientCount ?> Empfänger senden</button>
@@ -464,6 +473,9 @@ $pastSends = $pdo->query(
             <div id="field_photo">
                 <label>Foto (max. 8 MB, JPG/PNG/WebP)
                     <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
+                </label>
+                <label>Fotobreite in der Mail (in Pixel, 100–560)
+                    <input type="number" name="photo_width" min="100" max="560" value="<?= (int) $photoWidth ?>">
                 </label>
             </div>
 

@@ -227,6 +227,7 @@ CREATE TABLE IF NOT EXISTS newsletter_sends (
   episode_link VARCHAR(500) NULL,
   body_text TEXT NOT NULL,
   photo_url VARCHAR(500) NULL,
+  photo_width INT NULL,
   recipient_count INT NOT NULL DEFAULT 0,
   sent_by INT NOT NULL,
   sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
