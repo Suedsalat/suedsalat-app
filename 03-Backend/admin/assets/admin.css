@@ -189,6 +189,12 @@ tr.is-done { background: rgba(0, 0, 0, 0.08); }
 .button-danger { background: #b00020; }
 .button-danger:hover { background: #8a0018; }
 
+/* Anderer Gruenton als der normale Anlegen/Speichern-Button (var(--color-primary)) -
+   fuer den "- ... minimieren"-Button, damit er sich optisch davon abhebt, aber
+   nicht wie eine destruktive Loesch-Aktion (button-danger) aussieht. */
+.button-secondary { background: #3f6b52; }
+.button-secondary:hover { background: #2f5140; }
+
 .modal-overlay {
   display: none;
   position: fixed;

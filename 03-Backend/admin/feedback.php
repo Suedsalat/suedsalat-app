@@ -271,7 +271,7 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                                 <?php if ($msg['status'] === 'erledigt'): ?>
                                     <form method="post" onsubmit="return false;">
                                         <input type="hidden" name="delete_id" value="<?= (int) $msg['id'] ?>">
-                                        <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Es wird nur dieser Feedback-Eintrag gelöscht. Eine daraus bereits übernommene Veranstaltung, ein Filmtipp oder ein Foto bleibt erhalten.')">Löschen</button>
+                                        <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Es wird nur dieser Feedback-Eintrag gelöscht. Eine daraus bereits übernommene Veranstaltung, ein Filmtipp oder ein Foto bleibt erhalten.')">Entfernen</button>
                                     </form>
                                 <?php endif; ?>
                             </div>

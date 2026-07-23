@@ -358,7 +358,7 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
     <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Foto/Video hochladen</button>
     <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
     <?php if (!$editPhoto && !$importFeedback && !$importFeedbackMedia): ?>
-        <button type="button" class="button" data-hide-create-form="create-form">- Foto/Video hochladen</button>
+        <button type="button" class="button-secondary" data-hide-create-form="create-form">- Foto/Video hochladen</button>
     <?php endif; ?>
     <form method="post" enctype="multipart/form-data">
         <?php if ($editPhoto): ?>

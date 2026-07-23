@@ -371,7 +371,7 @@ $showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !
     <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Veranstaltungstermin anlegen</button>
     <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
     <?php if (!$editEvent): ?>
-        <button type="button" class="button" data-hide-create-form="create-form">- Veranstaltungstermin anlegen</button>
+        <button type="button" class="button-secondary" data-hide-create-form="create-form">- Veranstaltungstermin anlegen</button>
     <?php endif; ?>
     <form method="post" enctype="multipart/form-data">
         <?php if ($editEvent): ?>
