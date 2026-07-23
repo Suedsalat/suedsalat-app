@@ -111,6 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_id'])
                 ':created_by' => $adminId,
                 ':feedback_id' => $feedbackId,
             ]);
+            $newPhotoId = (int) $pdo->lastInsertId();
 
             $update = $pdo->prepare(
                 'UPDATE feedback_messages SET photo_imported_at = NOW(), status = "erledigt", handled_by = :admin_id, handled_at = NOW() WHERE id = :id'
@@ -118,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_id'])
             $update->execute([':admin_id' => $adminId, ':id' => $feedbackId]);
 
             FcmSender::sendToAllDevices('Neues Foto in der Galerie', 'Schau es dir an!');
-            header('Location: ' . BASE_PATH . '/admin/gallery.php');
+            header('Location: ' . BASE_PATH . '/admin/gallery.php#photo-' . $newPhotoId);
             exit;
         }
     }
@@ -161,6 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_media
                 ':created_by' => $adminId,
                 ':feedback_id' => $mediaRow['feedback_message_id'],
             ]);
+            $newPhotoId = (int) $pdo->lastInsertId();
 
             $update = $pdo->prepare('UPDATE feedback_media SET imported_at = NOW() WHERE id = :id');
             $update->execute([':id' => $mediaId]);
@@ -179,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_media
             }
 
             FcmSender::sendToAllDevices('Neues Foto in der Galerie', 'Schau es dir an!');
-            header('Location: ' . BASE_PATH . '/admin/gallery.php');
+            header('Location: ' . BASE_PATH . '/admin/gallery.php#photo-' . $newPhotoId);
             exit;
         }
     }
@@ -229,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
                 ':description' => $description,
                 ':id' => $id,
             ]);
-            header('Location: ' . BASE_PATH . '/admin/gallery.php');
+            header('Location: ' . BASE_PATH . '/admin/gallery.php#photo-' . $id);
             exit;
         }
 
@@ -261,8 +263,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo']) && !isset($
             ':description' => $description,
             ':created_by' => $adminId,
         ]);
+        $newPhotoId = (int) $pdo->lastInsertId();
         FcmSender::sendToAllDevices('Neues Foto in der Galerie', 'Schau es dir an!');
-        header('Location: ' . BASE_PATH . '/admin/gallery.php');
+        header('Location: ' . BASE_PATH . '/admin/gallery.php#photo-' . $newPhotoId);
         exit;
     }
 }
@@ -396,7 +399,7 @@ $deleteError = isset($_GET['delete_error']);
         </thead>
         <tbody>
         <?php foreach ($photos as $photo): ?>
-            <tr>
+            <tr id="photo-<?= (int) $photo['id'] ?>">
                 <td>
                     <?php if ($photo['media_type'] === 'video'): ?>
                         <video src="<?= htmlspecialchars($photo['image_path'], ENT_QUOTES) ?>" controls muted style="width:100px;border-radius:6px;"></video>

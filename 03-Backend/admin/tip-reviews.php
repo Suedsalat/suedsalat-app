@@ -57,7 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'manua
             ':reviewer_name' => $reviewerName,
             ':admin_id' => $adminId,
         ]);
-        header('Location: ' . BASE_PATH . '/admin/tip-reviews.php');
+        $newReviewId = (int) $pdo->lastInsertId();
+        header('Location: ' . BASE_PATH . '/admin/tip-reviews.php#review-' . $newReviewId);
         exit;
     }
 }
@@ -71,23 +72,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     $reviewText = trim((string) ($_POST['review_text'] ?? '')) ?: null;
     $stmt = $pdo->prepare('UPDATE tip_reviews SET reviewer_name = :reviewer_name, review_text = :review_text WHERE id = :id');
     $stmt->execute([':reviewer_name' => $reviewerName, ':review_text' => $reviewText, ':id' => $reviewId]);
-    header('Location: ' . BASE_PATH . '/admin/tip-reviews.php');
+    header('Location: ' . BASE_PATH . '/admin/tip-reviews.php#review-' . $reviewId);
     exit;
 }
 
 // Freigeben
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'approve') {
+    $reviewId = (int) $_POST['review_id'];
     $stmt = $pdo->prepare('UPDATE tip_reviews SET approved = 1, approved_at = NOW(), approved_by = :admin_id WHERE id = :id');
-    $stmt->execute([':admin_id' => $adminId, ':id' => (int) $_POST['review_id']]);
-    header('Location: ' . BASE_PATH . '/admin/tip-reviews.php');
+    $stmt->execute([':admin_id' => $adminId, ':id' => $reviewId]);
+    header('Location: ' . BASE_PATH . '/admin/tip-reviews.php#review-' . $reviewId);
     exit;
 }
 
 // Freigabe zurueckziehen (kein Passwort noetig, nicht destruktiv - die Rezension bleibt erhalten)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'revoke') {
+    $reviewId = (int) $_POST['review_id'];
     $stmt = $pdo->prepare('UPDATE tip_reviews SET approved = 0, approved_at = NULL, approved_by = NULL WHERE id = :id');
-    $stmt->execute([':id' => (int) $_POST['review_id']]);
-    header('Location: ' . BASE_PATH . '/admin/tip-reviews.php');
+    $stmt->execute([':id' => $reviewId]);
+    header('Location: ' . BASE_PATH . '/admin/tip-reviews.php#review-' . $reviewId);
     exit;
 }
 
@@ -249,7 +252,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
         </thead>
         <tbody>
         <?php foreach ($pendingReviews as $review): ?>
-            <tr>
+            <tr id="review-<?= (int) $review['id'] ?>">
                 <td><?= htmlspecialchars($tipTypeLabels[$review['tip_type']] ?? $review['tip_type'], ENT_QUOTES) ?></td>
                 <td><?= htmlspecialchars($review['tip_label'], ENT_QUOTES) ?></td>
                 <td><?= (int) $review['rating'] ?> / 5</td>
@@ -289,7 +292,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
         </thead>
         <tbody>
         <?php foreach ($approvedReviews as $review): ?>
-            <tr>
+            <tr id="review-<?= (int) $review['id'] ?>">
                 <td><?= htmlspecialchars($tipTypeLabels[$review['tip_type']] ?? $review['tip_type'], ENT_QUOTES) ?></td>
                 <td><?= htmlspecialchars($review['tip_label'], ENT_QUOTES) ?></td>
                 <td><?= (int) $review['rating'] ?> / 5</td>

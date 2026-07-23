@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_r
             ':admin_id' => $adminId,
         ]);
     }
-    header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . $reviewTipId);
+    header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . $reviewTipId . '#reviews');
     exit;
 }
 
@@ -166,23 +166,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_r
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'approve_review') {
     $stmt = $pdo->prepare('UPDATE tip_reviews SET approved = 1, approved_at = NOW(), approved_by = :admin_id WHERE id = :id AND tip_type = "location_tip"');
     $stmt->execute([':admin_id' => $adminId, ':id' => (int) $_POST['review_id']]);
-    header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . (int) $_POST['tip_id']);
+    header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . (int) $_POST['tip_id'] . '#reviews');
     exit;
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'revoke_review') {
     $stmt = $pdo->prepare('UPDATE tip_reviews SET approved = 0, approved_at = NULL, approved_by = NULL WHERE id = :id AND tip_type = "location_tip"');
     $stmt->execute([':id' => (int) $_POST['review_id']]);
-    header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . (int) $_POST['tip_id']);
+    header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . (int) $_POST['tip_id'] . '#reviews');
     exit;
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'reject_review') {
     if (!verify_admin_password($pdo, $adminId, (string) ($_POST['confirm_password'] ?? ''))) {
-        header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . (int) $_POST['tip_id'] . '&delete_error=1');
+        header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . (int) $_POST['tip_id'] . '&delete_error=1#reviews');
         exit;
     }
     $stmt = $pdo->prepare('DELETE FROM tip_reviews WHERE id = :id AND tip_type = "location_tip"');
     $stmt->execute([':id' => (int) $_POST['review_id']]);
-    header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . (int) $_POST['tip_id']);
+    header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . (int) $_POST['tip_id'] . '#reviews');
     exit;
 }
 
@@ -487,7 +487,7 @@ $deleteError = isset($_GET['delete_error']);
     </form>
 
     <?php if ($editTip): ?>
-    <h2>Rezensionen zu „<?= htmlspecialchars($editTip['name'], ENT_QUOTES) ?>“</h2>
+    <h2 id="reviews">Rezensionen zu „<?= htmlspecialchars($editTip['name'], ENT_QUOTES) ?>“</h2>
 
     <?php if (!empty($tipPendingReviews)): ?>
         <p><strong>Ausstehend:</strong></p>

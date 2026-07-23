@@ -222,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
             ':image_path' => $imagePath,
             ':id' => $editId,
         ]);
-        header('Location: ' . BASE_PATH . '/admin/events.php');
+        header('Location: ' . BASE_PATH . '/admin/events.php#event-' . $editId);
         exit;
     } else {
         $feedbackId = isset($_POST['feedback_id']) && $_POST['feedback_id'] !== '' ? (int) $_POST['feedback_id'] : null;
@@ -269,8 +269,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
             $markDone->execute([':admin_id' => $adminId, ':id' => $feedbackId]);
         }
 
+        $newEventId = (int) $pdo->lastInsertId();
         FcmSender::sendToAllDevices("Neue Veranstaltung: $title", date('d.m.Y', strtotime($eventDate)));
-        header('Location: ' . BASE_PATH . '/admin/events.php');
+        header('Location: ' . BASE_PATH . '/admin/events.php#event-' . $newEventId);
         exit;
     }
 }
@@ -425,7 +426,7 @@ $deleteError = isset($_GET['delete_error']);
         </thead>
         <tbody>
         <?php foreach ($upcomingEvents as $event): ?>
-            <tr>
+            <tr id="event-<?= (int) $event['id'] ?>">
                 <td>
                     <?php if (!empty($event['image_path'])): ?>
                         <img src="<?= htmlspecialchars($event['image_path'], ENT_QUOTES) ?>" alt="" style="width:40px;height:40px;object-fit:cover;object-position:top;border-radius:6px;">
@@ -464,7 +465,7 @@ $deleteError = isset($_GET['delete_error']);
         </thead>
         <tbody>
         <?php foreach ($pastEvents as $event): ?>
-            <tr class="is-done">
+            <tr id="event-<?= (int) $event['id'] ?>" class="is-done">
                 <td>
                     <?php if (!empty($event['image_path'])): ?>
                         <img src="<?= htmlspecialchars($event['image_path'], ENT_QUOTES) ?>" alt="" style="width:40px;height:40px;object-fit:cover;object-position:top;border-radius:6px;">
