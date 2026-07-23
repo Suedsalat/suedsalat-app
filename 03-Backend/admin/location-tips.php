@@ -186,6 +186,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rejec
     exit;
 }
 
+// Manuelle Reihenfolge: mit dem direkten Nachbarn (naechst kleinere/groessere
+// sort_order) die Position tauschen. id als Tiebreaker, falls sort_order mal
+// nicht eindeutig sein sollte.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['move_up', 'move_down'], true)) {
+    $moveId = (int) ($_POST['tip_id'] ?? 0);
+    $current = $pdo->prepare('SELECT id, sort_order FROM location_tips WHERE id = :id');
+    $current->execute([':id' => $moveId]);
+    $currentTip = $current->fetch();
+
+    if ($currentTip) {
+        if ($_POST['action'] === 'move_up') {
+            $neighborStmt = $pdo->prepare(
+                'SELECT id, sort_order FROM location_tips
+                 WHERE sort_order < :so OR (sort_order = :so2 AND id < :id)
+                 ORDER BY sort_order DESC, id DESC LIMIT 1'
+            );
+        } else {
+            $neighborStmt = $pdo->prepare(
+                'SELECT id, sort_order FROM location_tips
+                 WHERE sort_order > :so OR (sort_order = :so2 AND id > :id)
+                 ORDER BY sort_order ASC, id ASC LIMIT 1'
+            );
+        }
+        $neighborStmt->execute([':so' => $currentTip['sort_order'], ':so2' => $currentTip['sort_order'], ':id' => $moveId]);
+        $neighbor = $neighborStmt->fetch();
+
+        if ($neighbor) {
+            $swap = $pdo->prepare('UPDATE location_tips SET sort_order = :so WHERE id = :id');
+            $swap->execute([':so' => $neighbor['sort_order'], ':id' => $currentTip['id']]);
+            $swap->execute([':so' => $currentTip['sort_order'], ':id' => $neighbor['id']]);
+        }
+    }
+    header('Location: ' . BASE_PATH . '/admin/location-tips.php');
+    exit;
+}
+
 // Anlegen oder Bearbeiten
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
     $editId = isset($_POST['edit_id']) && $_POST['edit_id'] !== '' ? (int) $_POST['edit_id'] : null;
@@ -257,9 +293,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             }
         }
 
+        $nextSortOrder = (int) $pdo->query('SELECT COALESCE(MAX(sort_order), 0) + 1 FROM location_tips')->fetchColumn();
+
         $stmt = $pdo->prepare(
-            'INSERT INTO location_tips (name, location, description, link, episode_guid, episode_timestamp_seconds, image_path, created_by)
-             VALUES (:name, :location, :description, :link, :episode_guid, :episode_timestamp_seconds, :image_path, :created_by)'
+            'INSERT INTO location_tips (name, location, description, link, episode_guid, episode_timestamp_seconds, image_path, created_by, sort_order)
+             VALUES (:name, :location, :description, :link, :episode_guid, :episode_timestamp_seconds, :image_path, :created_by, :sort_order)'
         );
         $stmt->execute([
             ':name' => $name,
@@ -270,6 +308,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             ':episode_timestamp_seconds' => $episodeTimestampSeconds,
             ':image_path' => $imagePath,
             ':created_by' => $adminId,
+            ':sort_order' => $nextSortOrder,
         ]);
         $newTipId = (int) $pdo->lastInsertId();
 
@@ -334,7 +373,7 @@ $allTips = $pdo->query(
         (SELECT AVG(rating) FROM tip_reviews WHERE tip_type = "location_tip" AND tip_id = lt.id AND approved = 1) AS avg_rating,
         (SELECT COUNT(*) FROM tip_reviews WHERE tip_type = "location_tip" AND tip_id = lt.id AND approved = 1) AS review_count
      FROM location_tips lt
-     ORDER BY lt.created_at DESC'
+     ORDER BY lt.sort_order ASC'
 )->fetchAll();
 
 $deleteError = isset($_GET['delete_error']);
@@ -544,11 +583,29 @@ $deleteError = isset($_GET['delete_error']);
     <div class="table-scroll">
     <table>
         <thead>
-            <tr><th>Foto</th><th>Name</th><th>Ort</th><th>Ø Bewertung</th><th>Angelegt</th><th></th></tr>
+            <tr><th>Reihenfolge</th><th>Foto</th><th>Name</th><th>Ort</th><th>Ø Bewertung</th><th>Angelegt</th><th></th></tr>
         </thead>
         <tbody>
-        <?php foreach ($allTips as $tip): ?>
+        <?php foreach ($allTips as $i => $tip): ?>
             <tr>
+                <td>
+                    <div class="actions">
+                        <?php if ($i > 0): ?>
+                            <form method="post">
+                                <input type="hidden" name="action" value="move_up">
+                                <input type="hidden" name="tip_id" value="<?= (int) $tip['id'] ?>">
+                                <button type="submit" class="button" title="Nach oben">▲</button>
+                            </form>
+                        <?php endif; ?>
+                        <?php if ($i < count($allTips) - 1): ?>
+                            <form method="post">
+                                <input type="hidden" name="action" value="move_down">
+                                <input type="hidden" name="tip_id" value="<?= (int) $tip['id'] ?>">
+                                <button type="submit" class="button" title="Nach unten">▼</button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                </td>
                 <td>
                     <?php if (!empty($tip['image_path'])): ?>
                         <img src="<?= htmlspecialchars($tip['image_path'], ENT_QUOTES) ?>" alt="" style="width:40px;height:40px;object-fit:cover;object-position:top;border-radius:6px;">

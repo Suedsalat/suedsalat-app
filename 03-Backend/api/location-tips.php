@@ -17,7 +17,7 @@ $stmt = $pdo->query(
         (SELECT AVG(rating) FROM tip_reviews WHERE tip_type = "location_tip" AND tip_id = lt.id AND approved = 1) AS avg_rating,
         (SELECT COUNT(*) FROM tip_reviews WHERE tip_type = "location_tip" AND tip_id = lt.id AND approved = 1) AS review_count
      FROM location_tips lt
-     ORDER BY lt.created_at DESC'
+     ORDER BY lt.sort_order ASC'
 );
 
 // PDO liefert AVG()/COUNT() standardmaessig als String statt als Zahl - ohne diesen
