@@ -368,7 +368,7 @@ $showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !
         <p class="error text-center">Falsches Passwort — nichts wurde gelöscht.</p>
     <?php endif; ?>
 
-    <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Veranstaltung anlegen</button>
+    <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Veranstaltungstermin anlegen</button>
     <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
     <form method="post" enctype="multipart/form-data">
         <?php if ($editEvent): ?>
