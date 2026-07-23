@@ -216,3 +216,19 @@ CREATE TABLE IF NOT EXISTS feedback_media (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (feedback_message_id) REFERENCES feedback_messages(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Protokoll jedes tatsaechlichen Newsletter-Versands (admin/newsletter.php) - fuer
+-- die Liste bisheriger Newsletter sowie die Moeglichkeit, einen alten Newsletter
+-- als Vorlage fuer einen neuen zu uebernehmen (reuse_id).
+CREATE TABLE IF NOT EXISTS newsletter_sends (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  subject VARCHAR(255) NOT NULL,
+  headline VARCHAR(255) NULL,
+  episode_link VARCHAR(500) NULL,
+  body_text TEXT NOT NULL,
+  photo_url VARCHAR(500) NULL,
+  recipient_count INT NOT NULL DEFAULT 0,
+  sent_by INT NOT NULL,
+  sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sent_by) REFERENCES admins(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

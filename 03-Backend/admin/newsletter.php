@@ -228,6 +228,20 @@ if ($action === 'send') {
         flush();
     }
 
+    $logStmt = $pdo->prepare(
+        'INSERT INTO newsletter_sends (subject, headline, episode_link, body_text, photo_url, recipient_count, sent_by)
+         VALUES (:subject, :headline, :episode_link, :body_text, :photo_url, :recipient_count, :sent_by)'
+    );
+    $logStmt->execute([
+        ':subject' => $subject,
+        ':headline' => $headline !== '' ? $headline : null,
+        ':episode_link' => $episodeLink !== '' ? $episodeLink : null,
+        ':body_text' => $bodyText,
+        ':photo_url' => $photoUrl,
+        ':recipient_count' => $countSent,
+        ':sent_by' => $adminId,
+    ]);
+
     echo '</ul>';
     echo "<h2>Versand abgeschlossen:</h2><p>Gesendet: <strong>$countSent</strong> | Fehlgeschlagen: <strong>$countFailed</strong></p>";
     echo '<a class="button" href="' . BASE_PATH . '/admin/newsletter.php">Zurück zum Newsletter-Formular</a> ';
@@ -236,9 +250,19 @@ if ($action === 'send') {
     exit;
 }
 
+// --- Alten Newsletter nur ansehen (GET mit view_id, read-only) ---
+$viewingSend = null;
+if ($action === null && isset($_GET['view_id'])) {
+    $stmt = $pdo->prepare('SELECT * FROM newsletter_sends WHERE id = :id');
+    $stmt->execute([':id' => (int) $_GET['view_id']]);
+    $viewingSend = $stmt->fetch() ?: null;
+}
+
 // --- STUFE 1: VORSCHAU (POST mit action=preview) ---
 $previewHtml = null;
 $recipientCount = null;
+$reusedSend = null;
+$existingPhotoUrl = null;
 if ($action === 'preview') {
     $subject = trim((string) ($_POST['subject'] ?? $defaultSubject)) ?: $defaultSubject;
 
@@ -261,25 +285,32 @@ if ($action === 'preview') {
         $error = 'Bitte einen Text für die Newsletter-Mail eingeben.';
     }
 
-    if ($error === null && $usePhoto && !empty($_FILES['photo']['name'])) {
-        $file = $_FILES['photo'];
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            $error = 'Foto-Upload fehlgeschlagen.';
-        } else {
-            $mime = mime_content_type($file['tmp_name']);
-            if (!isset($allowedImageTypes[$mime])) {
-                $error = 'Nur JPG, PNG oder WebP sind als Foto erlaubt.';
-            } elseif ($file['size'] > $maxImageBytes) {
-                $error = 'Foto ist zu groß (max. 8 MB).';
+    if ($error === null && $usePhoto) {
+        if (!empty($_FILES['photo']['name'])) {
+            $file = $_FILES['photo'];
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                $error = 'Foto-Upload fehlgeschlagen.';
             } else {
-                $newsletterUploadDir = UPLOAD_DIR . '/newsletter';
-                if (!is_dir($newsletterUploadDir)) {
-                    mkdir($newsletterUploadDir, 0755, true);
+                $mime = mime_content_type($file['tmp_name']);
+                if (!isset($allowedImageTypes[$mime])) {
+                    $error = 'Nur JPG, PNG oder WebP sind als Foto erlaubt.';
+                } elseif ($file['size'] > $maxImageBytes) {
+                    $error = 'Foto ist zu groß (max. 8 MB).';
+                } else {
+                    $newsletterUploadDir = UPLOAD_DIR . '/newsletter';
+                    if (!is_dir($newsletterUploadDir)) {
+                        mkdir($newsletterUploadDir, 0755, true);
+                    }
+                    $filename = bin2hex(random_bytes(16)) . '.' . $allowedImageTypes[$mime];
+                    move_uploaded_file($file['tmp_name'], $newsletterUploadDir . '/' . $filename);
+                    $photoUrl = UPLOAD_URL_BASE . '/newsletter/' . $filename;
                 }
-                $filename = bin2hex(random_bytes(16)) . '.' . $allowedImageTypes[$mime];
-                move_uploaded_file($file['tmp_name'], $newsletterUploadDir . '/' . $filename);
-                $photoUrl = UPLOAD_URL_BASE . '/newsletter/' . $filename;
             }
+        } elseif (!empty($_POST['existing_photo_url'])) {
+            // Kein neues Foto hochgeladen, aber ein von einem alten Newsletter
+            // uebernommenes Foto (existing_photo_url, siehe reuse_id unten) - das
+            // bereits vorhandene Foto einfach weiterverwenden statt neu hochzuladen.
+            $photoUrl = trim((string) $_POST['existing_photo_url']);
         }
     }
 
@@ -289,21 +320,54 @@ if ($action === 'preview') {
         $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photoUrl);
     }
 } else {
-    $subject = $defaultSubject;
-    $headline = $defaultHeadline;
-    $episodeLink = $defaultEpisodeLink;
-    $bodyText = '';
-    $photoUrl = null;
-    // Anfangszustand der Modul-Checkboxen: Ueberschrift und Folgen-Link meist gewuenscht
-    // (typischer Fall: neue Folge), Foto ist die Ausnahme und startet daher abgehakt-frei.
-    $useHeadline = true;
-    $useEpisodeLink = true;
-    $usePhoto = false;
+    // Aus einem alten Newsletter uebernehmen (siehe "Fuer neuen Newsletter
+    // uebernehmen" in der Liste unten) - befuellt das Formular mit den
+    // damaligen Werten, damit Thorsten sie als Ausgangspunkt anpassen kann,
+    // statt jedes Mal bei Null anzufangen.
+    $reuseId = isset($_GET['reuse_id']) ? (int) $_GET['reuse_id'] : null;
+    if ($reuseId) {
+        $stmt = $pdo->prepare('SELECT * FROM newsletter_sends WHERE id = :id');
+        $stmt->execute([':id' => $reuseId]);
+        $reusedSend = $stmt->fetch() ?: null;
+    }
+
+    if ($reusedSend) {
+        $subject = $reusedSend['subject'];
+        $headline = $reusedSend['headline'] ?? '';
+        $episodeLink = $reusedSend['episode_link'] ?? '';
+        $bodyText = $reusedSend['body_text'];
+        // Ein <input type="file"> laesst sich aus Sicherheitsgruenden nie mit einer
+        // URL vorbefuellen - das schon vorhandene Foto wird stattdessen separat als
+        // Vorschau + verstecktes Feld (existing_photo_url) angeboten, siehe Formular unten.
+        $photoUrl = null;
+        $existingPhotoUrl = $reusedSend['photo_url'];
+        $useHeadline = $headline !== '';
+        $useEpisodeLink = $episodeLink !== '';
+        $usePhoto = $existingPhotoUrl !== null && $existingPhotoUrl !== '';
+    } else {
+        $subject = $defaultSubject;
+        $headline = $defaultHeadline;
+        $episodeLink = $defaultEpisodeLink;
+        $bodyText = '';
+        $photoUrl = null;
+        // Anfangszustand der Modul-Checkboxen: Ueberschrift und Folgen-Link meist gewuenscht
+        // (typischer Fall: neue Folge), Foto ist die Ausnahme und startet daher abgehakt-frei.
+        $useHeadline = true;
+        $useEpisodeLink = true;
+        $usePhoto = false;
+    }
 }
 
-// Formular standardmaessig eingeklappt, ausser nach einem Fehler - dann direkt
-// offen, damit die bereits eingegebenen Daten nicht verloren gehen.
-$showCreateForm = $error !== null;
+// Formular standardmaessig eingeklappt, ausser nach einem Fehler oder mit
+// uebernommenen Werten aus einem alten Newsletter - dann direkt offen.
+$showCreateForm = $error !== null || $reusedSend !== null;
+
+$pastSends = $pdo->query(
+    'SELECT ns.*, a.name AS sent_by_name
+     FROM newsletter_sends ns
+     LEFT JOIN admins a ON a.id = ns.sent_by
+     ORDER BY ns.sent_at DESC'
+)->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -338,7 +402,15 @@ $showCreateForm = $error !== null;
         <p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
     <?php endif; ?>
 
-    <?php if ($previewHtml !== null): ?>
+    <?php if ($viewingSend !== null): ?>
+        <h2>Vorschau: <?= htmlspecialchars($viewingSend['subject'], ENT_QUOTES) ?></h2>
+        <p>Verschickt am <?= htmlspecialchars(date('d.m.Y', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> um <?= htmlspecialchars(date('H:i', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> Uhr an <strong><?= (int) $viewingSend['recipient_count'] ?></strong> Empfänger.</p>
+        <iframe srcdoc="<?= htmlspecialchars(render_email_html($templateFile, $viewingSend['headline'] ?? '', $viewingSend['episode_link'] ?? '', $viewingSend['body_text'], $viewingSend['photo_url']), ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
+        <div class="button-row" style="margin-top:16px;">
+            <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?reuse_id=<?= (int) $viewingSend['id'] ?>">Für neuen Newsletter übernehmen</a>
+            <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php">Zurück</a>
+        </div>
+    <?php elseif ($previewHtml !== null): ?>
         <h2>Vorschau</h2>
         <p><strong><?= $recipientCount ?></strong> gültige Empfänger in der Liste. Nichts wird verschickt, bevor du unten aktiv auf "Jetzt senden" klickst.</p>
         <iframe srcdoc="<?= htmlspecialchars($previewHtml, ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
@@ -396,6 +468,13 @@ $showCreateForm = $error !== null;
                 Foto einbinden
             </label>
             <div id="field_photo">
+                <?php if ($existingPhotoUrl): ?>
+                    <p>
+                        <img src="<?= htmlspecialchars($existingPhotoUrl, ENT_QUOTES) ?>" alt="" style="max-width:200px;border-radius:8px;display:block;margin-bottom:8px;">
+                        <span style="font-size:0.85rem;color:#666;">Übernommenes Foto vom vorherigen Newsletter. Lade unten ein neues Foto hoch, um es zu ersetzen.</span>
+                        <input type="hidden" name="existing_photo_url" value="<?= htmlspecialchars($existingPhotoUrl, ENT_QUOTES) ?>">
+                    </p>
+                <?php endif; ?>
                 <label>Foto (max. 8 MB, JPG/PNG/WebP)
                     <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
                 </label>
@@ -425,8 +504,38 @@ $showCreateForm = $error !== null;
             })();
         </script>
         </div>
+
+        <h2>Bisherige Newsletter</h2>
+        <?php if (empty($pastSends)): ?>
+            <p>Noch kein Newsletter verschickt.</p>
+        <?php else: ?>
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Betreff</th><th>Verschickt</th><th>Empfänger</th><th>Von</th><th></th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($pastSends as $send): ?>
+                <tr>
+                    <td><?= htmlspecialchars($send['subject'], ENT_QUOTES) ?></td>
+                    <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime($send['sent_at'])), ENT_QUOTES) ?></td>
+                    <td><?= (int) $send['recipient_count'] ?></td>
+                    <td><?= htmlspecialchars($send['sent_by_name'] ?? '—', ENT_QUOTES) ?></td>
+                    <td>
+                        <div class="actions">
+                            <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?view_id=<?= (int) $send['id'] ?>">Ansehen</a>
+                            <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?reuse_id=<?= (int) $send['id'] ?>">Übernehmen</a>
+                        </div>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 </main>
+<script src="<?= BASE_PATH ?>/admin/assets/table-scroll-sync.js?v=<?= @filemtime(__DIR__ . '/assets/table-scroll-sync.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/toggle-create-form.js?v=<?= @filemtime(__DIR__ . '/assets/toggle-create-form.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
 </body>
