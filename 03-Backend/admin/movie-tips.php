@@ -241,7 +241,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($_POST['action'] ?? '', ['
             $swap->execute([':so' => $currentTip['sort_order'], ':id' => $neighbor['id']]);
         }
     }
-    header('Location: ' . BASE_PATH . '/admin/movie-tips.php');
+    // Anker auf den verschobenen Eintrag, damit der Browser nach dem Redirect
+    // an der Tabellenzeile bleibt statt ganz nach oben zu springen.
+    header('Location: ' . BASE_PATH . '/admin/movie-tips.php#tip-' . $moveId);
     exit;
 }
 
@@ -645,7 +647,7 @@ $deleteError = isset($_GET['delete_error']);
         </thead>
         <tbody>
         <?php foreach ($allTips as $i => $tip): ?>
-            <tr>
+            <tr id="tip-<?= (int) $tip['id'] ?>">
                 <td>
                     <div class="actions">
                         <?php if ($i > 0): ?>
