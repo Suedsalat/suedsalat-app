@@ -128,13 +128,24 @@ function normalize_photo_width($value): int
     return max(100, min(560, $width));
 }
 
-function build_email_photo_html(?string $photoUrl, int $photoWidth = 560): string
+// Nur 'left'/'center'/'right' zulassen, sonst Standard 'center'.
+function normalize_photo_align($value): string
+{
+    return in_array($value, ['left', 'center', 'right'], true) ? $value : 'center';
+}
+
+function build_email_photo_html(?string $photoUrl, int $photoWidth = 560, string $photoAlign = 'center'): string
 {
     if ($photoUrl === null || $photoUrl === '') {
         return '';
     }
+    $margin = match ($photoAlign) {
+        'left' => '0 auto 20px 0',
+        'right' => '0 0 20px auto',
+        default => '0 auto 20px auto',
+    };
     return '<img src="' . htmlspecialchars($photoUrl, ENT_QUOTES) . '" alt="" '
-        . 'style="display:block;width:100%;max-width:' . $photoWidth . 'px;height:auto;margin:0 0 20px;border-radius:8px;">';
+        . 'style="display:block;width:100%;max-width:' . $photoWidth . 'px;height:auto;margin:' . $margin . ';border-radius:8px;">';
 }
 
 // Der "Jetzt reinhören"-Button erscheint nur, wenn ein Episoden-Link angegeben ist -
@@ -153,13 +164,13 @@ function build_episode_button_html(string $episodeLink): string
         . '</td></tr></table>';
 }
 
-function render_email_html(string $templateFile, string $headline, string $episodeLink, string $bodyText, ?string $photoUrl, int $photoWidth = 560): string
+function render_email_html(string $templateFile, string $headline, string $episodeLink, string $bodyText, ?string $photoUrl, int $photoWidth = 560, string $photoAlign = 'center'): string
 {
     $template = file_get_contents($templateFile);
     $search = ['[EMAIL_HEADLINE_BLOCK]', '[EMAIL_PHOTO]', '[EMAIL_BODY]', '[EPISODE_BUTTON]', '[UNSUBSCRIBE_LINK]'];
     $replace = [
         build_email_headline_html($headline),
-        build_email_photo_html($photoUrl, $photoWidth),
+        build_email_photo_html($photoUrl, $photoWidth, $photoAlign),
         build_email_body_html($bodyText),
         build_episode_button_html($episodeLink),
         '#', // Platzhalter fuer die Vorschau - der echte Abmeldelink wird erst pro Empfaenger im Versand gesetzt.
@@ -183,6 +194,7 @@ if ($action === 'send') {
     $bodyText = (string) ($_POST['body_text'] ?? '');
     $photoUrl = trim((string) ($_POST['photo_url'] ?? '')) ?: null;
     $photoWidth = normalize_photo_width($_POST['photo_width'] ?? 560);
+    $photoAlign = normalize_photo_align($_POST['photo_align'] ?? 'center');
 
     $recipients = load_recipients($emailsFile);
     $template = file_get_contents($templateFile);
@@ -194,7 +206,7 @@ if ($action === 'send') {
     $encodedSubject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
 
     $headlineHtml = build_email_headline_html($headline);
-    $photoHtml = build_email_photo_html($photoUrl, $photoWidth);
+    $photoHtml = build_email_photo_html($photoUrl, $photoWidth, $photoAlign);
     $bodyHtml = build_email_body_html($bodyText);
     $episodeButtonHtml = build_episode_button_html($episodeLink);
 
@@ -233,8 +245,8 @@ if ($action === 'send') {
     }
 
     $logStmt = $pdo->prepare(
-        'INSERT INTO newsletter_sends (subject, headline, episode_link, body_text, photo_url, photo_width, recipient_count, sent_by)
-         VALUES (:subject, :headline, :episode_link, :body_text, :photo_url, :photo_width, :recipient_count, :sent_by)'
+        'INSERT INTO newsletter_sends (subject, headline, episode_link, body_text, photo_url, photo_width, photo_align, recipient_count, sent_by)
+         VALUES (:subject, :headline, :episode_link, :body_text, :photo_url, :photo_width, :photo_align, :recipient_count, :sent_by)'
     );
     $logStmt->execute([
         ':subject' => $subject,
@@ -243,6 +255,7 @@ if ($action === 'send') {
         ':body_text' => $bodyText,
         ':photo_url' => $photoUrl,
         ':photo_width' => $photoUrl !== null ? $photoWidth : null,
+        ':photo_align' => $photoUrl !== null ? $photoAlign : null,
         ':recipient_count' => $countSent,
         ':sent_by' => $adminId,
     ]);
@@ -267,6 +280,7 @@ if ($action === null && isset($_GET['view_id'])) {
 $previewHtml = null;
 $recipientCount = null;
 $reusedSend = null;
+$existingPhotoUrl = null;
 if ($action === 'preview') {
     $subject = trim((string) ($_POST['subject'] ?? $defaultSubject)) ?: $defaultSubject;
 
@@ -282,6 +296,7 @@ if ($action === 'preview') {
 
     $usePhoto = isset($_POST['use_photo']);
     $photoWidth = normalize_photo_width($_POST['photo_width'] ?? 560);
+    $photoAlign = normalize_photo_align($_POST['photo_align'] ?? 'center');
 
     $bodyText = trim((string) ($_POST['body_text'] ?? ''));
     $photoUrl = null;
@@ -290,33 +305,55 @@ if ($action === 'preview') {
         $error = 'Bitte einen Text für die Newsletter-Mail eingeben.';
     }
 
-    if ($error === null && $usePhoto && !empty($_FILES['photo']['name'])) {
-        $file = $_FILES['photo'];
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            $error = 'Foto-Upload fehlgeschlagen.';
-        } else {
-            $mime = mime_content_type($file['tmp_name']);
-            if (!isset($allowedImageTypes[$mime])) {
-                $error = 'Nur JPG, PNG oder WebP sind als Foto erlaubt.';
-            } elseif ($file['size'] > $maxImageBytes) {
-                $error = 'Foto ist zu groß (max. 8 MB).';
+    if ($error === null && $usePhoto) {
+        if (!empty($_FILES['photo']['name'])) {
+            $file = $_FILES['photo'];
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                $error = 'Foto-Upload fehlgeschlagen.';
             } else {
-                $newsletterUploadDir = UPLOAD_DIR . '/newsletter';
-                if (!is_dir($newsletterUploadDir)) {
-                    mkdir($newsletterUploadDir, 0755, true);
+                $mime = mime_content_type($file['tmp_name']);
+                if (!isset($allowedImageTypes[$mime])) {
+                    $error = 'Nur JPG, PNG oder WebP sind als Foto erlaubt.';
+                } elseif ($file['size'] > $maxImageBytes) {
+                    $error = 'Foto ist zu groß (max. 8 MB).';
+                } else {
+                    $newsletterUploadDir = UPLOAD_DIR . '/newsletter';
+                    if (!is_dir($newsletterUploadDir)) {
+                        mkdir($newsletterUploadDir, 0755, true);
+                    }
+                    $filename = bin2hex(random_bytes(16)) . '.' . $allowedImageTypes[$mime];
+                    move_uploaded_file($file['tmp_name'], $newsletterUploadDir . '/' . $filename);
+                    $photoUrl = UPLOAD_URL_BASE . '/newsletter/' . $filename;
                 }
-                $filename = bin2hex(random_bytes(16)) . '.' . $allowedImageTypes[$mime];
-                move_uploaded_file($file['tmp_name'], $newsletterUploadDir . '/' . $filename);
-                $photoUrl = UPLOAD_URL_BASE . '/newsletter/' . $filename;
             }
+        } elseif (!empty($_POST['existing_photo_url'])) {
+            // Kein neues Foto hochgeladen, aber eins aus dem "Zurueck zum Bearbeiten"-
+            // Sprung (siehe action=edit_again) bereits vorhanden - einfach weiterverwenden.
+            $photoUrl = trim((string) $_POST['existing_photo_url']);
         }
     }
 
     if ($error === null) {
         $recipients = load_recipients($emailsFile);
         $recipientCount = count($recipients);
-        $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photoUrl, $photoWidth);
+        $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photoUrl, $photoWidth, $photoAlign);
     }
+} elseif ($action === 'edit_again') {
+    // Von der Vorschau zurueck zum Bearbeiten (siehe "Zurueck zum Bearbeiten"-Button
+    // dort) - alle eingegebenen Werte 1:1 uebernehmen, damit nichts verloren geht und
+    // nicht der komplette Newsletter neu angelegt werden muss, nur weil die Vorschau
+    // noch nicht passt.
+    $subject = trim((string) ($_POST['subject'] ?? '')) ?: $defaultSubject;
+    $headline = trim((string) ($_POST['headline'] ?? ''));
+    $episodeLink = trim((string) ($_POST['episode_link'] ?? ''));
+    $bodyText = (string) ($_POST['body_text'] ?? '');
+    $useHeadline = isset($_POST['use_headline']);
+    $useEpisodeLink = isset($_POST['use_episode_link']);
+    $usePhoto = isset($_POST['use_photo']);
+    $photoWidth = normalize_photo_width($_POST['photo_width'] ?? 560);
+    $photoAlign = normalize_photo_align($_POST['photo_align'] ?? 'center');
+    $photoUrl = null;
+    $existingPhotoUrl = trim((string) ($_POST['photo_url'] ?? '')) ?: null;
 } else {
     // Aus einem alten Newsletter uebernehmen (siehe "Fuer neuen Newsletter
     // uebernehmen" in der Liste unten) - befuellt das Formular mit den
@@ -339,6 +376,7 @@ if ($action === 'preview') {
         $bodyText = $reusedSend['body_text'];
         $photoUrl = null;
         $photoWidth = 560;
+        $photoAlign = 'center';
         $useHeadline = $headline !== '';
         $useEpisodeLink = $episodeLink !== '';
         $usePhoto = false;
@@ -349,6 +387,7 @@ if ($action === 'preview') {
         $bodyText = '';
         $photoUrl = null;
         $photoWidth = 560;
+        $photoAlign = 'center';
         // Anfangszustand der Modul-Checkboxen: Ueberschrift und Folgen-Link meist gewuenscht
         // (typischer Fall: neue Folge), Foto ist die Ausnahme und startet daher abgehakt-frei.
         $useHeadline = true;
@@ -357,9 +396,10 @@ if ($action === 'preview') {
     }
 }
 
-// Formular standardmaessig eingeklappt, ausser nach einem Fehler oder mit
-// uebernommenen Werten aus einem alten Newsletter - dann direkt offen.
-$showCreateForm = $error !== null || $reusedSend !== null;
+// Formular standardmaessig eingeklappt, ausser nach einem Fehler, mit
+// uebernommenen Werten aus einem alten Newsletter, oder beim Zurueckspringen
+// aus der Vorschau - dann direkt offen.
+$showCreateForm = $error !== null || $reusedSend !== null || $action === 'edit_again';
 
 $pastSends = $pdo->query(
     'SELECT ns.*, a.name AS sent_by_name
@@ -404,7 +444,7 @@ $pastSends = $pdo->query(
     <?php if ($viewingSend !== null): ?>
         <h2>Vorschau: <?= htmlspecialchars($viewingSend['subject'], ENT_QUOTES) ?></h2>
         <p>Verschickt am <?= htmlspecialchars(date('d.m.Y', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> um <?= htmlspecialchars(date('H:i', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> Uhr an <strong><?= (int) $viewingSend['recipient_count'] ?></strong> Empfänger.</p>
-        <iframe srcdoc="<?= htmlspecialchars(render_email_html($templateFile, $viewingSend['headline'] ?? '', $viewingSend['episode_link'] ?? '', $viewingSend['body_text'], $viewingSend['photo_url'], normalize_photo_width($viewingSend['photo_width'] ?? 560)), ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
+        <iframe srcdoc="<?= htmlspecialchars(render_email_html($templateFile, $viewingSend['headline'] ?? '', $viewingSend['episode_link'] ?? '', $viewingSend['body_text'], $viewingSend['photo_url'], normalize_photo_width($viewingSend['photo_width'] ?? 560), normalize_photo_align($viewingSend['photo_align'] ?? 'center')), ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
         <div class="button-row" style="margin-top:16px;">
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?reuse_id=<?= (int) $viewingSend['id'] ?>">Für neuen Newsletter übernehmen</a>
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php">Zurück</a>
@@ -414,21 +454,38 @@ $pastSends = $pdo->query(
         <p><strong><?= $recipientCount ?></strong> gültige Empfänger in der Liste. Nichts wird verschickt, bevor du unten aktiv auf "Jetzt senden" klickst.</p>
         <iframe srcdoc="<?= htmlspecialchars($previewHtml, ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
 
-        <form method="post" style="margin-top:16px;">
-            <input type="hidden" name="action" value="send">
-            <input type="hidden" name="subject" value="<?= htmlspecialchars($subject, ENT_QUOTES) ?>">
-            <input type="hidden" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>">
-            <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
-            <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
-            <?php if ($photoUrl !== null): ?>
-                <input type="hidden" name="photo_url" value="<?= htmlspecialchars($photoUrl, ENT_QUOTES) ?>">
-                <input type="hidden" name="photo_width" value="<?= (int) $photoWidth ?>">
-            <?php endif; ?>
-            <div class="button-row">
+        <div class="button-row" style="margin-top:16px;">
+            <form method="post">
+                <input type="hidden" name="action" value="send">
+                <input type="hidden" name="subject" value="<?= htmlspecialchars($subject, ENT_QUOTES) ?>">
+                <input type="hidden" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>">
+                <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
+                <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
+                <?php if ($photoUrl !== null): ?>
+                    <input type="hidden" name="photo_url" value="<?= htmlspecialchars($photoUrl, ENT_QUOTES) ?>">
+                    <input type="hidden" name="photo_width" value="<?= (int) $photoWidth ?>">
+                    <input type="hidden" name="photo_align" value="<?= htmlspecialchars($photoAlign, ENT_QUOTES) ?>">
+                <?php endif; ?>
                 <button type="submit">Jetzt an <?= $recipientCount ?> Empfänger senden</button>
-                <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php">Abbrechen / neu bearbeiten</a>
-            </div>
-        </form>
+            </form>
+            <form method="post">
+                <input type="hidden" name="action" value="edit_again">
+                <input type="hidden" name="subject" value="<?= htmlspecialchars($subject, ENT_QUOTES) ?>">
+                <input type="hidden" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>">
+                <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
+                <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
+                <?php if ($useHeadline): ?><input type="hidden" name="use_headline" value="1"><?php endif; ?>
+                <?php if ($useEpisodeLink): ?><input type="hidden" name="use_episode_link" value="1"><?php endif; ?>
+                <?php if ($usePhoto): ?><input type="hidden" name="use_photo" value="1"><?php endif; ?>
+                <?php if ($photoUrl !== null): ?>
+                    <input type="hidden" name="photo_url" value="<?= htmlspecialchars($photoUrl, ENT_QUOTES) ?>">
+                <?php endif; ?>
+                <input type="hidden" name="photo_width" value="<?= (int) $photoWidth ?>">
+                <input type="hidden" name="photo_align" value="<?= htmlspecialchars($photoAlign, ENT_QUOTES) ?>">
+                <button type="submit" class="button-secondary" style="margin-bottom:0;">Zurück zum Bearbeiten</button>
+            </form>
+            <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php">Ganz neu anfangen</a>
+        </div>
     <?php else: ?>
         <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Newsletter verfassen</button>
         <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
@@ -471,11 +528,25 @@ $pastSends = $pdo->query(
                 Foto einbinden
             </label>
             <div id="field_photo">
+                <?php if ($existingPhotoUrl): ?>
+                    <p>
+                        <img src="<?= htmlspecialchars($existingPhotoUrl, ENT_QUOTES) ?>" alt="" style="max-width:200px;border-radius:8px;display:block;margin-bottom:8px;">
+                        <span style="font-size:0.85rem;color:#666;">Bereits hochgeladenes Foto. Lade unten ein neues Foto hoch, um es zu ersetzen.</span>
+                        <input type="hidden" name="existing_photo_url" value="<?= htmlspecialchars($existingPhotoUrl, ENT_QUOTES) ?>">
+                    </p>
+                <?php endif; ?>
                 <label>Foto (max. 8 MB, JPG/PNG/WebP)
                     <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
                 </label>
                 <label>Fotobreite in der Mail (in Pixel, 100–560)
                     <input type="number" name="photo_width" min="100" max="560" value="<?= (int) $photoWidth ?>">
+                </label>
+                <label>Ausrichtung des Fotos
+                    <select name="photo_align">
+                        <option value="left" <?= $photoAlign === 'left' ? 'selected' : '' ?>>Linksbündig</option>
+                        <option value="center" <?= $photoAlign === 'center' ? 'selected' : '' ?>>Zentriert</option>
+                        <option value="right" <?= $photoAlign === 'right' ? 'selected' : '' ?>>Rechtsbündig</option>
+                    </select>
                 </label>
             </div>
 
