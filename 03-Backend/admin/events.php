@@ -325,6 +325,12 @@ foreach ($allEvents as $event) {
 $pastEvents = array_reverse($pastEvents);
 
 $deleteError = isset($_GET['delete_error']);
+
+// Formular standardmaessig eingeklappt, damit oben zuerst nur der Button und
+// die Liste zu sehen sind - beim Bearbeiten, nach einem Fehler oder mit
+// Vorbelegung aus einem Feedback-Eintrag aber direkt offen, damit der
+// Kontext nicht verloren geht.
+$showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !== '';
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -362,6 +368,8 @@ $deleteError = isset($_GET['delete_error']);
         <p class="error text-center">Falsches Passwort — nichts wurde gelöscht.</p>
     <?php endif; ?>
 
+    <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Veranstaltung anlegen</button>
+    <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
     <form method="post" enctype="multipart/form-data">
         <?php if ($editEvent): ?>
             <input type="hidden" name="edit_id" value="<?= (int) $editEvent['id'] ?>">
@@ -413,7 +421,7 @@ $deleteError = isset($_GET['delete_error']);
             <a class="button" href="<?= BASE_PATH ?>/admin/events.php">Abbrechen</a>
         <?php endif; ?>
     </form>
-
+    </div>
 
     <h2>Kommende Veranstaltungen</h2>
     <?php if (empty($upcomingEvents)): ?>
@@ -518,6 +526,7 @@ $deleteError = isset($_GET['delete_error']);
 </div>
 <script src="<?= BASE_PATH ?>/admin/assets/confirm-delete.js?v=<?= @filemtime(__DIR__ . '/assets/confirm-delete.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/table-scroll-sync.js?v=<?= @filemtime(__DIR__ . '/assets/table-scroll-sync.js') ?>"></script>
+<script src="<?= BASE_PATH ?>/admin/assets/toggle-create-form.js?v=<?= @filemtime(__DIR__ . '/assets/toggle-create-form.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
 </body>
 </html>
