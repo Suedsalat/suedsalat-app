@@ -262,7 +262,6 @@ if ($action === null && isset($_GET['view_id'])) {
 $previewHtml = null;
 $recipientCount = null;
 $reusedSend = null;
-$existingPhotoUrl = null;
 if ($action === 'preview') {
     $subject = trim((string) ($_POST['subject'] ?? $defaultSubject)) ?: $defaultSubject;
 
@@ -285,32 +284,25 @@ if ($action === 'preview') {
         $error = 'Bitte einen Text für die Newsletter-Mail eingeben.';
     }
 
-    if ($error === null && $usePhoto) {
-        if (!empty($_FILES['photo']['name'])) {
-            $file = $_FILES['photo'];
-            if ($file['error'] !== UPLOAD_ERR_OK) {
-                $error = 'Foto-Upload fehlgeschlagen.';
+    if ($error === null && $usePhoto && !empty($_FILES['photo']['name'])) {
+        $file = $_FILES['photo'];
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $error = 'Foto-Upload fehlgeschlagen.';
+        } else {
+            $mime = mime_content_type($file['tmp_name']);
+            if (!isset($allowedImageTypes[$mime])) {
+                $error = 'Nur JPG, PNG oder WebP sind als Foto erlaubt.';
+            } elseif ($file['size'] > $maxImageBytes) {
+                $error = 'Foto ist zu groß (max. 8 MB).';
             } else {
-                $mime = mime_content_type($file['tmp_name']);
-                if (!isset($allowedImageTypes[$mime])) {
-                    $error = 'Nur JPG, PNG oder WebP sind als Foto erlaubt.';
-                } elseif ($file['size'] > $maxImageBytes) {
-                    $error = 'Foto ist zu groß (max. 8 MB).';
-                } else {
-                    $newsletterUploadDir = UPLOAD_DIR . '/newsletter';
-                    if (!is_dir($newsletterUploadDir)) {
-                        mkdir($newsletterUploadDir, 0755, true);
-                    }
-                    $filename = bin2hex(random_bytes(16)) . '.' . $allowedImageTypes[$mime];
-                    move_uploaded_file($file['tmp_name'], $newsletterUploadDir . '/' . $filename);
-                    $photoUrl = UPLOAD_URL_BASE . '/newsletter/' . $filename;
+                $newsletterUploadDir = UPLOAD_DIR . '/newsletter';
+                if (!is_dir($newsletterUploadDir)) {
+                    mkdir($newsletterUploadDir, 0755, true);
                 }
+                $filename = bin2hex(random_bytes(16)) . '.' . $allowedImageTypes[$mime];
+                move_uploaded_file($file['tmp_name'], $newsletterUploadDir . '/' . $filename);
+                $photoUrl = UPLOAD_URL_BASE . '/newsletter/' . $filename;
             }
-        } elseif (!empty($_POST['existing_photo_url'])) {
-            // Kein neues Foto hochgeladen, aber ein von einem alten Newsletter
-            // uebernommenes Foto (existing_photo_url, siehe reuse_id unten) - das
-            // bereits vorhandene Foto einfach weiterverwenden statt neu hochzuladen.
-            $photoUrl = trim((string) $_POST['existing_photo_url']);
         }
     }
 
@@ -332,18 +324,17 @@ if ($action === 'preview') {
     }
 
     if ($reusedSend) {
+        // Bewusst nur die Text-Bestandteile uebernehmen (Betreff, Ueberschrift,
+        // Folgen-Link, Fliesstext) - ein eventuelles Foto NICHT, das soll bei
+        // jedem Newsletter bewusst neu ausgewaehlt werden (siehe Hinweis im Formular).
         $subject = $reusedSend['subject'];
         $headline = $reusedSend['headline'] ?? '';
         $episodeLink = $reusedSend['episode_link'] ?? '';
         $bodyText = $reusedSend['body_text'];
-        // Ein <input type="file"> laesst sich aus Sicherheitsgruenden nie mit einer
-        // URL vorbefuellen - das schon vorhandene Foto wird stattdessen separat als
-        // Vorschau + verstecktes Feld (existing_photo_url) angeboten, siehe Formular unten.
         $photoUrl = null;
-        $existingPhotoUrl = $reusedSend['photo_url'];
         $useHeadline = $headline !== '';
         $useEpisodeLink = $episodeLink !== '';
-        $usePhoto = $existingPhotoUrl !== null && $existingPhotoUrl !== '';
+        $usePhoto = false;
     } else {
         $subject = $defaultSubject;
         $headline = $defaultHeadline;
@@ -433,6 +424,9 @@ $pastSends = $pdo->query(
         <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Newsletter verfassen</button>
         <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
         <button type="button" class="button-secondary" data-hide-create-form="create-form">- Newsletter verfassen</button>
+        <?php if ($reusedSend): ?>
+            <p style="font-size:0.9rem;color:#666;">Betreff, Überschrift, Folgen-Link und Text wurden aus dem gewählten Newsletter übernommen. Ein eventuelles Foto wird bewusst <strong>nicht</strong> mit übernommen – bei Bedarf bitte neu hochladen.</p>
+        <?php endif; ?>
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="action" value="preview">
             <label>Betreff
@@ -468,13 +462,6 @@ $pastSends = $pdo->query(
                 Foto einbinden
             </label>
             <div id="field_photo">
-                <?php if ($existingPhotoUrl): ?>
-                    <p>
-                        <img src="<?= htmlspecialchars($existingPhotoUrl, ENT_QUOTES) ?>" alt="" style="max-width:200px;border-radius:8px;display:block;margin-bottom:8px;">
-                        <span style="font-size:0.85rem;color:#666;">Übernommenes Foto vom vorherigen Newsletter. Lade unten ein neues Foto hoch, um es zu ersetzen.</span>
-                        <input type="hidden" name="existing_photo_url" value="<?= htmlspecialchars($existingPhotoUrl, ENT_QUOTES) ?>">
-                    </p>
-                <?php endif; ?>
                 <label>Foto (max. 8 MB, JPG/PNG/WebP)
                     <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
                 </label>
