@@ -11,6 +11,7 @@ import 'listened_episodes_service.dart';
 /// naechsten weiterzumachen.
 class AudioPlayerService extends ChangeNotifier {
   AudioPlayerService._internal() {
+    _configureAudioContext();
     _player.onPlayerStateChanged.listen((state) {
       playerState = state;
       notifyListeners();
@@ -42,6 +43,36 @@ class AudioPlayerService extends ChangeNotifier {
   static final AudioPlayerService instance = AudioPlayerService._internal();
 
   final AudioPlayer _player = AudioPlayer();
+
+  bool _audioContextConfigured = false;
+
+  /// Stellt die iOS-Audiosession auf "playback" statt der Standard-Kategorie -
+  /// ohne das pausiert iOS die Wiedergabe automatisch, sobald der Bildschirm
+  /// sich sperrt/abschaltet (genau der gemeldete Bug: Player stoppt beim
+  /// Wechsel in den Sperrbildschirm). "playback" ist die von Apple vorgesehene
+  /// Kategorie fuer Audio, das auch im Hintergrund/bei gesperrtem Screen
+  /// weiterlaufen soll (siehe zusaetzlich UIBackgroundModes in Info.plist).
+  Future<void> _configureAudioContext() async {
+    if (_audioContextConfigured) return;
+    _audioContextConfigured = true;
+    await AudioPlayer.global.setAudioContext(AudioContext(
+      iOS: AudioContextIOS(
+        category: AVAudioSessionCategory.playback,
+        options: {
+          AVAudioSessionOptions.allowAirPlay,
+          AVAudioSessionOptions.allowBluetooth,
+          AVAudioSessionOptions.allowBluetoothA2DP,
+        },
+      ),
+      android: AudioContextAndroid(
+        isSpeakerphoneOn: false,
+        stayAwake: true,
+        contentType: AndroidContentType.music,
+        usageType: AndroidUsageType.media,
+        audioFocus: AndroidAudioFocus.gain,
+      ),
+    ));
+  }
 
   List<Episode> _queue = [];
   int _queueIndex = -1;
@@ -81,6 +112,7 @@ class AudioPlayerService extends ChangeNotifier {
 
   Future<void> _playCurrent() async {
     if (_queueIndex < 0 || _queueIndex >= _queue.length) return;
+    await _configureAudioContext();
     final episode = _queue[_queueIndex];
     currentEpisode = episode;
     position = Duration.zero;

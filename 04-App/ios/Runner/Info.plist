@@ -34,6 +34,10 @@
 		<string>Wird benötigt, um ein Foto aus deiner Fotomediathek für dein Feedback auszuwählen.</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>Wird benötigt, um eine Sprachnachricht für dein Feedback aufzunehmen.</string>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>audio</string>
+		</array>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>
