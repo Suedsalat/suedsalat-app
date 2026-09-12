@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/episode.dart';
+import 'api_service.dart';
 import 'listened_episodes_service.dart';
 
 /// Haelt genau einen AudioPlayer als App-weiten Singleton, damit eine laufende
@@ -43,6 +46,7 @@ class AudioPlayerService extends ChangeNotifier {
   static final AudioPlayerService instance = AudioPlayerService._internal();
 
   final AudioPlayer _player = AudioPlayer();
+  final ApiService _api = ApiService();
 
   bool _audioContextConfigured = false;
 
@@ -119,6 +123,7 @@ class AudioPlayerService extends ChangeNotifier {
     duration = Duration.zero;
     notifyListeners();
     await _player.play(UrlSource(episode.audioUrl));
+    unawaited(_api.trackEpisodePlay(episode.guid));
   }
 
   Future<void> togglePlayPause() async {

@@ -57,6 +57,19 @@ $totalViews = $pdo->query('SELECT screen, SUM(count) AS total FROM screen_views 
 $recentViews = $pdo->query(
     "SELECT screen, SUM(count) AS total FROM screen_views WHERE day >= CURDATE() - INTERVAL 7 DAY GROUP BY screen"
 )->fetchAll(PDO::FETCH_KEY_PAIR);
+
+// Anonyme Folgen-Wiedergaben (siehe api/track-episode-play.php): wie oft welche
+// Folge abgespielt wurde, gesamt und in den letzten 7 Tagen. LEFT JOIN, damit
+// auch Folgen ohne bisherige Wiedergabe mit 0 auftauchen.
+$episodePlayCounts = $pdo->query(
+    "SELECT e.guid, e.title, e.pub_date,
+        COALESCE(SUM(c.count), 0) AS total_plays,
+        COALESCE(SUM(CASE WHEN c.day >= CURDATE() - INTERVAL 7 DAY THEN c.count ELSE 0 END), 0) AS recent_plays
+     FROM episodes_cache e
+     LEFT JOIN episode_play_counts c ON c.episode_guid = e.guid
+     GROUP BY e.guid, e.title, e.pub_date
+     ORDER BY total_plays DESC, e.pub_date DESC"
+)->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -120,6 +133,31 @@ $recentViews = $pdo->query(
         </tbody>
     </table>
     </div>
+</section>
+
+<section class="content-box">
+    <h2>Folgen-Wiedergaben <span style="font-weight:normal;font-size:0.85rem;">(anonym, ohne Personenbezug)</span></h2>
+    <?php if (empty($episodePlayCounts)): ?>
+        <p>Noch keine Folgen im Cache.</p>
+    <?php else: ?>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Folge</th><th>Veröffentlicht</th><th>Letzte 7 Tage</th><th>Gesamt</th></tr>
+        </thead>
+        <tbody>
+        <?php foreach ($episodePlayCounts as $ep): ?>
+            <tr>
+                <td><?= htmlspecialchars($ep['title'], ENT_QUOTES) ?></td>
+                <td><?= htmlspecialchars(date('d.m.Y', strtotime($ep['pub_date'])), ENT_QUOTES) ?></td>
+                <td><?= (int) $ep['recent_plays'] ?></td>
+                <td><?= (int) $ep['total_plays'] ?></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    </div>
+    <?php endif; ?>
 </section>
 
 <section class="content-box">
