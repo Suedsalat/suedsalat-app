@@ -35,9 +35,18 @@ $defaultHeadline = 'Es gibt eine neue Folge!';
 // muss (Folgen sind durchgaengig 3-stellig, z.B. "episode034") statt jedes Mal die
 // komplette URL einzutippen.
 $defaultEpisodeLink = 'https://www.xn--sdsalat-n2a.eu#episode0';
-$fromEmail = 'newsletter@xn--sdsalat-n2a.eu';
 $fromName = 'Südsalat Podcast';
 $delayMicrosec = 500000;
+
+// Zur Auswahl stehende Absenderadressen - bewusst eine feste Liste (kein Freitext),
+// damit nicht versehentlich eine nicht existierende/falsch konfigurierte Adresse als
+// Absender landet. "newsletter@" ist der bisherige Standard fuer den normalen
+// Newsletter, "testphase@" ist fuer Mails an die Google-Play-Testergruppe gedacht.
+$availableSenders = [
+    'newsletter@xn--sdsalat-n2a.eu' => 'newsletter@südsalat.eu',
+    'testphase@xn--sdsalat-n2a.eu' => 'testphase@südsalat.eu',
+];
+$defaultFromEmail = array_key_first($availableSenders);
 
 $allowedImageTypes = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
 $maxImageBytes = 8 * 1024 * 1024;
@@ -116,7 +125,7 @@ function resolve_newsletter_target(string $target, string $emailsFile, PDO $pdo)
             return ['recipients' => $membersStmt->fetchAll(PDO::FETCH_COLUMN), 'label' => $listName];
         }
     }
-    return ['recipients' => load_recipients($emailsFile), 'label' => 'Alle Abonnenten'];
+    return ['recipients' => load_recipients($emailsFile), 'label' => 'Newsletter'];
 }
 
 // Baut aus dem Fliesstext-Feld den [EMAIL_BODY]-Ersatz. Bewusst 1:1 so, wie im
@@ -315,6 +324,7 @@ if ($action === 'send') {
     $bodyText = (string) ($_POST['body_text'] ?? '');
     $photos = collect_photos_from_request($allowedImageTypes, $maxImageBytes);
     $target = (string) ($_POST['target'] ?? 'all');
+    $fromEmail = array_key_exists($_POST['from_email'] ?? '', $availableSenders) ? $_POST['from_email'] : $defaultFromEmail;
 
     $resolvedTarget = resolve_newsletter_target($target, $emailsFile, $pdo);
     $recipients = $resolvedTarget['recipients'];
@@ -371,8 +381,8 @@ if ($action === 'send') {
     // (siehe [[project-suedsalat-app]]-Update Mehrfachfotos). Alte Sends behalten ihre Werte
     // in diesen Spalten, siehe "Ansehen"-Abschnitt weiter unten fuer den Fallback.
     $logStmt = $pdo->prepare(
-        'INSERT INTO newsletter_sends (subject, headline, episode_link, body_text, recipient_count, recipient_list_name, sent_by)
-         VALUES (:subject, :headline, :episode_link, :body_text, :recipient_count, :recipient_list_name, :sent_by)'
+        'INSERT INTO newsletter_sends (subject, headline, episode_link, body_text, recipient_count, recipient_list_name, from_email, sent_by)
+         VALUES (:subject, :headline, :episode_link, :body_text, :recipient_count, :recipient_list_name, :from_email, :sent_by)'
     );
     $logStmt->execute([
         ':subject' => $subject,
@@ -381,6 +391,7 @@ if ($action === 'send') {
         ':body_text' => $bodyText,
         ':recipient_count' => $countSent,
         ':recipient_list_name' => $targetLabel,
+        ':from_email' => $fromEmail,
         ':sent_by' => $adminId,
     ]);
     $newSendId = (int) $pdo->lastInsertId();
@@ -455,6 +466,7 @@ if ($action === 'preview') {
 
     $bodyText = trim((string) ($_POST['body_text'] ?? ''));
     $target = (string) ($_POST['target'] ?? 'all');
+    $selectedFromEmail = array_key_exists($_POST['from_email'] ?? '', $availableSenders) ? $_POST['from_email'] : $defaultFromEmail;
 
     if ($bodyText === '') {
         $error = 'Bitte einen Text für die Newsletter-Mail eingeben.';
@@ -487,6 +499,7 @@ if ($action === 'preview') {
     $useHeadline = isset($_POST['use_headline']);
     $useEpisodeLink = isset($_POST['use_episode_link']);
     $target = (string) ($_POST['target'] ?? 'all');
+    $selectedFromEmail = array_key_exists($_POST['from_email'] ?? '', $availableSenders) ? $_POST['from_email'] : $defaultFromEmail;
     $photos = [];
     foreach ($_POST['existing_photos'] ?? [] as $entry) {
         $url = trim((string) ($entry['url'] ?? ''));
@@ -523,6 +536,7 @@ if ($action === 'preview') {
         $useHeadline = $headline !== '';
         $useEpisodeLink = $episodeLink !== '';
         $target = 'all';
+        $selectedFromEmail = $defaultFromEmail;
     } else {
         $subject = $defaultSubject;
         $headline = $defaultHeadline;
@@ -534,6 +548,7 @@ if ($action === 'preview') {
         $useHeadline = true;
         $useEpisodeLink = true;
         $target = 'all';
+        $selectedFromEmail = $defaultFromEmail;
     }
 }
 
@@ -598,7 +613,7 @@ $pastSends = $pdo->query(
         </div>
     <?php elseif ($previewHtml !== null): ?>
         <h2>Vorschau</h2>
-        <p>Zielgruppe: <strong><?= htmlspecialchars($targetLabel, ENT_QUOTES) ?></strong> — <strong><?= $recipientCount ?></strong> gültige Empfänger. Nichts wird verschickt, bevor du unten aktiv auf "Jetzt senden" klickst.</p>
+        <p>Zielgruppe: <strong><?= htmlspecialchars($targetLabel, ENT_QUOTES) ?></strong> — <strong><?= $recipientCount ?></strong> gültige Empfänger. Absender: <strong><?= htmlspecialchars($availableSenders[$selectedFromEmail], ENT_QUOTES) ?></strong>. Nichts wird verschickt, bevor du unten aktiv auf "Jetzt senden" klickst.</p>
         <iframe srcdoc="<?= htmlspecialchars($previewHtml, ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
 
         <?php if (!empty($photos)): ?>
@@ -611,6 +626,7 @@ $pastSends = $pdo->query(
             <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
             <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
             <input type="hidden" name="target" value="<?= htmlspecialchars($target, ENT_QUOTES) ?>">
+            <input type="hidden" name="from_email" value="<?= htmlspecialchars($selectedFromEmail, ENT_QUOTES) ?>">
             <?php if ($useHeadline): ?><input type="hidden" name="use_headline" value="1"><?php endif; ?>
             <?php if ($useEpisodeLink): ?><input type="hidden" name="use_episode_link" value="1"><?php endif; ?>
             <?php render_photo_editor_fields($photos); ?>
@@ -628,6 +644,7 @@ $pastSends = $pdo->query(
                 <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
                 <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
                 <input type="hidden" name="target" value="<?= htmlspecialchars($target, ENT_QUOTES) ?>">
+            <input type="hidden" name="from_email" value="<?= htmlspecialchars($selectedFromEmail, ENT_QUOTES) ?>">
                 <?php foreach ($photos as $i => $photo): ?>
                     <input type="hidden" name="existing_photos[<?= $i ?>][url]" value="<?= htmlspecialchars($photo['url'], ENT_QUOTES) ?>">
                     <input type="hidden" name="existing_photos[<?= $i ?>][width]" value="<?= (int) $photo['width'] ?>">
@@ -642,6 +659,7 @@ $pastSends = $pdo->query(
                 <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
                 <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
                 <input type="hidden" name="target" value="<?= htmlspecialchars($target, ENT_QUOTES) ?>">
+            <input type="hidden" name="from_email" value="<?= htmlspecialchars($selectedFromEmail, ENT_QUOTES) ?>">
                 <?php if ($useHeadline): ?><input type="hidden" name="use_headline" value="1"><?php endif; ?>
                 <?php if ($useEpisodeLink): ?><input type="hidden" name="use_episode_link" value="1"><?php endif; ?>
                 <?php foreach ($photos as $i => $photo): ?>
@@ -668,7 +686,7 @@ $pastSends = $pdo->query(
 
             <label>An wen senden?
                 <select name="target">
-                    <option value="all" <?= $target === 'all' ? 'selected' : '' ?>>Alle Abonnenten</option>
+                    <option value="all" <?= $target === 'all' ? 'selected' : '' ?>>Newsletter</option>
                     <?php foreach ($customLists as $list): ?>
                         <option value="list:<?= (int) $list['id'] ?>" <?= $target === 'list:' . $list['id'] ? 'selected' : '' ?>>
                             <?= htmlspecialchars($list['name'], ENT_QUOTES) ?>
@@ -679,6 +697,16 @@ $pastSends = $pdo->query(
             <?php if (empty($customLists)): ?>
                 <p style="font-size:0.85rem;color:#666;">Noch keine eigene Liste angelegt — das geht unter <a href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Empfängerlisten</a>.</p>
             <?php endif; ?>
+
+            <label>Absender
+                <select name="from_email">
+                    <?php foreach ($availableSenders as $address => $displayLabel): ?>
+                        <option value="<?= htmlspecialchars($address, ENT_QUOTES) ?>" <?= $selectedFromEmail === $address ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
 
             <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
                 <input type="checkbox" id="chk_headline" name="use_headline" <?= $useHeadline ? 'checked' : '' ?> style="width:auto;">
@@ -746,15 +774,16 @@ $pastSends = $pdo->query(
         <div class="table-scroll">
         <table>
             <thead>
-                <tr><th>Betreff</th><th>Verschickt</th><th>Zielgruppe</th><th>Empfänger</th><th>Von</th><th></th></tr>
+                <tr><th>Betreff</th><th>Verschickt</th><th>Zielgruppe</th><th>Empfänger</th><th>Absender</th><th>Von</th><th></th></tr>
             </thead>
             <tbody>
             <?php foreach ($pastSends as $send): ?>
                 <tr>
                     <td><?= htmlspecialchars($send['subject'], ENT_QUOTES) ?></td>
                     <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime($send['sent_at'])), ENT_QUOTES) ?></td>
-                    <td><?= htmlspecialchars($send['recipient_list_name'] ?? 'Alle Abonnenten', ENT_QUOTES) ?></td>
+                    <td><?= htmlspecialchars($send['recipient_list_name'] ?? 'Newsletter', ENT_QUOTES) ?></td>
                     <td><?= (int) $send['recipient_count'] ?></td>
+                    <td><?= htmlspecialchars($send['from_email'] ?? $availableSenders[$defaultFromEmail], ENT_QUOTES) ?></td>
                     <td><?= htmlspecialchars($send['sent_by_name'] ?? '—', ENT_QUOTES) ?></td>
                     <td>
                         <div class="actions">
