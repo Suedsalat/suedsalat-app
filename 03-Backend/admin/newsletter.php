@@ -148,6 +148,18 @@ function build_email_photo_html(?string $photoUrl, int $photoWidth = 560, string
         . 'style="display:block;width:100%;max-width:' . $photoWidth . 'px;height:auto;margin:' . $margin . ';border-radius:8px;">';
 }
 
+// Reiht die Bild-Blocks mehrerer Fotos direkt untereinander - jedes Foto behaelt
+// seine eigene Breite/Ausrichtung (siehe build_email_photo_html), es gibt keinen
+// gemeinsamen Rahmen o.ae. Erwartet ein Array aus ['url'=>string,'width'=>int,'align'=>string].
+function build_email_photos_html(array $photos): string
+{
+    $html = '';
+    foreach ($photos as $photo) {
+        $html .= build_email_photo_html($photo['url'], $photo['width'], $photo['align']);
+    }
+    return $html;
+}
+
 // Der "Jetzt reinhören"-Button erscheint nur, wenn ein Episoden-Link angegeben ist -
 // wird das Feld im Formular komplett geleert, kann so auch ein allgemeiner Newsletter
 // ohne Folgenbezug verschickt werden.
@@ -164,18 +176,106 @@ function build_episode_button_html(string $episodeLink): string
         . '</td></tr></table>';
 }
 
-function render_email_html(string $templateFile, string $headline, string $episodeLink, string $bodyText, ?string $photoUrl, int $photoWidth = 560, string $photoAlign = 'center'): string
+function render_email_html(string $templateFile, string $headline, string $episodeLink, string $bodyText, array $photos): string
 {
     $template = file_get_contents($templateFile);
     $search = ['[EMAIL_HEADLINE_BLOCK]', '[EMAIL_PHOTO]', '[EMAIL_BODY]', '[EPISODE_BUTTON]', '[UNSUBSCRIBE_LINK]'];
     $replace = [
         build_email_headline_html($headline),
-        build_email_photo_html($photoUrl, $photoWidth, $photoAlign),
+        build_email_photos_html($photos),
         build_email_body_html($bodyText),
         build_episode_button_html($episodeLink),
         '#', // Platzhalter fuer die Vorschau - der echte Abmeldelink wird erst pro Empfaenger im Versand gesetzt.
     ];
     return str_replace($search, $replace, $template);
+}
+
+// Baut aus den bisherigen (existing_photos[]) und neu hochgeladenen (photos[])
+// Formularfeldern die aktuelle Foto-Liste - genutzt sowohl bei der Vorschau als auch
+// beim tatsaechlichen Versand, damit beide exakt dieselbe Liste sehen/verschicken.
+function collect_photos_from_request(array $allowedImageTypes, int $maxImageBytes): array
+{
+    $photos = [];
+
+    $existing = $_POST['existing_photos'] ?? [];
+    foreach ($existing as $entry) {
+        $url = trim((string) ($entry['url'] ?? ''));
+        if ($url === '' || !empty($entry['remove'])) {
+            continue;
+        }
+        $photos[] = [
+            'url' => $url,
+            'width' => normalize_photo_width($entry['width'] ?? 560),
+            'align' => normalize_photo_align($entry['align'] ?? 'center'),
+        ];
+    }
+
+    $uploaded = $_FILES['photos'] ?? null;
+    if ($uploaded && is_array($uploaded['name'] ?? null)) {
+        $newsletterUploadDir = UPLOAD_DIR . '/newsletter';
+        foreach ($uploaded['name'] as $i => $name) {
+            if ($name === '' || $uploaded['error'][$i] === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            if ($uploaded['error'][$i] !== UPLOAD_ERR_OK) {
+                throw new RuntimeException('Foto-Upload fehlgeschlagen.');
+            }
+            $mime = mime_content_type($uploaded['tmp_name'][$i]);
+            if (!isset($allowedImageTypes[$mime])) {
+                throw new RuntimeException('Nur JPG, PNG oder WebP sind als Foto erlaubt.');
+            }
+            if ($uploaded['size'][$i] > $maxImageBytes) {
+                throw new RuntimeException('Foto ist zu groß (max. 8 MB).');
+            }
+            if (!is_dir($newsletterUploadDir)) {
+                mkdir($newsletterUploadDir, 0755, true);
+            }
+            $filename = bin2hex(random_bytes(16)) . '.' . $allowedImageTypes[$mime];
+            move_uploaded_file($uploaded['tmp_name'][$i], $newsletterUploadDir . '/' . $filename);
+            $photos[] = [
+                'url' => UPLOAD_URL_BASE . '/newsletter/' . $filename,
+                'width' => 560,
+                'align' => 'center',
+            ];
+        }
+    }
+
+    return $photos;
+}
+
+// Rendert die Bearbeitungs-Zeilen fuer bereits vorhandene Fotos (Vorschau-Thumbnail,
+// Breite, Ausrichtung, Entfernen-Haekchen) plus ein Datei-Feld zum Hinzufuegen
+// weiterer Fotos. Wird sowohl im Verfassen-Formular als auch auf der Vorschau-Seite
+// verwendet, damit die Groesse/Ausrichtung direkt an der Vorschau nachjustiert werden kann.
+function render_photo_editor_fields(array $photos): void
+{
+    foreach ($photos as $i => $photo): ?>
+        <div class="photo-editor-item" style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;padding:10px;border:1px solid #ddd;border-radius:8px;">
+            <img src="<?= htmlspecialchars($photo['url'], ENT_QUOTES) ?>" alt="" style="max-width:120px;max-height:120px;border-radius:6px;flex-shrink:0;">
+            <input type="hidden" name="existing_photos[<?= $i ?>][url]" value="<?= htmlspecialchars($photo['url'], ENT_QUOTES) ?>">
+            <div style="flex:1;min-width:180px;">
+                <label>Breite in der Mail (in Pixel, 100–560)
+                    <input type="number" name="existing_photos[<?= $i ?>][width]" min="100" max="560" value="<?= (int) $photo['width'] ?>">
+                </label>
+                <label>Ausrichtung
+                    <select name="existing_photos[<?= $i ?>][align]">
+                        <option value="left" <?= $photo['align'] === 'left' ? 'selected' : '' ?>>Linksbündig</option>
+                        <option value="center" <?= $photo['align'] === 'center' ? 'selected' : '' ?>>Zentriert</option>
+                        <option value="right" <?= $photo['align'] === 'right' ? 'selected' : '' ?>>Rechtsbündig</option>
+                    </select>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
+                    <input type="checkbox" name="existing_photos[<?= $i ?>][remove]" value="1" style="width:auto;">
+                    Dieses Foto entfernen
+                </label>
+            </div>
+        </div>
+    <?php endforeach;
+    ?>
+    <label>Weitere(s) Foto(s) hinzufügen (max. 8 MB je Foto, JPG/PNG/WebP)
+        <input type="file" name="photos[]" accept="image/jpeg,image/png,image/webp" multiple>
+    </label>
+    <?php
 }
 
 $error = null;
@@ -192,9 +292,7 @@ if ($action === 'send') {
     $headline = trim((string) ($_POST['headline'] ?? $defaultHeadline));
     $episodeLink = trim((string) ($_POST['episode_link'] ?? ''));
     $bodyText = (string) ($_POST['body_text'] ?? '');
-    $photoUrl = trim((string) ($_POST['photo_url'] ?? '')) ?: null;
-    $photoWidth = normalize_photo_width($_POST['photo_width'] ?? 560);
-    $photoAlign = normalize_photo_align($_POST['photo_align'] ?? 'center');
+    $photos = collect_photos_from_request($allowedImageTypes, $maxImageBytes);
 
     $recipients = load_recipients($emailsFile);
     $template = file_get_contents($templateFile);
@@ -206,7 +304,7 @@ if ($action === 'send') {
     $encodedSubject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
 
     $headlineHtml = build_email_headline_html($headline);
-    $photoHtml = build_email_photo_html($photoUrl, $photoWidth, $photoAlign);
+    $photoHtml = build_email_photos_html($photos);
     $bodyHtml = build_email_body_html($bodyText);
     $episodeButtonHtml = build_episode_button_html($episodeLink);
 
@@ -244,21 +342,38 @@ if ($action === 'send') {
         flush();
     }
 
+    // photo_url/photo_width/photo_align in newsletter_sends bleiben ab jetzt leer -
+    // Fotos werden fuer neue Sends ausschliesslich in newsletter_send_photos protokolliert
+    // (siehe [[project-suedsalat-app]]-Update Mehrfachfotos). Alte Sends behalten ihre Werte
+    // in diesen Spalten, siehe "Ansehen"-Abschnitt weiter unten fuer den Fallback.
     $logStmt = $pdo->prepare(
-        'INSERT INTO newsletter_sends (subject, headline, episode_link, body_text, photo_url, photo_width, photo_align, recipient_count, sent_by)
-         VALUES (:subject, :headline, :episode_link, :body_text, :photo_url, :photo_width, :photo_align, :recipient_count, :sent_by)'
+        'INSERT INTO newsletter_sends (subject, headline, episode_link, body_text, recipient_count, sent_by)
+         VALUES (:subject, :headline, :episode_link, :body_text, :recipient_count, :sent_by)'
     );
     $logStmt->execute([
         ':subject' => $subject,
         ':headline' => $headline !== '' ? $headline : null,
         ':episode_link' => $episodeLink !== '' ? $episodeLink : null,
         ':body_text' => $bodyText,
-        ':photo_url' => $photoUrl,
-        ':photo_width' => $photoUrl !== null ? $photoWidth : null,
-        ':photo_align' => $photoUrl !== null ? $photoAlign : null,
         ':recipient_count' => $countSent,
         ':sent_by' => $adminId,
     ]);
+    $newSendId = (int) $pdo->lastInsertId();
+    if (!empty($photos)) {
+        $photoStmt = $pdo->prepare(
+            'INSERT INTO newsletter_send_photos (newsletter_send_id, sort_order, photo_url, photo_width, photo_align)
+             VALUES (:send_id, :sort_order, :photo_url, :photo_width, :photo_align)'
+        );
+        foreach ($photos as $i => $photo) {
+            $photoStmt->execute([
+                ':send_id' => $newSendId,
+                ':sort_order' => $i,
+                ':photo_url' => $photo['url'],
+                ':photo_width' => $photo['width'],
+                ':photo_align' => $photo['align'],
+            ]);
+        }
+    }
 
     echo '</ul>';
     echo "<h2>Versand abgeschlossen:</h2><p>Gesendet: <strong>$countSent</strong> | Fehlgeschlagen: <strong>$countFailed</strong></p>";
@@ -270,73 +385,68 @@ if ($action === 'send') {
 
 // --- Alten Newsletter nur ansehen (GET mit view_id, read-only) ---
 $viewingSend = null;
+$viewingSendPhotos = [];
 if ($action === null && isset($_GET['view_id'])) {
     $stmt = $pdo->prepare('SELECT * FROM newsletter_sends WHERE id = :id');
     $stmt->execute([':id' => (int) $_GET['view_id']]);
     $viewingSend = $stmt->fetch() ?: null;
+
+    if ($viewingSend !== null) {
+        $photosStmt = $pdo->prepare('SELECT * FROM newsletter_send_photos WHERE newsletter_send_id = :id ORDER BY sort_order ASC');
+        $photosStmt->execute([':id' => (int) $viewingSend['id']]);
+        $viewingSendPhotos = array_map(
+            static fn (array $row) => ['url' => $row['photo_url'], 'width' => (int) $row['photo_width'], 'align' => $row['photo_align']],
+            $photosStmt->fetchAll()
+        );
+        // Fallback fuer Newsletter aus der Zeit vor Mehrfachfotos - deren einziges Foto
+        // steckt noch in den alten Einzel-Spalten von newsletter_sends selbst.
+        if (empty($viewingSendPhotos) && !empty($viewingSend['photo_url'])) {
+            $viewingSendPhotos = [[
+                'url' => $viewingSend['photo_url'],
+                'width' => normalize_photo_width($viewingSend['photo_width'] ?? 560),
+                'align' => normalize_photo_align($viewingSend['photo_align'] ?? 'center'),
+            ]];
+        }
+    }
 }
 
 // --- STUFE 1: VORSCHAU (POST mit action=preview) ---
 $previewHtml = null;
 $recipientCount = null;
 $reusedSend = null;
-$existingPhotoUrl = null;
 if ($action === 'preview') {
     $subject = trim((string) ($_POST['subject'] ?? $defaultSubject)) ?: $defaultSubject;
 
-    // Jedes optionale Modul (Ueberschrift, Folgen-Link, Foto) hat eine eigene Checkbox
-    // im Formular - nur bei angehaktem Kaestchen wird der zugehoerige Wert uebernommen,
+    // Jedes optionale Modul (Ueberschrift, Folgen-Link) hat eine eigene Checkbox im
+    // Formular - nur bei angehaktem Kaestchen wird der zugehoerige Wert uebernommen,
     // sonst bleibt das Modul komplett weg (leerer String = "aus" fuer die build_*_html()-
-    // Funktionen). So laesst sich der Newsletter modular zusammenstellen.
+    // Funktionen). So laesst sich der Newsletter modular zusammenstellen. Fotos werden
+    // dagegen einfach ueber die Liste $photos gesteuert - leer = kein Foto im Newsletter.
     $useHeadline = isset($_POST['use_headline']);
     $headline = $useHeadline ? trim((string) ($_POST['headline'] ?? $defaultHeadline)) : '';
 
     $useEpisodeLink = isset($_POST['use_episode_link']);
     $episodeLink = $useEpisodeLink ? trim((string) ($_POST['episode_link'] ?? '')) : '';
 
-    $usePhoto = isset($_POST['use_photo']);
-    $photoWidth = normalize_photo_width($_POST['photo_width'] ?? 560);
-    $photoAlign = normalize_photo_align($_POST['photo_align'] ?? 'center');
-
     $bodyText = trim((string) ($_POST['body_text'] ?? ''));
-    $photoUrl = null;
 
     if ($bodyText === '') {
         $error = 'Bitte einen Text für die Newsletter-Mail eingeben.';
     }
 
-    if ($error === null && $usePhoto) {
-        if (!empty($_FILES['photo']['name'])) {
-            $file = $_FILES['photo'];
-            if ($file['error'] !== UPLOAD_ERR_OK) {
-                $error = 'Foto-Upload fehlgeschlagen.';
-            } else {
-                $mime = mime_content_type($file['tmp_name']);
-                if (!isset($allowedImageTypes[$mime])) {
-                    $error = 'Nur JPG, PNG oder WebP sind als Foto erlaubt.';
-                } elseif ($file['size'] > $maxImageBytes) {
-                    $error = 'Foto ist zu groß (max. 8 MB).';
-                } else {
-                    $newsletterUploadDir = UPLOAD_DIR . '/newsletter';
-                    if (!is_dir($newsletterUploadDir)) {
-                        mkdir($newsletterUploadDir, 0755, true);
-                    }
-                    $filename = bin2hex(random_bytes(16)) . '.' . $allowedImageTypes[$mime];
-                    move_uploaded_file($file['tmp_name'], $newsletterUploadDir . '/' . $filename);
-                    $photoUrl = UPLOAD_URL_BASE . '/newsletter/' . $filename;
-                }
-            }
-        } elseif (!empty($_POST['existing_photo_url'])) {
-            // Kein neues Foto hochgeladen, aber eins aus dem "Zurueck zum Bearbeiten"-
-            // Sprung (siehe action=edit_again) bereits vorhanden - einfach weiterverwenden.
-            $photoUrl = trim((string) $_POST['existing_photo_url']);
+    $photos = [];
+    if ($error === null) {
+        try {
+            $photos = collect_photos_from_request($allowedImageTypes, $maxImageBytes);
+        } catch (\RuntimeException $e) {
+            $error = $e->getMessage();
         }
     }
 
     if ($error === null) {
         $recipients = load_recipients($emailsFile);
         $recipientCount = count($recipients);
-        $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photoUrl, $photoWidth, $photoAlign);
+        $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photos);
     }
 } elseif ($action === 'edit_again') {
     // Von der Vorschau zurueck zum Bearbeiten (siehe "Zurueck zum Bearbeiten"-Button
@@ -349,11 +459,18 @@ if ($action === 'preview') {
     $bodyText = (string) ($_POST['body_text'] ?? '');
     $useHeadline = isset($_POST['use_headline']);
     $useEpisodeLink = isset($_POST['use_episode_link']);
-    $usePhoto = isset($_POST['use_photo']);
-    $photoWidth = normalize_photo_width($_POST['photo_width'] ?? 560);
-    $photoAlign = normalize_photo_align($_POST['photo_align'] ?? 'center');
-    $photoUrl = null;
-    $existingPhotoUrl = trim((string) ($_POST['photo_url'] ?? '')) ?: null;
+    $photos = [];
+    foreach ($_POST['existing_photos'] ?? [] as $entry) {
+        $url = trim((string) ($entry['url'] ?? ''));
+        if ($url === '') {
+            continue;
+        }
+        $photos[] = [
+            'url' => $url,
+            'width' => normalize_photo_width($entry['width'] ?? 560),
+            'align' => normalize_photo_align($entry['align'] ?? 'center'),
+        ];
+    }
 } else {
     // Aus einem alten Newsletter uebernehmen (siehe "Fuer neuen Newsletter
     // uebernehmen" in der Liste unten) - befuellt das Formular mit den
@@ -374,25 +491,19 @@ if ($action === 'preview') {
         $headline = $reusedSend['headline'] ?? '';
         $episodeLink = $reusedSend['episode_link'] ?? '';
         $bodyText = $reusedSend['body_text'];
-        $photoUrl = null;
-        $photoWidth = 560;
-        $photoAlign = 'center';
+        $photos = [];
         $useHeadline = $headline !== '';
         $useEpisodeLink = $episodeLink !== '';
-        $usePhoto = false;
     } else {
         $subject = $defaultSubject;
         $headline = $defaultHeadline;
         $episodeLink = $defaultEpisodeLink;
         $bodyText = '';
-        $photoUrl = null;
-        $photoWidth = 560;
-        $photoAlign = 'center';
+        $photos = [];
         // Anfangszustand der Modul-Checkboxen: Ueberschrift und Folgen-Link meist gewuenscht
-        // (typischer Fall: neue Folge), Foto ist die Ausnahme und startet daher abgehakt-frei.
+        // (typischer Fall: neue Folge).
         $useHeadline = true;
         $useEpisodeLink = true;
-        $usePhoto = false;
     }
 }
 
@@ -400,6 +511,7 @@ if ($action === 'preview') {
 // uebernommenen Werten aus einem alten Newsletter, oder beim Zurueckspringen
 // aus der Vorschau - dann direkt offen.
 $showCreateForm = $error !== null || $reusedSend !== null || $action === 'edit_again';
+$showPhotosSection = !empty($photos);
 
 $pastSends = $pdo->query(
     'SELECT ns.*, a.name AS sent_by_name
@@ -444,7 +556,7 @@ $pastSends = $pdo->query(
     <?php if ($viewingSend !== null): ?>
         <h2>Vorschau: <?= htmlspecialchars($viewingSend['subject'], ENT_QUOTES) ?></h2>
         <p>Verschickt am <?= htmlspecialchars(date('d.m.Y', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> um <?= htmlspecialchars(date('H:i', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> Uhr an <strong><?= (int) $viewingSend['recipient_count'] ?></strong> Empfänger.</p>
-        <iframe srcdoc="<?= htmlspecialchars(render_email_html($templateFile, $viewingSend['headline'] ?? '', $viewingSend['episode_link'] ?? '', $viewingSend['body_text'], $viewingSend['photo_url'], normalize_photo_width($viewingSend['photo_width'] ?? 560), normalize_photo_align($viewingSend['photo_align'] ?? 'center')), ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
+        <iframe srcdoc="<?= htmlspecialchars(render_email_html($templateFile, $viewingSend['headline'] ?? '', $viewingSend['episode_link'] ?? '', $viewingSend['body_text'], $viewingSendPhotos), ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
         <div class="button-row" style="margin-top:16px;">
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?reuse_id=<?= (int) $viewingSend['id'] ?>">Für neuen Newsletter übernehmen</a>
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php">Zurück</a>
@@ -454,6 +566,24 @@ $pastSends = $pdo->query(
         <p><strong><?= $recipientCount ?></strong> gültige Empfänger in der Liste. Nichts wird verschickt, bevor du unten aktiv auf "Jetzt senden" klickst.</p>
         <iframe srcdoc="<?= htmlspecialchars($previewHtml, ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
 
+        <?php if (!empty($photos)): ?>
+        <h3 style="margin-top:24px;">Fotos zurechtrücken</h3>
+        <p style="font-size:0.85rem;color:#666;">Breite/Ausrichtung anpassen und auf "Vorschau aktualisieren" klicken, um das Ergebnis oben zu sehen - es wird dabei noch nichts verschickt.</p>
+        <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="preview">
+            <input type="hidden" name="subject" value="<?= htmlspecialchars($subject, ENT_QUOTES) ?>">
+            <input type="hidden" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>">
+            <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
+            <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
+            <?php if ($useHeadline): ?><input type="hidden" name="use_headline" value="1"><?php endif; ?>
+            <?php if ($useEpisodeLink): ?><input type="hidden" name="use_episode_link" value="1"><?php endif; ?>
+            <?php render_photo_editor_fields($photos); ?>
+            <div class="button-row">
+                <button type="submit" class="button-secondary">Vorschau aktualisieren</button>
+            </div>
+        </form>
+        <?php endif; ?>
+
         <div class="button-row" style="margin-top:16px;">
             <form method="post">
                 <input type="hidden" name="action" value="send">
@@ -461,11 +591,11 @@ $pastSends = $pdo->query(
                 <input type="hidden" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>">
                 <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
                 <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
-                <?php if ($photoUrl !== null): ?>
-                    <input type="hidden" name="photo_url" value="<?= htmlspecialchars($photoUrl, ENT_QUOTES) ?>">
-                    <input type="hidden" name="photo_width" value="<?= (int) $photoWidth ?>">
-                    <input type="hidden" name="photo_align" value="<?= htmlspecialchars($photoAlign, ENT_QUOTES) ?>">
-                <?php endif; ?>
+                <?php foreach ($photos as $i => $photo): ?>
+                    <input type="hidden" name="existing_photos[<?= $i ?>][url]" value="<?= htmlspecialchars($photo['url'], ENT_QUOTES) ?>">
+                    <input type="hidden" name="existing_photos[<?= $i ?>][width]" value="<?= (int) $photo['width'] ?>">
+                    <input type="hidden" name="existing_photos[<?= $i ?>][align]" value="<?= htmlspecialchars($photo['align'], ENT_QUOTES) ?>">
+                <?php endforeach; ?>
                 <button type="submit">Jetzt an <?= $recipientCount ?> Empfänger senden</button>
             </form>
             <form method="post">
@@ -476,12 +606,11 @@ $pastSends = $pdo->query(
                 <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
                 <?php if ($useHeadline): ?><input type="hidden" name="use_headline" value="1"><?php endif; ?>
                 <?php if ($useEpisodeLink): ?><input type="hidden" name="use_episode_link" value="1"><?php endif; ?>
-                <?php if ($usePhoto): ?><input type="hidden" name="use_photo" value="1"><?php endif; ?>
-                <?php if ($photoUrl !== null): ?>
-                    <input type="hidden" name="photo_url" value="<?= htmlspecialchars($photoUrl, ENT_QUOTES) ?>">
-                <?php endif; ?>
-                <input type="hidden" name="photo_width" value="<?= (int) $photoWidth ?>">
-                <input type="hidden" name="photo_align" value="<?= htmlspecialchars($photoAlign, ENT_QUOTES) ?>">
+                <?php foreach ($photos as $i => $photo): ?>
+                    <input type="hidden" name="existing_photos[<?= $i ?>][url]" value="<?= htmlspecialchars($photo['url'], ENT_QUOTES) ?>">
+                    <input type="hidden" name="existing_photos[<?= $i ?>][width]" value="<?= (int) $photo['width'] ?>">
+                    <input type="hidden" name="existing_photos[<?= $i ?>][align]" value="<?= htmlspecialchars($photo['align'], ENT_QUOTES) ?>">
+                <?php endforeach; ?>
                 <button type="submit" class="button-secondary" style="margin-bottom:0;">Zurück zum Bearbeiten</button>
             </form>
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php">Ganz neu anfangen</a>
@@ -491,7 +620,7 @@ $pastSends = $pdo->query(
         <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
         <button type="button" class="button-secondary" data-hide-create-form="create-form">- Newsletter verfassen</button>
         <?php if ($reusedSend): ?>
-            <p style="font-size:0.9rem;color:#666;">Betreff, Überschrift, Folgen-Link und Text wurden aus dem gewählten Newsletter übernommen. Ein eventuelles Foto wird bewusst <strong>nicht</strong> mit übernommen – bei Bedarf bitte neu hochladen.</p>
+            <p style="font-size:0.9rem;color:#666;">Betreff, Überschrift, Folgen-Link und Text wurden aus dem gewählten Newsletter übernommen. Etwaige Fotos werden bewusst <strong>nicht</strong> mit übernommen – bei Bedarf bitte neu hochladen.</p>
         <?php endif; ?>
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="action" value="preview">
@@ -524,33 +653,15 @@ $pastSends = $pdo->query(
             </label>
 
             <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
-                <input type="checkbox" id="chk_photo" name="use_photo" <?= $usePhoto ? 'checked' : '' ?> style="width:auto;">
-                Foto einbinden
+                <input type="checkbox" id="chk_photo" <?= $showPhotosSection ? 'checked' : '' ?> style="width:auto;">
+                Foto(s) einbinden
             </label>
             <div id="field_photo">
-                <?php if ($existingPhotoUrl): ?>
-                    <p>
-                        <img src="<?= htmlspecialchars($existingPhotoUrl, ENT_QUOTES) ?>" alt="" style="max-width:200px;border-radius:8px;display:block;margin-bottom:8px;">
-                        <span style="font-size:0.85rem;color:#666;">Bereits hochgeladenes Foto. Lade unten ein neues Foto hoch, um es zu ersetzen.</span>
-                        <input type="hidden" name="existing_photo_url" value="<?= htmlspecialchars($existingPhotoUrl, ENT_QUOTES) ?>">
-                    </p>
-                <?php endif; ?>
-                <label>Foto (max. 8 MB, JPG/PNG/WebP)
-                    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
-                </label>
-                <label>Fotobreite in der Mail (in Pixel, 100–560)
-                    <input type="number" name="photo_width" min="100" max="560" value="<?= (int) $photoWidth ?>">
-                </label>
-                <label>Ausrichtung des Fotos
-                    <select name="photo_align">
-                        <option value="left" <?= $photoAlign === 'left' ? 'selected' : '' ?>>Linksbündig</option>
-                        <option value="center" <?= $photoAlign === 'center' ? 'selected' : '' ?>>Zentriert</option>
-                        <option value="right" <?= $photoAlign === 'right' ? 'selected' : '' ?>>Rechtsbündig</option>
-                    </select>
-                </label>
+                <?php render_photo_editor_fields($photos); ?>
+                <p style="font-size:0.85rem;color:#666;">Breite/Ausrichtung lassen sich nach der Vorschau noch feinjustieren.</p>
             </div>
 
-            <p style="font-size:0.85rem;color:#666;">Logo und Fußzeile (Impressum/Datenschutz/Abmelden) der Vorlage bleiben immer unverändert. Nicht angehakte Module (Überschrift/Folgen-Link/Foto) erscheinen gar nicht erst im Newsletter.</p>
+            <p style="font-size:0.85rem;color:#666;">Logo und Fußzeile (Impressum/Datenschutz/Abmelden) der Vorlage bleiben immer unverändert. Nicht angehakte Module (Überschrift/Folgen-Link) bzw. eine leere Fotoliste erscheinen gar nicht erst im Newsletter.</p>
             <div class="button-row">
                 <button type="submit">Vorschau anzeigen</button>
             </div>
@@ -558,7 +669,8 @@ $pastSends = $pdo->query(
         <script>
             // Blendet die zu einer Checkbox gehoerenden Felder ein/aus - rein optisch,
             // die eigentliche Entscheidung (Modul an/aus) trifft serverseitig ohnehin
-            // die Checkbox selbst (siehe admin/newsletter.php use_headline/use_episode_link/use_photo).
+            // die Checkbox selbst (siehe admin/newsletter.php use_headline/use_episode_link) bzw.
+            // bei Fotos schlicht eine leere/nicht-leere $photos-Liste (chk_photo ist rein optisch).
             (function () {
                 function bind(checkboxId, fieldId) {
                     var checkbox = document.getElementById(checkboxId);
