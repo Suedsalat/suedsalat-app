@@ -98,6 +98,27 @@ function load_recipients(string $emailsFile): array
     return $recipients;
 }
 
+// Loest die Formular-Auswahl "An wen senden?" auf: 'all' = die normale oeffentliche
+// Abonnenten-Liste (emails.txt), 'list:<id>' = eine im Admin-Bereich gepflegte eigene
+// Empfaengerliste (z.B. eine Testergruppe), siehe admin/newsletter-lists.php.
+// Gibt ['recipients'=>string[], 'label'=>string] zurueck - das Label landet zu
+// Dokumentationszwecken in newsletter_sends.recipient_list_name.
+function resolve_newsletter_target(string $target, string $emailsFile, PDO $pdo): array
+{
+    if (str_starts_with($target, 'list:')) {
+        $listId = (int) substr($target, 5);
+        $listStmt = $pdo->prepare('SELECT name FROM newsletter_lists WHERE id = :id');
+        $listStmt->execute([':id' => $listId]);
+        $listName = $listStmt->fetchColumn();
+        if ($listName !== false) {
+            $membersStmt = $pdo->prepare('SELECT email FROM newsletter_list_members WHERE list_id = :id ORDER BY email ASC');
+            $membersStmt->execute([':id' => $listId]);
+            return ['recipients' => $membersStmt->fetchAll(PDO::FETCH_COLUMN), 'label' => $listName];
+        }
+    }
+    return ['recipients' => load_recipients($emailsFile), 'label' => 'Alle Abonnenten'];
+}
+
 // Baut aus dem Fliesstext-Feld den [EMAIL_BODY]-Ersatz. Bewusst 1:1 so, wie im
 // Eingabefeld getippt - jeder Zeilenumbruch (auch mehrere hintereinander fuer
 // groesseren Abstand) wird als <br> uebernommen, statt Leerzeilen zu "Absaetzen"
@@ -293,8 +314,11 @@ if ($action === 'send') {
     $episodeLink = trim((string) ($_POST['episode_link'] ?? ''));
     $bodyText = (string) ($_POST['body_text'] ?? '');
     $photos = collect_photos_from_request($allowedImageTypes, $maxImageBytes);
+    $target = (string) ($_POST['target'] ?? 'all');
 
-    $recipients = load_recipients($emailsFile);
+    $resolvedTarget = resolve_newsletter_target($target, $emailsFile, $pdo);
+    $recipients = $resolvedTarget['recipients'];
+    $targetLabel = $resolvedTarget['label'];
     $template = file_get_contents($templateFile);
 
     $headers  = "MIME-Version: 1.0" . "\r\n";
@@ -347,8 +371,8 @@ if ($action === 'send') {
     // (siehe [[project-suedsalat-app]]-Update Mehrfachfotos). Alte Sends behalten ihre Werte
     // in diesen Spalten, siehe "Ansehen"-Abschnitt weiter unten fuer den Fallback.
     $logStmt = $pdo->prepare(
-        'INSERT INTO newsletter_sends (subject, headline, episode_link, body_text, recipient_count, sent_by)
-         VALUES (:subject, :headline, :episode_link, :body_text, :recipient_count, :sent_by)'
+        'INSERT INTO newsletter_sends (subject, headline, episode_link, body_text, recipient_count, recipient_list_name, sent_by)
+         VALUES (:subject, :headline, :episode_link, :body_text, :recipient_count, :recipient_list_name, :sent_by)'
     );
     $logStmt->execute([
         ':subject' => $subject,
@@ -356,6 +380,7 @@ if ($action === 'send') {
         ':episode_link' => $episodeLink !== '' ? $episodeLink : null,
         ':body_text' => $bodyText,
         ':recipient_count' => $countSent,
+        ':recipient_list_name' => $targetLabel,
         ':sent_by' => $adminId,
     ]);
     $newSendId = (int) $pdo->lastInsertId();
@@ -429,6 +454,7 @@ if ($action === 'preview') {
     $episodeLink = $useEpisodeLink ? trim((string) ($_POST['episode_link'] ?? '')) : '';
 
     $bodyText = trim((string) ($_POST['body_text'] ?? ''));
+    $target = (string) ($_POST['target'] ?? 'all');
 
     if ($bodyText === '') {
         $error = 'Bitte einen Text für die Newsletter-Mail eingeben.';
@@ -444,8 +470,9 @@ if ($action === 'preview') {
     }
 
     if ($error === null) {
-        $recipients = load_recipients($emailsFile);
-        $recipientCount = count($recipients);
+        $resolvedTarget = resolve_newsletter_target($target, $emailsFile, $pdo);
+        $recipientCount = count($resolvedTarget['recipients']);
+        $targetLabel = $resolvedTarget['label'];
         $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photos);
     }
 } elseif ($action === 'edit_again') {
@@ -459,6 +486,7 @@ if ($action === 'preview') {
     $bodyText = (string) ($_POST['body_text'] ?? '');
     $useHeadline = isset($_POST['use_headline']);
     $useEpisodeLink = isset($_POST['use_episode_link']);
+    $target = (string) ($_POST['target'] ?? 'all');
     $photos = [];
     foreach ($_POST['existing_photos'] ?? [] as $entry) {
         $url = trim((string) ($entry['url'] ?? ''));
@@ -494,6 +522,7 @@ if ($action === 'preview') {
         $photos = [];
         $useHeadline = $headline !== '';
         $useEpisodeLink = $episodeLink !== '';
+        $target = 'all';
     } else {
         $subject = $defaultSubject;
         $headline = $defaultHeadline;
@@ -504,8 +533,11 @@ if ($action === 'preview') {
         // (typischer Fall: neue Folge).
         $useHeadline = true;
         $useEpisodeLink = true;
+        $target = 'all';
     }
 }
+
+$customLists = $pdo->query('SELECT id, name FROM newsletter_lists ORDER BY name ASC')->fetchAll();
 
 // Formular standardmaessig eingeklappt, ausser nach einem Fehler, mit
 // uebernommenen Werten aus einem alten Newsletter, oder beim Zurueckspringen
@@ -542,7 +574,10 @@ $pastSends = $pdo->query(
     <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
-    <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a><?php endif; ?>
+    <?php if ($isOwner): ?>
+        <a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a>
+        <a href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Empfängerlisten</a>
+    <?php endif; ?>
     <a href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
     <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
 </nav>
@@ -563,7 +598,7 @@ $pastSends = $pdo->query(
         </div>
     <?php elseif ($previewHtml !== null): ?>
         <h2>Vorschau</h2>
-        <p><strong><?= $recipientCount ?></strong> gültige Empfänger in der Liste. Nichts wird verschickt, bevor du unten aktiv auf "Jetzt senden" klickst.</p>
+        <p>Zielgruppe: <strong><?= htmlspecialchars($targetLabel, ENT_QUOTES) ?></strong> — <strong><?= $recipientCount ?></strong> gültige Empfänger. Nichts wird verschickt, bevor du unten aktiv auf "Jetzt senden" klickst.</p>
         <iframe srcdoc="<?= htmlspecialchars($previewHtml, ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
 
         <?php if (!empty($photos)): ?>
@@ -575,6 +610,7 @@ $pastSends = $pdo->query(
             <input type="hidden" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>">
             <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
             <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
+            <input type="hidden" name="target" value="<?= htmlspecialchars($target, ENT_QUOTES) ?>">
             <?php if ($useHeadline): ?><input type="hidden" name="use_headline" value="1"><?php endif; ?>
             <?php if ($useEpisodeLink): ?><input type="hidden" name="use_episode_link" value="1"><?php endif; ?>
             <?php render_photo_editor_fields($photos); ?>
@@ -591,6 +627,7 @@ $pastSends = $pdo->query(
                 <input type="hidden" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>">
                 <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
                 <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
+                <input type="hidden" name="target" value="<?= htmlspecialchars($target, ENT_QUOTES) ?>">
                 <?php foreach ($photos as $i => $photo): ?>
                     <input type="hidden" name="existing_photos[<?= $i ?>][url]" value="<?= htmlspecialchars($photo['url'], ENT_QUOTES) ?>">
                     <input type="hidden" name="existing_photos[<?= $i ?>][width]" value="<?= (int) $photo['width'] ?>">
@@ -604,6 +641,7 @@ $pastSends = $pdo->query(
                 <input type="hidden" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>">
                 <input type="hidden" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
                 <input type="hidden" name="body_text" value="<?= htmlspecialchars($bodyText, ENT_QUOTES) ?>">
+                <input type="hidden" name="target" value="<?= htmlspecialchars($target, ENT_QUOTES) ?>">
                 <?php if ($useHeadline): ?><input type="hidden" name="use_headline" value="1"><?php endif; ?>
                 <?php if ($useEpisodeLink): ?><input type="hidden" name="use_episode_link" value="1"><?php endif; ?>
                 <?php foreach ($photos as $i => $photo): ?>
@@ -627,6 +665,20 @@ $pastSends = $pdo->query(
             <label>Betreff
                 <input type="text" name="subject" value="<?= htmlspecialchars($subject, ENT_QUOTES) ?>" required>
             </label>
+
+            <label>An wen senden?
+                <select name="target">
+                    <option value="all" <?= $target === 'all' ? 'selected' : '' ?>>Alle Abonnenten</option>
+                    <?php foreach ($customLists as $list): ?>
+                        <option value="list:<?= (int) $list['id'] ?>" <?= $target === 'list:' . $list['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($list['name'], ENT_QUOTES) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <?php if (empty($customLists)): ?>
+                <p style="font-size:0.85rem;color:#666;">Noch keine eigene Liste angelegt — das geht unter <a href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Empfängerlisten</a>.</p>
+            <?php endif; ?>
 
             <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
                 <input type="checkbox" id="chk_headline" name="use_headline" <?= $useHeadline ? 'checked' : '' ?> style="width:auto;">
@@ -694,13 +746,14 @@ $pastSends = $pdo->query(
         <div class="table-scroll">
         <table>
             <thead>
-                <tr><th>Betreff</th><th>Verschickt</th><th>Empfänger</th><th>Von</th><th></th></tr>
+                <tr><th>Betreff</th><th>Verschickt</th><th>Zielgruppe</th><th>Empfänger</th><th>Von</th><th></th></tr>
             </thead>
             <tbody>
             <?php foreach ($pastSends as $send): ?>
                 <tr>
                     <td><?= htmlspecialchars($send['subject'], ENT_QUOTES) ?></td>
                     <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime($send['sent_at'])), ENT_QUOTES) ?></td>
+                    <td><?= htmlspecialchars($send['recipient_list_name'] ?? 'Alle Abonnenten', ENT_QUOTES) ?></td>
                     <td><?= (int) $send['recipient_count'] ?></td>
                     <td><?= htmlspecialchars($send['sent_by_name'] ?? '—', ENT_QUOTES) ?></td>
                     <td>
