@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:record/record.dart';
 
+import '../../models/episode.dart';
 import '../../services/api_service.dart';
 
 class FeedbackScreen extends StatefulWidget {
@@ -51,6 +52,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   static const _maxRecordDuration = Duration(minutes: 5);
 
   String? _type;
+  String? _episodeGuid;
+  List<Episode> _episodes = [];
   DateTime? _suggestedDate;
   File? _media;
   List<File> _photos = [];
@@ -74,6 +77,25 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       _type = widget.initialType!;
     }
     _apiService.trackView('feedback');
+    _loadEpisodes();
+  }
+
+  /// Laedt die Folgenliste fuer die optionale Folgen-Zuordnung. Schlaegt der
+  /// Abruf fehl, bleibt die Auswahl einfach leer - das Feld ist optional,
+  /// daher kein Fehlerzustand noetig.
+  Future<void> _loadEpisodes() async {
+    try {
+      final episodes = await _apiService.fetchEpisodes();
+      if (mounted) setState(() => _episodes = episodes);
+    } catch (_) {
+      // Ignorieren - Folgen-Zuordnung ist optional.
+    }
+  }
+
+  /// Kurzform fuer die Folgen-Auswahl (z.B. "Episode 21" statt dem vollen Titel).
+  String _episodeShortLabel(String title) {
+    final match = RegExp(r'^(Episode\s+\d+)', caseSensitive: false).firstMatch(title);
+    return match?.group(1) ?? title;
   }
 
   @override
@@ -319,6 +341,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         photos: _type == 'sprachnachricht' ? null : _photos,
         suggestedDate: _type == 'termin_tipp' ? _suggestedDate : null,
         consentPublish: consentPublish,
+        episodeGuid: _episodeGuid,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -374,6 +397,21 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 _photoError = null;
               }),
             ),
+            if (_episodes.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _episodeGuid,
+                decoration: const InputDecoration(labelText: 'Bezieht sich auf eine Folge? (optional)'),
+                hint: const Text('Keine Folge ausgewählt'),
+                items: _episodes
+                    .map((episode) => DropdownMenuItem(
+                          value: episode.guid,
+                          child: Text(_episodeShortLabel(episode.title)),
+                        ))
+                    .toList(),
+                onChanged: (value) => setState(() => _episodeGuid = value),
+              ),
+            ],
             const SizedBox(height: 16),
             TextFormField(
               controller: _nameController,

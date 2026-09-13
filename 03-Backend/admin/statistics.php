@@ -158,6 +158,7 @@ if ($view === 'funnel') {
 } elseif ($view === 'content') {
     $sql = "SELECT e.guid, e.title,
                 COALESCE((SELECT SUM(pc.count) FROM episode_play_counts pc WHERE pc.episode_guid = e.guid $dayFilterSql), 0) AS total_plays,
+                (SELECT COUNT(*) FROM feedback_messages WHERE episode_guid = e.guid) AS feedback_count,
                 (SELECT COUNT(*) FROM movie_tips WHERE episode_guid = e.guid)
                     + (SELECT COUNT(*) FROM location_tips WHERE episode_guid = e.guid)
                     + (SELECT COUNT(*) FROM events WHERE episode_guid = e.guid) AS related_content_count
@@ -378,18 +379,19 @@ $episodeShortLabel = static function (string $title): string {
 
     <?php elseif ($view === 'content'): ?>
         <h2>Meistgehörte Folgen &amp; ausgelöste Inhalte</h2>
-        <p style="font-size:0.85rem;color:#666;">"Ausgelöste Inhalte" zählt Filmtipps/Locationtipps/Veranstaltungen, die auf diese Folge verweisen - ein Näherungswert dafür, welche Folgen am meisten Reaktion/Anschlussinhalt erzeugen (echtes Feedback ist bisher nicht pro Folge erfasst).</p>
+        <p style="font-size:0.85rem;color:#666;">"Feedback" zählt Nutzer-Feedback, das explizit dieser Folge zugeordnet wurde. "Ausgelöste Inhalte" zählt zusätzlich Filmtipps/Locationtipps/Veranstaltungen, die auf diese Folge verweisen.</p>
         <?php if (empty($contentRows)): ?>
             <p>Noch keine Folgen im Cache.</p>
         <?php else: ?>
         <div class="table-scroll">
         <table>
-            <thead><tr><th>Folge</th><th>Wiedergaben</th><th>Ausgelöste Inhalte</th></tr></thead>
+            <thead><tr><th>Folge</th><th>Wiedergaben</th><th>Feedback</th><th>Ausgelöste Inhalte</th></tr></thead>
             <tbody>
             <?php foreach ($contentRows as $row): ?>
                 <tr>
                     <td><?= htmlspecialchars($row['title'], ENT_QUOTES) ?></td>
                     <td><?= (int) $row['total_plays'] ?></td>
+                    <td><?= (int) $row['feedback_count'] ?></td>
                     <td><?= (int) $row['related_content_count'] ?></td>
                 </tr>
             <?php endforeach; ?>

@@ -158,6 +158,7 @@ class ApiService {
     List<File>? photos,
     DateTime? suggestedDate,
     bool consentPublish = false,
+    String? episodeGuid,
   }) async {
     Future<http.StreamedResponse> buildAndSend(Map<String, String> headers) async {
       final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/feedback.php'));
@@ -167,6 +168,9 @@ class ApiService {
       request.fields['consent_publish'] = consentPublish ? '1' : '0';
       if (senderName != null && senderName.trim().isNotEmpty) {
         request.fields['sender_name'] = senderName.trim();
+      }
+      if (episodeGuid != null && episodeGuid.isNotEmpty) {
+        request.fields['episode_guid'] = episodeGuid;
       }
       if (suggestedDate != null) {
         request.fields['suggested_date'] =

@@ -29,6 +29,7 @@ RateLimiter::record('feedback_submit', $ip);
 $senderName = trim((string) ($_POST['sender_name'] ?? ''));
 $type = trim((string) ($_POST['type'] ?? 'allgemein'));
 $message = trim((string) ($_POST['message'] ?? ''));
+$episodeGuid = trim((string) ($_POST['episode_guid'] ?? '')) ?: null;
 
 $allowedTypes = ['allgemein', 'termin_tipp', 'foto_vorschlag', 'kino_tipp', 'sprachnachricht', 'frage', 'location_tipp'];
 if (!in_array($type, $allowedTypes, true)) {
@@ -194,13 +195,25 @@ if (!empty($_FILES['media']['name']) && is_array($_FILES['media']['name'])) {
 }
 
 $pdo = Database::connection();
+
+// Nur eine tatsaechlich bekannte Folge zulassen - sonst einfach ignorieren
+// (die Zuordnung ist rein optional, kein Grund die ganze Einreichung abzulehnen).
+if ($episodeGuid !== null) {
+    $episodeExists = $pdo->prepare('SELECT 1 FROM episodes_cache WHERE guid = :guid');
+    $episodeExists->execute([':guid' => $episodeGuid]);
+    if ($episodeExists->fetchColumn() === false) {
+        $episodeGuid = null;
+    }
+}
+
 $stmt = $pdo->prepare(
-    'INSERT INTO feedback_messages (sender_name, type, message, suggested_date, image_path, media_type, consent_publish)
-     VALUES (:sender_name, :type, :message, :suggested_date, :image_path, :media_type, :consent_publish)'
+    'INSERT INTO feedback_messages (sender_name, type, episode_guid, message, suggested_date, image_path, media_type, consent_publish)
+     VALUES (:sender_name, :type, :episode_guid, :message, :suggested_date, :image_path, :media_type, :consent_publish)'
 );
 $stmt->execute([
     ':sender_name' => $senderName !== '' ? $senderName : null,
     ':type' => $type,
+    ':episode_guid' => $episodeGuid,
     ':message' => $message,
     ':suggested_date' => $suggestedDate,
     ':image_path' => $imageUrl,
@@ -233,6 +246,14 @@ $emailBody = "<p>Neue Nachricht über das Feedback-Formular der App:</p>"
     . "<strong>Typ:</strong> " . htmlspecialchars($typeLabels[$type] ?? 'Allgemeines Feedback', ENT_QUOTES);
 if ($type === 'sprachnachricht') {
     $emailBody .= "<br><strong>Veröffentlichung im Podcast:</strong> " . ($consentPublish ? 'Ja' : 'Nein');
+}
+if ($episodeGuid !== null) {
+    $episodeTitle = $pdo->prepare('SELECT title FROM episodes_cache WHERE guid = :guid');
+    $episodeTitle->execute([':guid' => $episodeGuid]);
+    $episodeTitleValue = $episodeTitle->fetchColumn();
+    if ($episodeTitleValue !== false) {
+        $emailBody .= "<br><strong>Folge:</strong> " . htmlspecialchars($episodeTitleValue, ENT_QUOTES);
+    }
 }
 $emailBody .= "</p>"
     . "<p>" . nl2br(htmlspecialchars($message, ENT_QUOTES)) . "</p>"

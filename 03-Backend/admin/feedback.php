@@ -106,9 +106,10 @@ $typeLabels = [
 
 // Nutzer-Feedback
 $feedbackRows = $pdo->query(
-    "SELECT f.*, a.name AS handled_by_name
+    "SELECT f.*, a.name AS handled_by_name, e.title AS episode_title
      FROM feedback_messages f
      LEFT JOIN admins a ON a.id = f.handled_by
+     LEFT JOIN episodes_cache e ON e.guid = f.episode_guid
      ORDER BY f.created_at DESC"
 )->fetchAll();
 
@@ -227,6 +228,9 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                     <td><?= htmlspecialchars($item['from'], ENT_QUOTES) ?></td>
                     <td style="text-align:left;">
                         <?= htmlspecialchars($item['type'], ENT_QUOTES) ?>
+                        <?php if (!empty($item['row']['episode_title'] ?? null)): ?>
+                            <br><span style="font-size:0.8rem;color:#666;">Folge: <?= htmlspecialchars($item['row']['episode_title'], ENT_QUOTES) ?></span>
+                        <?php endif; ?>
                         <?php if (($item['media_type'] ?? 'image') === 'audio'): ?>
                             <br><span class="badge <?= !empty($item['consent_publish']) ? '' : 'badge-danger' ?>" style="margin-left:0;">Veröffentlichung: <?= !empty($item['consent_publish']) ? 'Ja' : 'Nein' ?></span>
                         <?php endif; ?>
