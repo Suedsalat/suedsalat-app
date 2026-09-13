@@ -77,15 +77,26 @@ nav.admin-nav details.nav-dropdown .nav-dropdown-menu {
   left: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  background: var(--color-secondary);
-  padding: 10px;
+  background: #fff;
+  padding: 6px;
   border-radius: var(--radius-input);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   z-index: 10;
   min-width: 190px;
 }
-nav.admin-nav details.nav-dropdown .nav-dropdown-menu a { display: block; }
+/* Flache Zeilen statt gestapelter gruener Buttons - sieht sonst wie zwei
+   uebereinanderliegende Buttons statt einem Menue aus. */
+nav.admin-nav details.nav-dropdown .nav-dropdown-menu a {
+  display: block;
+  background: none;
+  color: var(--color-text);
+  font-weight: 400;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+nav.admin-nav details.nav-dropdown .nav-dropdown-menu a:hover {
+  background: var(--color-secondary);
+}
 #logout-countdown { font-family: 'Courier New', monospace; font-variant-numeric: tabular-nums; }
 
 .auth-box, .content-box {
