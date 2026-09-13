@@ -19,8 +19,10 @@ $allEpisodes = $pdo->query('SELECT guid, title, pub_date FROM episodes_cache ORD
 $views = [
     'funnel' => 'Hördauer-Trichter',
     'hourly' => 'Tageszeit-Verteilung',
+    'weekday' => 'Wochentag-Verteilung',
     'platform' => 'Plattform-Verteilung',
     'reach' => 'Reichweite vs. Wiedergaben',
+    'completion' => 'Abschlussquote je Folge',
     'growth' => 'Wachstumstrend gesamt',
     'push' => 'Push-Wirksamkeit',
     'content' => 'Meistgehörte Folgen & ausgelöste Inhalte',
@@ -77,8 +79,10 @@ $tierLabels = [
 
 $funnelRows = [];
 $hourlyRows = [];
+$weekdayRows = [];
 $platformRows = [];
 $reachRows = [];
+$completionRows = [];
 $growthRows = [];
 $pushRows = [];
 $contentRows = [];
@@ -109,6 +113,15 @@ if ($view === 'funnel') {
     );
     $stmt->execute([...$episodeFilterParams, ...$dayFilterParams]);
     $hourlyUnknownCount = (int) $stmt->fetchColumn();
+} elseif ($view === 'weekday') {
+    // WEEKDAY() liefert 0=Montag..6=Sonntag - passt zur in Deutschland ueblichen
+    // Wochenansicht (Woche beginnt montags), siehe auch das "growth"-Wochen-Grouping unten.
+    $stmt = $pdo->prepare(
+        "SELECT WEEKDAY(day) AS weekday, SUM(count) AS total FROM episode_play_counts
+         WHERE 1=1 $episodeFilterSql $dayFilterSql GROUP BY weekday ORDER BY weekday"
+    );
+    $stmt->execute([...$episodeFilterParams, ...$dayFilterParams]);
+    $weekdayRows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 } elseif ($view === 'platform') {
     $stmt = $pdo->prepare(
         "SELECT platform, SUM(count) AS total FROM episode_play_platform WHERE 1=1 $episodeFilterSql $dayFilterSql GROUP BY platform"
@@ -132,6 +145,18 @@ if ($view === 'funnel') {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([...$dayFilterParams, ...$episodeFilterParams]);
     $reachRows = $stmt->fetchAll();
+} elseif ($view === 'completion') {
+    $sql = "SELECT e.guid, e.title, e.duration,
+                COALESCE((SELECT SUM(pc.count) FROM episode_play_counts pc WHERE pc.episode_guid = e.guid $dayFilterSql), 0) AS started,
+                COALESCE((SELECT SUM(m.count) FROM episode_play_milestones m WHERE m.episode_guid = e.guid AND m.tier = 'end' $dayFilterSql), 0) AS finished
+            FROM episodes_cache e";
+    if ($selectedEpisode !== '') {
+        $sql .= ' WHERE e.guid = :episode_guid';
+    }
+    $sql .= ' HAVING started > 0 ORDER BY (finished / started) DESC';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([...$dayFilterParams, ...$episodeFilterParams]);
+    $completionRows = $stmt->fetchAll();
 } elseif ($view === 'growth') {
     $stmt = $pdo->prepare(
         "SELECT DATE_SUB(day, INTERVAL WEEKDAY(day) DAY) AS week_start, SUM(count) AS total
@@ -288,6 +313,27 @@ $episodeShortLabel = static function (string $title): string {
         </div>
         <?php endif; ?>
 
+    <?php elseif ($view === 'weekday'): ?>
+        <h2>Wochentag-Verteilung</h2>
+        <?php if (empty($weekdayRows)): ?>
+            <p>Noch keine Daten vorhanden.</p>
+        <?php else: ?>
+        <?php $weekdayLabels = [0 => 'Montag', 1 => 'Dienstag', 2 => 'Mittwoch', 3 => 'Donnerstag', 4 => 'Freitag', 5 => 'Samstag', 6 => 'Sonntag']; ?>
+        <div class="table-scroll">
+        <table>
+            <thead><tr><th>Wochentag</th><th>Wiedergaben</th></tr></thead>
+            <tbody>
+            <?php foreach ($weekdayLabels as $key => $label): ?>
+                <tr>
+                    <td><?= $label ?></td>
+                    <td><?= (int) ($weekdayRows[$key] ?? 0) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+        <?php endif; ?>
+
     <?php elseif ($view === 'platform'): ?>
         <h2>Plattform-Verteilung</h2>
         <?php if (empty($platformRows)): ?>
@@ -326,6 +372,31 @@ $episodeShortLabel = static function (string $title): string {
                     <td><?= htmlspecialchars($row['title'], ENT_QUOTES) ?></td>
                     <td><?= (int) $row['total_plays'] ?></td>
                     <td><?= (int) $row['unique_device_days'] ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+        <?php endif; ?>
+
+    <?php elseif ($view === 'completion'): ?>
+        <h2>Abschlussquote je Folge</h2>
+        <p style="font-size:0.85rem;color:#666;">Vergleicht alle Folgen danach, wie viel Prozent der Starter auch bis zum Ende dranbleiben - hilft z. B. zu sehen, ob kürzere Folgen eher komplett gehört werden als längere (Spalte "Länge").</p>
+        <?php if (empty($completionRows)): ?>
+            <p>Noch keine Wiedergaben erfasst.</p>
+        <?php else: ?>
+        <div class="table-scroll">
+        <table>
+            <thead><tr><th>Folge</th><th>Länge</th><th>Gestartet</th><th>Bis zum Ende</th><th>Abschlussquote</th></tr></thead>
+            <tbody>
+            <?php foreach ($completionRows as $row): ?>
+                <?php $rate = $row['started'] > 0 ? $row['finished'] / $row['started'] * 100 : 0; ?>
+                <tr>
+                    <td><?= htmlspecialchars($row['title'], ENT_QUOTES) ?></td>
+                    <td><?= htmlspecialchars($row['duration'] ?? '—', ENT_QUOTES) ?></td>
+                    <td><?= (int) $row['started'] ?></td>
+                    <td><?= (int) $row['finished'] ?></td>
+                    <td><?= number_format($rate, 1, ',', '.') ?> %</td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
