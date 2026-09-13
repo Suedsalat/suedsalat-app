@@ -343,13 +343,8 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
     <a href="<?= BASE_PATH ?>/admin/statistics.php">Statistiken</a>
     <?php if ($isOwner): ?>
-    <details class="nav-dropdown">
-        <summary>Newsletter ▾</summary>
-        <div class="nav-dropdown-menu">
-            <a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter versenden</a>
-            <a href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Empfängerlisten</a>
-        </div>
-    </details>
+    <a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a>
+    <a href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Empfängerlisten</a>
     <?php endif; ?>
     <a href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
     <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
