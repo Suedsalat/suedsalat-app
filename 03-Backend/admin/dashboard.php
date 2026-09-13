@@ -117,6 +117,9 @@ $episodePlayCounts = $pdo->query(
 
 <section class="content-box">
     <h2>Nutzung nach Bereich <span style="font-weight:normal;font-size:0.85rem;">(anonym, ohne Personenbezug)</span></h2>
+    <button type="button" class="button" data-show-create-form="screen-views-table">+ anzeigen</button>
+    <div id="screen-views-table" style="display:none;">
+    <button type="button" class="button-secondary" data-hide-create-form="screen-views-table">- ausblenden</button>
     <div class="table-scroll">
     <table>
         <thead>
@@ -133,10 +136,14 @@ $episodePlayCounts = $pdo->query(
         </tbody>
     </table>
     </div>
+    </div>
 </section>
 
 <section class="content-box">
     <h2>Folgen-Wiedergaben <span style="font-weight:normal;font-size:0.85rem;">(anonym, ohne Personenbezug)</span></h2>
+    <button type="button" class="button" data-show-create-form="episode-plays-table">+ anzeigen</button>
+    <div id="episode-plays-table" style="display:none;">
+    <button type="button" class="button-secondary" data-hide-create-form="episode-plays-table">- ausblenden</button>
     <?php if (empty($episodePlayCounts)): ?>
         <p>Noch keine Folgen im Cache.</p>
     <?php else: ?>
@@ -158,6 +165,7 @@ $episodePlayCounts = $pdo->query(
     </table>
     </div>
     <?php endif; ?>
+    </div>
 </section>
 
 <section class="content-box">
@@ -233,6 +241,7 @@ $episodePlayCounts = $pdo->query(
 </section>
 
 <script src="<?= BASE_PATH ?>/admin/assets/table-scroll-sync.js?v=<?= @filemtime(__DIR__ . '/assets/table-scroll-sync.js') ?>"></script>
+<script src="<?= BASE_PATH ?>/admin/assets/toggle-create-form.js?v=<?= @filemtime(__DIR__ . '/assets/toggle-create-form.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
 </body>
 </html>
