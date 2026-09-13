@@ -50,8 +50,6 @@ nav.admin-nav a {
   transition: background-color 0.2s;
 }
 nav.admin-nav a:hover { background: var(--color-primary-hover); }
-nav.admin-nav a:nth-last-child(2) { margin-left: 30px; }
-nav.admin-nav a.nav-gap { margin-left: 20px; }
 
 /* Gruppiert seltener gebrauchte Nav-Punkte (z.B. Newsletter/Empfaengerlisten)
    hinter einem Aufklapp-Menue statt sie einzeln in die Leiste zu quetschen -
