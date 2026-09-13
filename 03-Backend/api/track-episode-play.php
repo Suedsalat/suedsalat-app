@@ -1,10 +1,13 @@
 <?php
 declare(strict_types=1);
 
-// Rein anonyme Zaehlung, wie oft eine Folge abgespielt wurde (fuer die
-// Statistik im Admin-Dashboard). Wie api/track-view.php wird bewusst NICHTS
-// gespeichert, das Rueckschluesse auf einzelne Nutzer zulaesst - keine IP,
-// kein Geraete-Token, keine Sitzungs-ID, nur ein taeglicher Zaehler pro Folge.
+// Rein anonyme Zaehlung, wie oft/wann/auf welcher Plattform eine Folge
+// abgespielt wurde (fuer die Statistik im Admin-Bereich). Es wird bewusst
+// NICHTS gespeichert, das Rueckschluesse auf einzelne Nutzer zulaesst:
+// - keine IP, kein Klartext-Geraete-Token, keine Sitzungs-ID
+// - die "Reichweite" (eindeutige Geraete) wird nur ueber einen Einweg-Hash aus
+//   Geraete-ID + Folge + Tag gezaehlt, der sich NICHT folgen- oder
+//   tagesuebergreifend einem Geraet zuordnen laesst (siehe episode_unique_devices)
 
 require_once __DIR__ . '/../config/bootstrap.php';
 
@@ -14,7 +17,7 @@ use Suedsalat\RateLimiter;
 
 header('Content-Type: application/json; charset=utf-8');
 
-ApiAuth::requireDeviceToken();
+$claims = ApiAuth::requireDeviceToken();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -50,10 +53,35 @@ if ($existsStmt->fetchColumn() === false) {
     exit;
 }
 
+$hour = (int) date('G');
 $stmt = $pdo->prepare(
-    'INSERT INTO episode_play_counts (episode_guid, day, count) VALUES (:guid, CURDATE(), 1)
+    'INSERT INTO episode_play_counts (episode_guid, day, hour, count) VALUES (:guid, CURDATE(), :hour, 1)
      ON DUPLICATE KEY UPDATE count = count + 1'
 );
-$stmt->execute([':guid' => $episodeGuid]);
+$stmt->execute([':guid' => $episodeGuid, ':hour' => $hour]);
+
+// Plattform + Reichweite nur erfassbar, wenn ein gueltiges Geraete-Token vorliegt
+// (im Soft-Auth-Uebergang faellt das bei sehr alten App-Versionen weg - dann
+// zaehlt nur der reine Start-Zaehler oben, ohne Plattform/Reichweite-Aufschluesselung).
+$deviceId = $claims['sub'] ?? null;
+if ($deviceId !== null) {
+    $platform = $pdo->prepare('SELECT platform FROM devices WHERE id = :id');
+    $platform->execute([':id' => $deviceId]);
+    $platformValue = $platform->fetchColumn();
+
+    if ($platformValue !== false) {
+        $stmt = $pdo->prepare(
+            'INSERT INTO episode_play_platform (episode_guid, day, platform, count) VALUES (:guid, CURDATE(), :platform, 1)
+             ON DUPLICATE KEY UPDATE count = count + 1'
+        );
+        $stmt->execute([':guid' => $episodeGuid, ':platform' => $platformValue]);
+    }
+
+    $deviceHash = hash('sha256', $deviceId . '|' . $episodeGuid . '|' . date('Y-m-d') . '|' . APP_SECRET);
+    $stmt = $pdo->prepare(
+        'INSERT IGNORE INTO episode_unique_devices (episode_guid, day, device_hash) VALUES (:guid, CURDATE(), :hash)'
+    );
+    $stmt->execute([':guid' => $episodeGuid, ':hash' => $deviceHash]);
+}
 
 echo json_encode(['status' => 'ok']);

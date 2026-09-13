@@ -241,6 +241,23 @@ class ApiService {
     }
   }
 
+  /// Zaehlt anonym, dass eine Folge eine Hoerdauer-Stufe erreicht hat
+  /// (5/15/25/35/45 Minuten oder "bis zum Ende") - fuer die Trichter-
+  /// Auswertung im Admin-Bereich. Fehler werden bewusst verschluckt.
+  Future<void> trackEpisodeMilestone(String episodeGuid, String tier) async {
+    try {
+      await _authorizedRequest(
+        (headers) => http.post(
+          Uri.parse('$baseUrl/track-episode-milestone.php'),
+          headers: headers,
+          body: {'episode_guid': episodeGuid, 'tier': tier},
+        ),
+      );
+    } catch (_) {
+      // Netzwerkfehler ignorieren - reine Statistik, nicht kritisch.
+    }
+  }
+
   Future<void> registerPushToken(String deviceToken, String platform) async {
     await _authorizedRequest(
       (headers) => http.post(

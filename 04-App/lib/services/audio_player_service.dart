@@ -21,6 +21,7 @@ class AudioPlayerService extends ChangeNotifier {
     });
     _player.onPositionChanged.listen((newPosition) {
       position = newPosition;
+      _checkMilestones();
       notifyListeners();
     });
     _player.onDurationChanged.listen((newDuration) {
@@ -81,6 +82,18 @@ class AudioPlayerService extends ChangeNotifier {
   List<Episode> _queue = [];
   int _queueIndex = -1;
 
+  // Hoerdauer-Stufen ("Trichter") fuer die anonyme Statistik im Admin-Bereich -
+  // pro laufender Wiedergabe merkt sich _firedMilestones, welche Stufen schon
+  // gemeldet wurden, damit z.B. Vor-/Zurueckspulen dieselbe Stufe nicht mehrfach zaehlt.
+  static const _minuteMilestones = {
+    '5min': Duration(minutes: 5),
+    '15min': Duration(minutes: 15),
+    '25min': Duration(minutes: 25),
+    '35min': Duration(minutes: 35),
+    '45min': Duration(minutes: 45),
+  };
+  final Set<String> _firedMilestones = {};
+
   Episode? currentEpisode;
   PlayerState playerState = PlayerState.stopped;
   Duration position = Duration.zero;
@@ -122,8 +135,34 @@ class AudioPlayerService extends ChangeNotifier {
     position = Duration.zero;
     duration = Duration.zero;
     notifyListeners();
+    _firedMilestones.clear();
     await _player.play(UrlSource(episode.audioUrl));
     unawaited(_api.trackEpisodePlay(episode.guid));
+  }
+
+  /// Prueft bei jedem Positions-Update, ob eine neue Hoerdauer-Stufe erreicht
+  /// wurde, und meldet sie einmalig. "Bis zum Ende" wird bewusst schon eine
+  /// Minute vor dem tatsaechlichen Ende ausgeloest (Restlaufzeit - 1 Minute),
+  /// da manche Hoerer schon beim Abspann abschalten, bevor die Datei technisch
+  /// zu Ende ist - eine strikte "letzte Sekunde"-Pruefung wuerde solche
+  /// vollstaendigen Anhoerungen sonst nicht mitzaehlen.
+  void _checkMilestones() {
+    final episode = currentEpisode;
+    if (episode == null) return;
+
+    for (final entry in _minuteMilestones.entries) {
+      if (!_firedMilestones.contains(entry.key) && position >= entry.value) {
+        _firedMilestones.add(entry.key);
+        unawaited(_api.trackEpisodeMilestone(episode.guid, entry.key));
+      }
+    }
+
+    if (!_firedMilestones.contains('end') &&
+        duration.inSeconds > 0 &&
+        position.inSeconds >= (duration.inSeconds - 60).clamp(0, duration.inSeconds)) {
+      _firedMilestones.add('end');
+      unawaited(_api.trackEpisodeMilestone(episode.guid, 'end'));
+    }
   }
 
   Future<void> togglePlayPause() async {

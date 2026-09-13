@@ -354,6 +354,7 @@ $showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !
     <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
     <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
     <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
+    <a href="<?= BASE_PATH ?>/admin/statistics.php">Statistiken</a>
     <?php if ($isOwner): ?><a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a>
     <a href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Empfängerlisten</a><?php endif; ?>
     <a href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>

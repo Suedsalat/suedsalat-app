@@ -52,6 +52,17 @@ function sendPushForNewEpisode(string $title): void
     FcmSender::sendToAllDevices("Neue Folge: $title", 'Jetzt reinhören!');
 }
 
+// Haelt fest, wann fuer eine Folge die "Neue Folge"-Push rausging - Grundlage
+// fuer die Push-Wirksamkeits-Auswertung (Wiedergaben kurz danach vs. spaeter).
+function recordPushSent(PDO $pdo, string $guid): void
+{
+    $stmt = $pdo->prepare(
+        'INSERT INTO episode_push_sent (episode_guid, sent_at) VALUES (:guid, NOW())
+         ON DUPLICATE KEY UPDATE sent_at = VALUES(sent_at)'
+    );
+    $stmt->execute([':guid' => $guid]);
+}
+
 $xml = fetchRssXml(RSS_FEED_URL);
 if ($xml === null) {
     exit(1);
@@ -104,6 +115,7 @@ foreach ($xml->channel->item as $item) {
     if ($isNew && $insertStmt->rowCount() > 0) {
         $newCount++;
         sendPushForNewEpisode((string) $item->title);
+        recordPushSent($pdo, $guid);
     }
 }
 
