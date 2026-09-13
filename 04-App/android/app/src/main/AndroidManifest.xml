@@ -42,6 +42,13 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/ic_launcher_background" />
+        <!-- Meldet die App bei Android Auto als Medien-App an (audio_service
+             registriert den passenden MediaBrowserService selbst ueber sein
+             eigenes Manifest, das beim Build automatisch mit diesem hier
+             zusammengefuehrt wird). -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

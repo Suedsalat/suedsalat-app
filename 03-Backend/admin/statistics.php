@@ -26,6 +26,7 @@ $views = [
     'growth' => 'Wachstumstrend gesamt',
     'push' => 'Push-Wirksamkeit',
     'content' => 'Meistgehörte Folgen & ausgelöste Inhalte',
+    'car' => 'Android Auto / CarPlay',
 ];
 
 $view = $_GET['view'] ?? 'funnel';
@@ -86,6 +87,7 @@ $completionRows = [];
 $growthRows = [];
 $pushRows = [];
 $contentRows = [];
+$carContextRows = [];
 
 if ($view === 'funnel') {
     $stmt = $pdo->prepare(
@@ -195,6 +197,13 @@ if ($view === 'funnel') {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([...$dayFilterParams, ...$episodeFilterParams]);
     $contentRows = $stmt->fetchAll();
+} elseif ($view === 'car') {
+    $stmt = $pdo->prepare(
+        "SELECT context, SUM(count) AS total FROM episode_play_car_context
+         WHERE 1=1 $episodeFilterSql $dayFilterSql GROUP BY context"
+    );
+    $stmt->execute([...$episodeFilterParams, ...$dayFilterParams]);
+    $carContextRows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 }
 
 $episodeShortLabel = static function (string $title): string {
@@ -464,6 +473,27 @@ $episodeShortLabel = static function (string $title): string {
                     <td><?= (int) $row['total_plays'] ?></td>
                     <td><?= (int) $row['feedback_count'] ?></td>
                     <td><?= (int) $row['related_content_count'] ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+        <?php endif; ?>
+
+    <?php elseif ($view === 'car'): ?>
+        <h2>Android Auto / CarPlay</h2>
+        <p style="font-size:0.85rem;color:#666;">Zählt Wiedergaben, die laut App über Android Auto bzw. CarPlay liefen (erkannt über den aktiven Auto-Modus bzw. die Audio-Ausgabe-Route) - rein informativ, ohne Geräte-/Fahrzeugbezug. Ältere App-Versionen ohne diese Erkennung tauchen hier gar nicht auf.</p>
+        <?php if (empty($carContextRows)): ?>
+            <p>Noch keine Daten vorhanden.</p>
+        <?php else: ?>
+        <div class="table-scroll">
+        <table>
+            <thead><tr><th>Kontext</th><th>Wiedergaben</th></tr></thead>
+            <tbody>
+            <?php foreach (['android_auto' => 'Android Auto', 'carplay' => 'CarPlay'] as $key => $label): ?>
+                <tr>
+                    <td><?= $label ?></td>
+                    <td><?= (int) ($carContextRows[$key] ?? 0) ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

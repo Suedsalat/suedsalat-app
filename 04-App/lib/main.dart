@@ -1,9 +1,11 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/splash_screen.dart';
+import 'services/audio_handler.dart';
 import 'services/push_notification_service.dart';
 import 'theme/app_theme.dart';
 
@@ -17,6 +19,19 @@ void main() async {
   if (prefs.getBool('push_enabled') ?? true) {
     PushNotificationService.instance.enable();
   }
+
+  // Registriert die App als Medien-App beim Betriebssystem (Sperrbildschirm-
+  // Steuerung, Android Auto, CarPlay-Standardbildschirm "Wird wiedergegeben").
+  // Siehe SuedsalatAudioHandler fuer die eigentliche Anbindung an den
+  // bestehenden AudioPlayerService.
+  await AudioService.init(
+    builder: () => SuedsalatAudioHandler(),
+    config: const AudioServiceConfig(
+      androidNotificationChannelId: 'eu.suedsalat.suedsalat_app.audio',
+      androidNotificationChannelName: 'Südsalat Wiedergabe',
+      androidNotificationOngoing: true,
+    ),
+  );
 
   runApp(const SuedsalatApp());
 }

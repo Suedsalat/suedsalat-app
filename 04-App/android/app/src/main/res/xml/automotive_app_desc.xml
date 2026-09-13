@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Meldet die App bei Android Auto als reine Medien-App an (Wiedergabe von
+     Audio-Inhalten ueber die Fahrzeug-Oberflaeche), siehe AndroidManifest.xml. -->
+<automotiveApp>
+    <uses name="media" />
+</automotiveApp>

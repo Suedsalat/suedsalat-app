@@ -231,13 +231,16 @@ class ApiService {
   /// Zaehlt anonym (ohne Personenbezug), dass eine Folge abgespielt wurde -
   /// fuer die Nutzungsstatistik im Admin-Dashboard. Fehler werden bewusst
   /// verschluckt, analog zu trackView().
-  Future<void> trackEpisodePlay(String episodeGuid) async {
+  Future<void> trackEpisodePlay(String episodeGuid, {String? carContext}) async {
     try {
       await _authorizedRequest(
         (headers) => http.post(
           Uri.parse('$baseUrl/track-episode-play.php'),
           headers: headers,
-          body: {'episode_guid': episodeGuid},
+          body: {
+            'episode_guid': episodeGuid,
+            if (carContext != null) 'car_context': carContext,
+          },
         ),
       );
     } catch (_) {

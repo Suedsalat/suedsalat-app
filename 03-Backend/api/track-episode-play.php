@@ -84,4 +84,15 @@ if ($deviceId !== null) {
     $stmt->execute([':guid' => $episodeGuid, ':hash' => $deviceHash]);
 }
 
+// Android Auto/CarPlay-Kontext (siehe CarContextService in der App) - rein
+// informativ, kein Geraete-/Fahrzeug-Identifier, nur ein Tageszaehler.
+$carContext = trim((string) ($_POST['car_context'] ?? ''));
+if (in_array($carContext, ['android_auto', 'carplay'], true)) {
+    $stmt = $pdo->prepare(
+        'INSERT INTO episode_play_car_context (episode_guid, day, context, count) VALUES (:guid, CURDATE(), :context, 1)
+         ON DUPLICATE KEY UPDATE count = count + 1'
+    );
+    $stmt->execute([':guid' => $episodeGuid, ':context' => $carContext]);
+}
+
 echo json_encode(['status' => 'ok']);

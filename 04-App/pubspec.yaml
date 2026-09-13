@@ -38,6 +38,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   audioplayers: ^6.1.0
+  audio_service: ^0.18.15
   chewie: ^1.8.5
   firebase_core: ^3.8.0
   firebase_messaging: ^15.1.5

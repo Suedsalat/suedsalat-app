@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/episode.dart';
 import 'api_service.dart';
+import 'car_context_service.dart';
 import 'listened_episodes_service.dart';
 
 /// Haelt genau einen AudioPlayer als App-weiten Singleton, damit eine laufende
@@ -137,7 +138,15 @@ class AudioPlayerService extends ChangeNotifier {
     notifyListeners();
     _firedMilestones.clear();
     await _player.play(UrlSource(episode.audioUrl));
-    unawaited(_api.trackEpisodePlay(episode.guid));
+    unawaited(_trackPlayWithCarContext(episode.guid));
+  }
+
+  /// Ermittelt beim Start einer Folge, ob gerade ueber Android Auto/CarPlay
+  /// wiedergegeben wird, und meldet das zusammen mit dem Play-Ereignis - siehe
+  /// CarContextService fuer die Erkennung, komplett anonym.
+  Future<void> _trackPlayWithCarContext(String episodeGuid) async {
+    final carContext = await CarContextService.detect();
+    await _api.trackEpisodePlay(episodeGuid, carContext: carContext);
   }
 
   /// Prueft bei jedem Positions-Update, ob eine neue Hoerdauer-Stufe erreicht
@@ -167,13 +176,25 @@ class AudioPlayerService extends ChangeNotifier {
 
   Future<void> togglePlayPause() async {
     if (playerState == PlayerState.playing) {
-      await _player.pause();
-    } else if (playerState == PlayerState.completed) {
-      await _player.seek(Duration.zero);
-      await _player.resume();
+      await pause();
     } else {
-      await _player.resume();
+      await play();
     }
+  }
+
+  /// Explizites Abspielen (statt togglePlayPause) - wird von der
+  /// Android-Auto-/CarPlay-Bruecke (SuedsalatAudioHandler) gebraucht, da
+  /// Fernsteuerungen dort play/pause als getrennte Kommandos senden, nicht
+  /// als einen einzigen Umschalt-Knopf wie der In-App-Button.
+  Future<void> play() async {
+    if (playerState == PlayerState.completed) {
+      await _player.seek(Duration.zero);
+    }
+    await _player.resume();
+  }
+
+  Future<void> pause() async {
+    await _player.pause();
   }
 
   /// Springt zu [newPosition]. Aktualisiert `position` sofort selbst, statt nur
