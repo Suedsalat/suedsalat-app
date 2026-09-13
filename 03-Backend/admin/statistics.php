@@ -275,7 +275,7 @@ $episodeShortLabel = static function (string $title): string {
         </div>
         <div class="button-row">
             <button type="submit">Anzeigen</button>
-            <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/statistics.php">Filter zurücksetzen</a>
+            <a class="button button-secondary" style="margin-bottom:0;" href="<?= BASE_PATH ?>/admin/statistics.php">Filter zurücksetzen</a>
         </div>
     </form>
 
