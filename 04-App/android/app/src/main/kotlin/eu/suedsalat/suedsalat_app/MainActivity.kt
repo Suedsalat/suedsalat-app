@@ -1,11 +1,16 @@
 package eu.suedsalat.suedsalat_app
 
 import android.content.res.Configuration
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterActivity() {
+// Erbt von AudioServiceActivity (audio_service-Paket) statt direkt von
+// FlutterActivity - das teilt die Flutter-Engine korrekt mit dem
+// Hintergrund-Wiedergabe-Service (siehe audio_service-Doku "Custom Android
+// activity"). Ohne diese Umstellung startet zwar eine zweite Engine-Instanz,
+// aber die Medien-Session/Android-Auto-Anbindung funktioniert nicht richtig.
+class MainActivity : AudioServiceActivity() {
     private val carContextChannel = "eu.suedsalat.suedsalat_app/car_context"
 
     // Erkennt Android Auto anhand des aktiven UI-Modus - Configuration.uiMode
