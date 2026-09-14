@@ -30,6 +30,9 @@ void main() async {
       androidNotificationChannelId: 'eu.suedsalat.suedsalat_app.audio',
       androidNotificationChannelName: 'Südsalat Wiedergabe',
       androidNotificationOngoing: true,
+      // Markenfarbe Gruen (#77B538) - faerbt Benachrichtigung/Android-Auto-
+      // Oberflaeche im Südsalat-Look statt eines Android-Standardtons.
+      notificationColor: Color(0xFF77B538),
     ),
   );
 
