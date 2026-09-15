@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:audioplayers/audioplayers.dart' show PlayerState;
 
 import '../models/episode.dart';
 import 'api_service.dart';
+import 'audio_debug_log.dart';
 import 'audio_player_service.dart';
 
 /// Duenne Bruecke zwischen der bestehenden AudioPlayerService (die die
@@ -67,11 +70,19 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<List<MediaItem>> getChildren(String parentMediaId, [Map<String, dynamic>? options]) async {
+    unawaited(AudioDebugLog.add('getChildren(parentMediaId="$parentMediaId")'));
     if (parentMediaId != AudioService.browsableRootId) {
+      unawaited(AudioDebugLog.add('  -> nicht root, gebe [] zurueck'));
       return [];
     }
-    final episodes = await _loadEpisodes();
-    return episodes.map(_mediaItemFor).toList();
+    try {
+      final episodes = await _loadEpisodes();
+      unawaited(AudioDebugLog.add('  -> ${episodes.length} Folgen geladen'));
+      return episodes.map(_mediaItemFor).toList();
+    } catch (e, st) {
+      unawaited(AudioDebugLog.add('  -> FEHLER: $e\n$st'));
+      rethrow;
+    }
   }
 
   // Wird von Android Auto separat aufgerufen, um Detailinformationen zu einer
@@ -81,19 +92,32 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
   // "Auswahl konnte nicht geladen werden" anzeigte.
   @override
   Future<MediaItem?> getMediaItem(String mediaId) async {
-    final episodes = await _loadEpisodes();
-    final index = episodes.indexWhere((episode) => episode.guid == mediaId);
-    return index != -1 ? _mediaItemFor(episodes[index]) : null;
+    unawaited(AudioDebugLog.add('getMediaItem(mediaId="$mediaId")'));
+    try {
+      final episodes = await _loadEpisodes();
+      final index = episodes.indexWhere((episode) => episode.guid == mediaId);
+      unawaited(AudioDebugLog.add('  -> ${index != -1 ? "gefunden: ${episodes[index].title}" : "NICHT gefunden"}'));
+      return index != -1 ? _mediaItemFor(episodes[index]) : null;
+    } catch (e, st) {
+      unawaited(AudioDebugLog.add('  -> FEHLER: $e\n$st'));
+      rethrow;
+    }
   }
 
   @override
-  Future<void> playFromMediaId(String mediaId, [Map<String, dynamic>? extras]) => _startEpisode(mediaId);
+  Future<void> playFromMediaId(String mediaId, [Map<String, dynamic>? extras]) {
+    unawaited(AudioDebugLog.add('playFromMediaId(mediaId="$mediaId", extras=$extras)'));
+    return _startEpisode(mediaId);
+  }
 
   // Manche Android-Auto-/Assistant-Versionen rufen statt playFromMediaId erst
   // prepareFromMediaId auf (z.B. bei "Ok Google, spiel Folge X") - ohne diese
   // Ueberschreibung bliebe das wirkungslos (BaseAudioHandler-Default tut nichts).
   @override
-  Future<void> prepareFromMediaId(String mediaId, [Map<String, dynamic>? extras]) => _startEpisode(mediaId);
+  Future<void> prepareFromMediaId(String mediaId, [Map<String, dynamic>? extras]) {
+    unawaited(AudioDebugLog.add('prepareFromMediaId(mediaId="$mediaId", extras=$extras)'));
+    return _startEpisode(mediaId);
+  }
 
   // Android Auto ruft beim Antippen einer Folge offenbar sowohl
   // prepareFromMediaId als auch playFromMediaId auf (teils praktisch
@@ -104,6 +128,7 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
 
   Future<void> _startEpisode(String mediaId) async {
     if (_startingMediaId == mediaId) {
+      unawaited(AudioDebugLog.add('_startEpisode: bereits am Starten fuer "$mediaId", ignoriere doppelten Aufruf'));
       return;
     }
     _startingMediaId = mediaId;
@@ -116,15 +141,19 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
       final episodes = await _loadEpisodes();
       final index = episodes.indexWhere((episode) => episode.guid == mediaId);
       if (index == -1) {
+        unawaited(AudioDebugLog.add('_startEpisode: "$mediaId" NICHT in Folgenliste gefunden'));
         playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
         return;
       }
+      unawaited(AudioDebugLog.add('_startEpisode: starte "${episodes[index].title}" ...'));
       await _service.playFromList(episodes, index);
-    } catch (_) {
+      unawaited(AudioDebugLog.add('_startEpisode: playFromList() zurueckgekehrt, playerState=${_service.playerState}'));
+    } catch (e, st) {
       // Fehler nicht unbehandelt durchreichen (sonst wertet Android Auto die
       // Anfrage als fehlgeschlagen, ohne dass die App danach noch reagiert),
       // sondern als Fehlerzustand melden - _syncState() korrigiert das wieder
       // auf "ready", sobald AudioPlayerService tatsaechlich weiterkommt.
+      unawaited(AudioDebugLog.add('_startEpisode: FEHLER beim Starten von "$mediaId": $e\n$st'));
       playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
     } finally {
       if (_startingMediaId == mediaId) {
