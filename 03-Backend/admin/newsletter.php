@@ -963,7 +963,7 @@ $pastSends = $pdo->query(
 
             <div class="button-row">
                 <button type="submit" name="action" value="preview">Vorschau anzeigen</button>
-                <button type="submit" name="action" value="save_draft" class="button-secondary">Als Vorlage speichern</button>
+                <button type="submit" name="action" value="save_draft" class="button-secondary" style="margin-bottom:0;">Als Vorlage speichern</button>
             </div>
         </form>
         <script>
