@@ -52,11 +52,34 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   @override
-  Future<void> playFromMediaId(String mediaId, [Map<String, dynamic>? extras]) async {
-    final episodes = await _loadEpisodes();
-    final index = episodes.indexWhere((episode) => episode.guid == mediaId);
-    if (index != -1) {
+  Future<void> playFromMediaId(String mediaId, [Map<String, dynamic>? extras]) => _startEpisode(mediaId);
+
+  // Manche Android-Auto-/Assistant-Versionen rufen statt playFromMediaId erst
+  // prepareFromMediaId auf (z.B. bei "Ok Google, spiel Folge X") - ohne diese
+  // Ueberschreibung bliebe das wirkungslos (BaseAudioHandler-Default tut nichts).
+  @override
+  Future<void> prepareFromMediaId(String mediaId, [Map<String, dynamic>? extras]) => _startEpisode(mediaId);
+
+  Future<void> _startEpisode(String mediaId) async {
+    // Sofort auf "laedt" umschalten, statt erst nach dem Laden/Anspielen der
+    // Audio-Datei ueberhaupt eine Zustandsaenderung zu melden - sonst wertet
+    // Android Auto die fehlende Rueckmeldung waehrend des Ladens/Pufferns
+    // moeglicherweise als fehlgeschlagen ("Auswahl konnte nicht geladen werden").
+    playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.loading));
+    try {
+      final episodes = await _loadEpisodes();
+      final index = episodes.indexWhere((episode) => episode.guid == mediaId);
+      if (index == -1) {
+        playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
+        return;
+      }
       await _service.playFromList(episodes, index);
+    } catch (_) {
+      // Fehler nicht unbehandelt durchreichen (sonst wertet Android Auto die
+      // Anfrage als fehlgeschlagen, ohne dass die App danach noch reagiert),
+      // sondern als Fehlerzustand melden - _syncState() korrigiert das wieder
+      // auf "ready", sobald AudioPlayerService tatsaechlich weiterkommt.
+      playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
     }
   }
 
@@ -112,7 +135,7 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
   Future<void> skipToNext() => _service.playNext();
 
   @override
-  Future<void> fastForward() => _service.seek(_service.position + const Duration(seconds: 30));
+  Future<void> fastForward() => _service.seek(_service.position + const Duration(seconds: 15));
 
   @override
   Future<void> rewind() => _service.seek(_service.position - const Duration(seconds: 15));
