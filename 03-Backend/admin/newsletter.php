@@ -128,14 +128,111 @@ function resolve_newsletter_target(string $target, string $emailsFile, PDO $pdo)
     return ['recipients' => load_recipients($emailsFile), 'label' => 'Newsletter'];
 }
 
-// Baut aus dem Fliesstext-Feld den [EMAIL_BODY]-Ersatz. Bewusst 1:1 so, wie im
-// Eingabefeld getippt - jeder Zeilenumbruch (auch mehrere hintereinander fuer
-// groesseren Abstand) wird als <br> uebernommen, statt Leerzeilen zu "Absaetzen"
-// zusammenzufassen (das hat zuvor dazu gefuehrt, dass bewusste Abstaende verloren gingen).
+// Erlaubte Formatierungs-Tags aus der kleinen Toolbar im Textfeld (Fett,
+// Kursiv, Liste, Link) - alles andere (Skripte, Stile, eingefuegte Word-
+// Formatierungen usw.) wird beim Speichern/Versenden entfernt, siehe
+// sanitize_newsletter_body_html().
+const NEWSLETTER_BODY_ALLOWED_TAGS = ['b', 'strong', 'i', 'em', 'u', 'a', 'ul', 'ol', 'li', 'br', 'p'];
+
+// Entfernt aus dem vom contenteditable-Feld kommenden HTML alles, was nicht in
+// NEWSLETTER_BODY_ALLOWED_TAGS steht (Tag wird entfernt, Inhalt bleibt - z.B.
+// wird aus einem eingefuegten <span style="..."> einfach nur der Text), und
+// laesst bei <a> ausschliesslich ein http(s)/mailto-href stehen (alle anderen
+// Attribute, z.B. onclick, fliegen raus). Bewusst per DOMDocument statt per
+// eigenem Regex-Parsing - HTML per Regex zu saeubern ist notorisch fehleranfaellig.
+function sanitize_newsletter_body_html(string $html): string
+{
+    $html = trim($html);
+    if ($html === '') {
+        return '';
+    }
+
+    // Falls hier noch alte, als reiner Text gespeicherte Newsletter reinkommen
+    // (vor Einfuehrung der Formatierungsleiste): echte Zeilenumbrueche wie
+    // gehabt in <br> uebersetzen, bevor das Ganze als HTML geparst wird.
+    $html = nl2br($html);
+
+    $doc = new DOMDocument();
+    libxml_use_internal_errors(true);
+    $doc->loadHTML(
+        '<?xml encoding="utf-8"?><div>' . $html . '</div>',
+        LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+    );
+    libxml_clear_errors();
+
+    $root = $doc->getElementsByTagName('div')->item(0);
+    if ($root === null) {
+        return '';
+    }
+    sanitize_newsletter_body_node($doc, $root);
+
+    $result = '';
+    foreach (iterator_to_array($root->childNodes) as $child) {
+        $result .= $doc->saveHTML($child);
+    }
+    return $result;
+}
+
+function sanitize_newsletter_body_node(DOMDocument $doc, DOMNode $node): void
+{
+    foreach (iterator_to_array($node->childNodes) as $child) {
+        if ($child instanceof DOMComment) {
+            $node->removeChild($child);
+            continue;
+        }
+        if (!($child instanceof DOMElement)) {
+            continue;
+        }
+
+        $tag = strtolower($child->tagName);
+        if ($tag === 'script' || $tag === 'style') {
+            $node->removeChild($child);
+            continue;
+        }
+
+        sanitize_newsletter_body_node($doc, $child);
+
+        if (!in_array($tag, NEWSLETTER_BODY_ALLOWED_TAGS, true)) {
+            // Tag selbst entfernen, aber den (bereits bereinigten) Inhalt an
+            // seiner Stelle stehen lassen statt ihn mit wegzuwerfen.
+            while ($child->firstChild) {
+                $node->insertBefore($child->firstChild, $child);
+            }
+            $node->removeChild($child);
+            continue;
+        }
+
+        $href = $tag === 'a' ? $child->getAttribute('href') : null;
+        foreach (iterator_to_array($child->attributes ?? []) as $attr) {
+            $child->removeAttribute($attr->name);
+        }
+
+        if ($tag === 'a') {
+            $href = trim((string) $href);
+            $isSafeScheme = $href !== '' && preg_match('#^(https?://|mailto:)#i', $href) === 1;
+            if ($isSafeScheme) {
+                $child->setAttribute('href', $href);
+                $child->setAttribute('target', '_blank');
+                $child->setAttribute('rel', 'noopener');
+            } else {
+                // Kein brauchbares/sicheres Ziel - Link-Tag verwerfen, Text bleibt.
+                while ($child->firstChild) {
+                    $node->insertBefore($child->firstChild, $child);
+                }
+                $node->removeChild($child);
+            }
+        }
+    }
+}
+
+// Baut aus dem Fliesstext-Feld den [EMAIL_BODY]-Ersatz. Das Feld kommt als
+// (bereits um unerlaubte Tags bereinigtes, siehe sanitize_newsletter_body_html)
+// HTML aus der kleinen Formatierungsleiste im Formular - Fett/Kursiv/Liste/Link
+// werden 1:1 uebernommen.
 function build_email_body_html(string $bodyText): string
 {
-    $escaped = nl2br(htmlspecialchars(trim($bodyText), ENT_QUOTES));
-    return '<p style="margin: 0 0 20px; font-size: 16px; line-height: 1.5; color: #102024;">' . $escaped . '</p>';
+    $sanitized = sanitize_newsletter_body_html($bodyText);
+    return '<div style="margin: 0 0 20px; font-size: 16px; line-height: 1.5; color: #102024;">' . $sanitized . '</div>';
 }
 
 function build_email_headline_html(string $headline): string
@@ -838,9 +935,15 @@ $pastSends = $pdo->query(
                 </label>
             </div>
 
-            <label>Text der Newsletter-Mail
-                <textarea name="body_text" rows="8" required><?= htmlspecialchars($bodyText, ENT_QUOTES) ?></textarea>
-            </label>
+            <label>Text der Newsletter-Mail</label>
+            <div id="body_text_toolbar" class="richtext-toolbar">
+                <button type="button" data-cmd="bold" title="Fett"><strong>F</strong></button>
+                <button type="button" data-cmd="italic" title="Kursiv"><em>K</em></button>
+                <button type="button" data-cmd="insertUnorderedList" title="Liste">• Liste</button>
+                <button type="button" data-cmd="link" title="Link einfügen">🔗 Link</button>
+            </div>
+            <div id="body_text_editor" class="richtext-editor" contenteditable="true"><?= sanitize_newsletter_body_html($bodyText) ?></div>
+            <textarea name="body_text" id="body_text_hidden" required style="display:none;"></textarea>
 
             <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
                 <input type="checkbox" id="chk_photo" <?= $showPhotosSection ? 'checked' : '' ?> style="width:auto;">
@@ -974,5 +1077,6 @@ $pastSends = $pdo->query(
 <script src="<?= BASE_PATH ?>/admin/assets/toggle-create-form.js?v=<?= @filemtime(__DIR__ . '/assets/toggle-create-form.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/scroll-restore.js?v=<?= @filemtime(__DIR__ . '/assets/scroll-restore.js') ?>"></script>
+<script src="<?= BASE_PATH ?>/admin/assets/newsletter-richtext.js?v=<?= @filemtime(__DIR__ . '/assets/newsletter-richtext.js') ?>"></script>
 </body>
 </html>

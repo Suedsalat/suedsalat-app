@@ -118,6 +118,44 @@ input, textarea, select {
   color: var(--color-text);
 }
 
+.richtext-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.richtext-toolbar button {
+  background: #eee;
+  color: var(--color-text);
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+  border-radius: var(--radius-input);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.richtext-toolbar button:hover {
+  background: #e0e0e0;
+}
+
+.richtext-editor {
+  width: 100%;
+  min-height: 160px;
+  margin-top: 6px;
+  margin-bottom: 16px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: var(--radius-input);
+  background: #fff;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.richtext-editor a {
+  color: var(--color-primary);
+}
+
 button, .button {
   background: var(--color-primary);
   color: #fff;
@@ -265,6 +303,9 @@ tr[id]:target { outline: 3px solid var(--color-primary); outline-offset: -3px; }
   .admin-header { color: #eee; }
   .auth-box, .content-box, nav.admin-nav { background: #1f1f1f; color: #eee; }
   input, textarea, select { background: #2a2a2a; color: #eee; border-color: #444; }
+  .richtext-editor { background: #2a2a2a; color: #eee; border-color: #444; }
+  .richtext-toolbar button { background: #333; color: #eee; border-color: #444; }
+  .richtext-toolbar button:hover { background: #3d3d3d; }
   th, td { border-color: #333; }
   .feedback-list li { background: rgba(255, 255, 255, 0.07); }
   tr.is-done { background: rgba(255, 255, 255, 0.06); }
