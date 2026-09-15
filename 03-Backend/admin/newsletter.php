@@ -944,7 +944,11 @@ $pastSends = $pdo->query(
                 <button type="button" data-cmd="link" title="Link einfügen">🔗 Link</button>
             </div>
             <div id="body_text_editor" class="richtext-editor" contenteditable="true"><?= sanitize_newsletter_body_html($bodyText) ?></div>
-            <textarea name="body_text" id="body_text_hidden" required style="display:none;"></textarea>
+            <!-- Kein "required" hier: ein unsichtbares Pflichtfeld (display:none) blockiert
+                 in Chrome/Firefox das Absenden des kompletten Formulars stillschweigend,
+                 ohne sichtbare Fehlermeldung - die Leer-Pruefung passiert stattdessen wie
+                 gehabt serverseitig ($error bei leerem body_text, siehe oben). -->
+            <textarea name="body_text" id="body_text_hidden" style="display:none;"></textarea>
 
             <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
                 <input type="checkbox" id="chk_photo" <?= $showPhotosSection ? 'checked' : '' ?> style="width:auto;">
