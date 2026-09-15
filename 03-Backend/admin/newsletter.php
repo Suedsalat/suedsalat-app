@@ -316,6 +316,21 @@ if (!file_exists($templateFile)) {
     $action = null;
 }
 
+// --- VORLAGE LÖSCHEN (nur per POST mit action=delete_draft, gleiches
+//     Passwort-Bestaetigungs-Muster wie ueberall sonst im Admin-Bereich) ---
+if ($action === 'delete_draft') {
+    if (!verify_admin_password($pdo, $adminId, (string) ($_POST['confirm_password'] ?? ''))) {
+        header('Location: ' . BASE_PATH . '/admin/newsletter.php?delete_error=1');
+        exit;
+    }
+    $draftId = (int) ($_POST['draft_id'] ?? 0);
+    if ($draftId > 0) {
+        $pdo->prepare('DELETE FROM newsletter_drafts WHERE id = :id')->execute([':id' => $draftId]);
+    }
+    header('Location: ' . BASE_PATH . '/admin/newsletter.php');
+    exit;
+}
+
 // --- STUFE 2: ECHTER VERSAND (nur per POST mit action=send) ---
 if ($action === 'send') {
     $subject = trim((string) ($_POST['subject'] ?? $defaultSubject));
@@ -450,6 +465,8 @@ if ($action === null && isset($_GET['view_id'])) {
 $previewHtml = null;
 $recipientCount = null;
 $reusedSend = null;
+$loadedDraft = null;
+$draftSaved = null;
 if ($action === 'preview') {
     $subject = trim((string) ($_POST['subject'] ?? $defaultSubject)) ?: $defaultSubject;
 
@@ -486,6 +503,48 @@ if ($action === 'preview') {
         $recipientCount = count($resolvedTarget['recipients']);
         $targetLabel = $resolvedTarget['label'];
         $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photos);
+    }
+} elseif ($action === 'save_draft') {
+    // Speichert die aktuell im Formular stehenden Werte als benannte Vorlage
+    // (newsletter_drafts) - bewusst ohne Fotos, dieselbe Entscheidung wie bei
+    // "Für neuen Newsletter übernehmen" weiter unten (Fotos sollen bei jedem
+    // Newsletter neu ausgewählt werden). Ein bereits vorhandener Name wird
+    // ueberschrieben (UNIQUE KEY auf name + ON DUPLICATE KEY UPDATE), damit
+    // sich eine Vorlage einfach aktualisieren laesst, ohne Duplikate anzulegen.
+    $subject = trim((string) ($_POST['subject'] ?? '')) ?: $defaultSubject;
+    $useHeadline = isset($_POST['use_headline']);
+    $headline = $useHeadline ? trim((string) ($_POST['headline'] ?? '')) : '';
+    $useEpisodeLink = isset($_POST['use_episode_link']);
+    $episodeLink = $useEpisodeLink ? trim((string) ($_POST['episode_link'] ?? '')) : '';
+    $bodyText = trim((string) ($_POST['body_text'] ?? ''));
+    $target = (string) ($_POST['target'] ?? 'all');
+    $selectedFromEmail = array_key_exists($_POST['from_email'] ?? '', $availableSenders) ? $_POST['from_email'] : $defaultFromEmail;
+    $photos = [];
+    $draftName = trim((string) ($_POST['draft_name'] ?? ''));
+    $currentDraftName = $draftName;
+
+    if ($draftName === '') {
+        $error = 'Bitte einen Namen für die Vorlage eingeben.';
+    } else {
+        $draftStmt = $pdo->prepare(
+            'INSERT INTO newsletter_drafts (name, subject, headline, episode_link, body_text, use_headline, use_episode_link, from_email, target)
+             VALUES (:name, :subject, :headline, :episode_link, :body_text, :use_headline, :use_episode_link, :from_email, :target)
+             ON DUPLICATE KEY UPDATE subject = VALUES(subject), headline = VALUES(headline), episode_link = VALUES(episode_link),
+                body_text = VALUES(body_text), use_headline = VALUES(use_headline), use_episode_link = VALUES(use_episode_link),
+                from_email = VALUES(from_email), target = VALUES(target)'
+        );
+        $draftStmt->execute([
+            ':name' => $draftName,
+            ':subject' => $subject,
+            ':headline' => $headline !== '' ? $headline : null,
+            ':episode_link' => $episodeLink !== '' ? $episodeLink : null,
+            ':body_text' => $bodyText,
+            ':use_headline' => $useHeadline ? 1 : 0,
+            ':use_episode_link' => $useEpisodeLink ? 1 : 0,
+            ':from_email' => $selectedFromEmail,
+            ':target' => $target,
+        ]);
+        $draftSaved = $draftName;
     }
 } elseif ($action === 'edit_again') {
     // Von der Vorschau zurueck zum Bearbeiten (siehe "Zurueck zum Bearbeiten"-Button
@@ -524,7 +583,30 @@ if ($action === 'preview') {
         $reusedSend = $stmt->fetch() ?: null;
     }
 
-    if ($reusedSend) {
+    // Eine gespeicherte Vorlage laden (siehe "Vorlage laden" oben im Formular) -
+    // hat Vorrang vor reuse_id, da beide ueber GET kommen aber nie gleichzeitig
+    // benutzt werden.
+    $loadDraftId = isset($_GET['load_draft_id']) && $_GET['load_draft_id'] !== '' ? (int) $_GET['load_draft_id'] : null;
+    $loadedDraft = null;
+    if ($loadDraftId) {
+        $stmt = $pdo->prepare('SELECT * FROM newsletter_drafts WHERE id = :id');
+        $stmt->execute([':id' => $loadDraftId]);
+        $loadedDraft = $stmt->fetch() ?: null;
+    }
+
+    if ($loadedDraft) {
+        // Bewusst auch hier ohne Fotos, siehe Hinweis bei action=save_draft.
+        $subject = $loadedDraft['subject'];
+        $headline = $loadedDraft['headline'] ?? '';
+        $episodeLink = $loadedDraft['episode_link'] ?? '';
+        $bodyText = $loadedDraft['body_text'];
+        $photos = [];
+        $useHeadline = (bool) $loadedDraft['use_headline'];
+        $useEpisodeLink = (bool) $loadedDraft['use_episode_link'];
+        $target = $loadedDraft['target'] ?? 'all';
+        $selectedFromEmail = array_key_exists($loadedDraft['from_email'] ?? '', $availableSenders) ? $loadedDraft['from_email'] : $defaultFromEmail;
+        $currentDraftName = $loadedDraft['name'];
+    } elseif ($reusedSend) {
         // Bewusst nur die Text-Bestandteile uebernehmen (Betreff, Ueberschrift,
         // Folgen-Link, Fliesstext) - ein eventuelles Foto NICHT, das soll bei
         // jedem Newsletter bewusst neu ausgewaehlt werden (siehe Hinweis im Formular).
@@ -552,12 +634,16 @@ if ($action === 'preview') {
     }
 }
 
+$currentDraftName ??= '';
+
 $customLists = $pdo->query('SELECT id, name FROM newsletter_lists ORDER BY name ASC')->fetchAll();
+$drafts = $pdo->query('SELECT id, name, updated_at FROM newsletter_drafts ORDER BY updated_at DESC')->fetchAll();
 
 // Formular standardmaessig eingeklappt, ausser nach einem Fehler, mit
-// uebernommenen Werten aus einem alten Newsletter, oder beim Zurueckspringen
-// aus der Vorschau - dann direkt offen.
-$showCreateForm = $error !== null || $reusedSend !== null || $action === 'edit_again';
+// uebernommenen Werten aus einem alten Newsletter/einer Vorlage, oder beim
+// Zurueckspringen aus der Vorschau - dann direkt offen.
+$showCreateForm = $error !== null || $reusedSend !== null || $loadedDraft !== null
+    || $action === 'edit_again' || $action === 'save_draft';
 $showPhotosSection = !empty($photos);
 
 $pastSends = $pdo->query(
@@ -602,6 +688,9 @@ $pastSends = $pdo->query(
 
     <?php if ($error): ?>
         <p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
+    <?php endif; ?>
+    <?php if (isset($_GET['delete_error'])): ?>
+        <p class="error text-center">Falsches Passwort — nichts wurde gelöscht.</p>
     <?php endif; ?>
 
     <?php if ($viewingSend !== null): ?>
@@ -673,14 +762,34 @@ $pastSends = $pdo->query(
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php">Ganz neu anfangen</a>
         </div>
     <?php else: ?>
+        <?php if ($draftSaved !== null): ?>
+            <p style="color:#2e7d32;font-weight:bold;">Vorlage „<?= htmlspecialchars($draftSaved, ENT_QUOTES) ?>" gespeichert.</p>
+        <?php endif; ?>
         <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Newsletter verfassen</button>
+        <?php if (!empty($drafts)): ?>
+        <form method="get" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin:12px 0;">
+            <label style="flex:1;min-width:200px;">Vorlage laden
+                <select name="load_draft_id">
+                    <option value="">– Vorlage wählen –</option>
+                    <?php foreach ($drafts as $draft): ?>
+                        <option value="<?= (int) $draft['id'] ?>" <?= $currentDraftName === $draft['name'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($draft['name'], ENT_QUOTES) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <button type="submit" class="button-secondary">Laden</button>
+        </form>
+        <?php endif; ?>
         <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
         <button type="button" class="button-secondary" data-hide-create-form="create-form">- Newsletter verfassen</button>
         <?php if ($reusedSend): ?>
             <p style="font-size:0.9rem;color:#666;">Betreff, Überschrift, Folgen-Link und Text wurden aus dem gewählten Newsletter übernommen. Etwaige Fotos werden bewusst <strong>nicht</strong> mit übernommen – bei Bedarf bitte neu hochladen.</p>
         <?php endif; ?>
+        <?php if ($loadedDraft): ?>
+            <p style="font-size:0.9rem;color:#666;">Vorlage „<?= htmlspecialchars($loadedDraft['name'], ENT_QUOTES) ?>" geladen. Etwaige Fotos werden bewusst <strong>nicht</strong> mit übernommen – bei Bedarf bitte neu hochladen.</p>
+        <?php endif; ?>
         <form method="post" enctype="multipart/form-data">
-            <input type="hidden" name="action" value="preview">
             <label>Betreff
                 <input type="text" name="subject" value="<?= htmlspecialchars($subject, ENT_QUOTES) ?>" required>
             </label>
@@ -743,8 +852,15 @@ $pastSends = $pdo->query(
             </div>
 
             <p style="font-size:0.85rem;color:#666;">Logo und Fußzeile (Impressum/Datenschutz/Abmelden) der Vorlage bleiben immer unverändert. Nicht angehakte Module (Überschrift/Folgen-Link) bzw. eine leere Fotoliste erscheinen gar nicht erst im Newsletter.</p>
+
+            <label>Vorlagenname (nur zum Speichern als Vorlage nötig)
+                <input type="text" name="draft_name" value="<?= htmlspecialchars($currentDraftName, ENT_QUOTES) ?>" placeholder="z.B. Neue-Folge-Standard">
+            </label>
+            <p style="font-size:0.85rem;color:#666;">Ein bereits vorhandener Name wird beim erneuten Speichern überschrieben. Beim Speichern als Vorlage wird nichts verschickt, Fotos werden nicht mit übernommen.</p>
+
             <div class="button-row">
-                <button type="submit">Vorschau anzeigen</button>
+                <button type="submit" name="action" value="preview">Vorschau anzeigen</button>
+                <button type="submit" name="action" value="save_draft" class="button-secondary">Als Vorlage speichern</button>
             </div>
         </form>
         <script>
@@ -798,8 +914,62 @@ $pastSends = $pdo->query(
         </table>
         </div>
         <?php endif; ?>
+
+        <h2>Gespeicherte Vorlagen</h2>
+        <?php if (empty($drafts)): ?>
+            <p>Noch keine Vorlage gespeichert.</p>
+        <?php else: ?>
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Zuletzt geändert</th><th></th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($drafts as $draft): ?>
+                <tr>
+                    <td><?= htmlspecialchars($draft['name'], ENT_QUOTES) ?></td>
+                    <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime($draft['updated_at'])), ENT_QUOTES) ?></td>
+                    <td>
+                        <div class="actions">
+                            <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?load_draft_id=<?= (int) $draft['id'] ?>">Laden</a>
+                            <form method="post" onsubmit="return false;">
+                                <input type="hidden" name="action" value="delete_draft">
+                                <input type="hidden" name="draft_id" value="<?= (int) $draft['id'] ?>">
+                                <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Die Vorlage „<?= htmlspecialchars(addslashes($draft['name']), ENT_QUOTES) ?>“ wird dauerhaft gelöscht.')">Löschen</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 </main>
+
+<div id="confirm-step1" class="modal-overlay">
+    <div class="modal-box">
+        <p><strong>Bist du sicher?</strong></p>
+        <p id="confirm-step1-text"></p>
+        <div class="modal-actions">
+            <button type="button" onclick="confirmStep1No()">Nein</button>
+            <button type="button" class="button-danger" onclick="confirmStep1Yes()">Ja</button>
+        </div>
+    </div>
+</div>
+<div id="confirm-step2" class="modal-overlay">
+    <div class="modal-box">
+        <p><strong>Zur Bestätigung: dein Passwort</strong></p>
+        <input type="password" id="confirm-password" placeholder="Passwort">
+        <p id="confirm-error" class="error" style="display:none;"></p>
+        <div class="modal-actions">
+            <button type="button" onclick="confirmStep2Cancel()">Abbrechen</button>
+            <button type="button" class="button-danger" onclick="confirmStep2Ok()">OK</button>
+        </div>
+    </div>
+</div>
+<script src="<?= BASE_PATH ?>/admin/assets/confirm-delete.js?v=<?= @filemtime(__DIR__ . '/assets/confirm-delete.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/table-scroll-sync.js?v=<?= @filemtime(__DIR__ . '/assets/table-scroll-sync.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/toggle-create-form.js?v=<?= @filemtime(__DIR__ . '/assets/toggle-create-form.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
