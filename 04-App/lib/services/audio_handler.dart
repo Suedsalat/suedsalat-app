@@ -19,6 +19,17 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
   final AudioPlayerService _service = AudioPlayerService.instance;
   final ApiService _api = ApiService();
 
+  // Ersatzbild fuer Folgen ohne eigenes Cover im RSS-Feed (z.B. aeltere
+  // Folgen) - dasselbe Mikro-Symbol, das auch in der Folgenliste der App
+  // selbst als Platzhalter dient, statt in Android Auto/CarPlay ganz ohne
+  // Bild dazustehen. Liegt bereits oeffentlich auf dem Server (admin.css
+  // laedt von dort auch andere statische Bilder).
+  static final Uri _fallbackArtUri =
+      Uri.parse('https://www.xn--sdsalat-n2a.eu/APP/admin/assets/img/mikro.png');
+
+  Uri _artUriFor(Episode episode) =>
+      episode.imageUrl != null ? Uri.tryParse(episode.imageUrl!) ?? _fallbackArtUri : _fallbackArtUri;
+
   // Cache der Folgenliste fuer die Android-Auto-/CarPlay-Browsing-Ansicht -
   // bewusst NUR Folgen (keine Termine/Filmtipps/Galerie o.ae.), das ist das
   // einzige, was im Auto sinnvoll waehlbar sein soll. Wird beim ersten
@@ -45,7 +56,7 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
               id: episode.guid,
               title: episode.title,
               artist: 'Südsalat Podcast',
-              artUri: episode.imageUrl != null ? Uri.tryParse(episode.imageUrl!) : null,
+              artUri: _artUriFor(episode),
               playable: true,
             ))
         .toList();
@@ -91,7 +102,7 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
         title: episode.title,
         artist: 'Südsalat Podcast',
         duration: _service.duration.inMilliseconds > 0 ? _service.duration : null,
-        artUri: episode.imageUrl != null ? Uri.tryParse(episode.imageUrl!) : null,
+        artUri: _artUriFor(episode),
       ));
     }
 
