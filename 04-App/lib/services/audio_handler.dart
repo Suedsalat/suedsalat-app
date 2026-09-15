@@ -71,7 +71,18 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
   @override
   Future<void> prepareFromMediaId(String mediaId, [Map<String, dynamic>? extras]) => _startEpisode(mediaId);
 
+  // Android Auto ruft beim Antippen einer Folge offenbar sowohl
+  // prepareFromMediaId als auch playFromMediaId auf (teils praktisch
+  // gleichzeitig) - ohne Sperre starten beide denselben Ladevorgang parallel
+  // und ueberschreiben sich gegenseitig den playbackState, wodurch faelschlich
+  // ein Fehlerbildschirm erscheint, obwohl die Wiedergabe tatsaechlich laeuft.
+  String? _startingMediaId;
+
   Future<void> _startEpisode(String mediaId) async {
+    if (_startingMediaId == mediaId) {
+      return;
+    }
+    _startingMediaId = mediaId;
     // Sofort auf "laedt" umschalten, statt erst nach dem Laden/Anspielen der
     // Audio-Datei ueberhaupt eine Zustandsaenderung zu melden - sonst wertet
     // Android Auto die fehlende Rueckmeldung waehrend des Ladens/Pufferns
@@ -91,6 +102,10 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
       // sondern als Fehlerzustand melden - _syncState() korrigiert das wieder
       // auf "ready", sobald AudioPlayerService tatsaechlich weiterkommt.
       playbackState.add(playbackState.value.copyWith(processingState: AudioProcessingState.error));
+    } finally {
+      if (_startingMediaId == mediaId) {
+        _startingMediaId = null;
+      }
     }
   }
 
