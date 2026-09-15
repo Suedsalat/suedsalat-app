@@ -162,7 +162,10 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
     }
   }
 
+  int _syncStateCallCount = 0;
+
   void _syncState() {
+    _syncStateCallCount++;
     final episode = _service.currentEpisode;
     if (episode != null) {
       mediaItem.add(MediaItem(
@@ -193,6 +196,18 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
       bufferedPosition: _service.duration,
       speed: 1.0,
     ));
+
+    // TEMPORAER: bestaetigt, ob unsere Bruecke zum Betriebssystem (playbackState/
+    // mediaItem-Streams von audio_service) ueberhaupt ausgefuehrt wird und ob die
+    // dortigen BehaviorSubjects tatsaechlich einen Abonnenten (=das Betriebssystem
+    // selbst) haben - hasListener==false wuerde erklaeren, warum trotz korrekter
+    // Aufrufe nie eine System-Benachrichtigung entsteht.
+    if (_syncStateCallCount <= 3 || _syncStateCallCount % 5 == 0) {
+      unawaited(AudioDebugLog.add(
+        '_syncState #$_syncStateCallCount: playing=${_service.playerState == PlayerState.playing}, '
+        'playbackState.hasListener=${playbackState.hasListener}, mediaItem.hasListener=${mediaItem.hasListener}',
+      ));
+    }
   }
 
   @override
