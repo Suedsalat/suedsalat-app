@@ -939,7 +939,8 @@ $pastSends = $pdo->query(
             <div id="body_text_toolbar" class="richtext-toolbar">
                 <button type="button" data-cmd="bold" title="Fett"><strong>F</strong></button>
                 <button type="button" data-cmd="italic" title="Kursiv"><em>K</em></button>
-                <button type="button" data-cmd="insertUnorderedList" title="Liste">• Liste</button>
+                <button type="button" data-cmd="insertUnorderedList" title="Liste mit Punkten">• Liste</button>
+                <button type="button" data-cmd="insertOrderedList" title="Nummerierte Liste">1. Liste</button>
                 <button type="button" data-cmd="link" title="Link einfügen">🔗 Link</button>
             </div>
             <div id="body_text_editor" class="richtext-editor" contenteditable="true"><?= sanitize_newsletter_body_html($bodyText) ?></div>
