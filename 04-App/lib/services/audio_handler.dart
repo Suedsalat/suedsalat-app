@@ -45,21 +45,45 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
     return _episodesCache ??= await _api.fetchEpisodes();
   }
 
+  // Beschreibung aus dem RSS-Feed kann HTML enthalten (z.B. <p>/<br>-Tags) -
+  // fuer die reine Textanzeige in Android Auto/CarPlay werden die Tags entfernt,
+  // sonst wuerden sie dort als sichtbare spitze Klammern auftauchen.
+  static final _htmlTagPattern = RegExp(r'<[^>]*>');
+
+  String? _plainDescriptionFor(Episode episode) {
+    final description = episode.description;
+    if (description == null || description.isEmpty) return null;
+    return description.replaceAll(_htmlTagPattern, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  MediaItem _mediaItemFor(Episode episode) => MediaItem(
+        id: episode.guid,
+        title: episode.title,
+        artist: 'Südsalat Podcast',
+        artUri: _artUriFor(episode),
+        playable: true,
+        displayDescription: _plainDescriptionFor(episode),
+      );
+
   @override
   Future<List<MediaItem>> getChildren(String parentMediaId, [Map<String, dynamic>? options]) async {
     if (parentMediaId != AudioService.browsableRootId) {
       return [];
     }
     final episodes = await _loadEpisodes();
-    return episodes
-        .map((episode) => MediaItem(
-              id: episode.guid,
-              title: episode.title,
-              artist: 'Südsalat Podcast',
-              artUri: _artUriFor(episode),
-              playable: true,
-            ))
-        .toList();
+    return episodes.map(_mediaItemFor).toList();
+  }
+
+  // Wird von Android Auto separat aufgerufen, um Detailinformationen zu einer
+  // angetippten Folge zu laden (unabhaengig vom eigentlichen Abspiel-Befehl).
+  // BaseAudioHandler liefert dafuer standardmaessig null zurueck - das fuehrte
+  // dazu, dass Android Auto trotz erfolgreich laufender Wiedergabe
+  // "Auswahl konnte nicht geladen werden" anzeigte.
+  @override
+  Future<MediaItem?> getMediaItem(String mediaId) async {
+    final episodes = await _loadEpisodes();
+    final index = episodes.indexWhere((episode) => episode.guid == mediaId);
+    return index != -1 ? _mediaItemFor(episodes[index]) : null;
   }
 
   @override
