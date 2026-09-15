@@ -95,5 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
 </main>
 <script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
+<script src="<?= BASE_PATH ?>/admin/assets/scroll-restore.js?v=<?= @filemtime(__DIR__ . '/assets/scroll-restore.js') ?>"></script>
 </body>
 </html>
