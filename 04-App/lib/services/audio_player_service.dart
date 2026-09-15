@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 
 import '../models/episode.dart';
 import 'api_service.dart';
-import 'audio_debug_log.dart';
 import 'car_context_service.dart';
 import 'listened_episodes_service.dart';
 
@@ -18,19 +17,9 @@ class AudioPlayerService extends ChangeNotifier {
   AudioPlayerService._internal() {
     _configureAudioContext();
     _player.onPlayerStateChanged.listen((state) {
-      // TEMPORAER fuer die Android-Auto-Fehlersuche (siehe AudioDebugLog) -
-      // danach wieder entfernen.
-      unawaited(AudioDebugLog.add('AudioPlayer.onPlayerStateChanged: $playerState -> $state (Folge: ${currentEpisode?.title})'));
       playerState = state;
       notifyListeners();
     });
-    // TEMPORAER: audioplayers meldet native Fehler/Warnungen (z.B. Quelle
-    // konnte nicht geladen werden) ueber diesen Log-Stream statt als
-    // klassische Exception - bisher haben wir nirgends darauf gehoert.
-    _player.onLog.listen(
-      (message) => unawaited(AudioDebugLog.add('AudioPlayer.onLog: $message')),
-      onError: (Object e, StackTrace st) => unawaited(AudioDebugLog.add('AudioPlayer.onLog FEHLER: $e\n$st')),
-    );
     _player.onPositionChanged.listen((newPosition) {
       position = newPosition;
       _checkMilestones();
@@ -148,14 +137,7 @@ class AudioPlayerService extends ChangeNotifier {
     duration = Duration.zero;
     notifyListeners();
     _firedMilestones.clear();
-    unawaited(AudioDebugLog.add('_playCurrent: rufe _player.play() auf fuer ${episode.audioUrl}'));
-    try {
-      await _player.play(UrlSource(episode.audioUrl));
-      unawaited(AudioDebugLog.add('_playCurrent: _player.play() zurueckgekehrt, playerState=$playerState'));
-    } catch (e, st) {
-      unawaited(AudioDebugLog.add('_playCurrent: FEHLER bei _player.play(): $e\n$st'));
-      rethrow;
-    }
+    await _player.play(UrlSource(episode.audioUrl));
     unawaited(_trackPlayWithCarContext(episode.guid));
   }
 

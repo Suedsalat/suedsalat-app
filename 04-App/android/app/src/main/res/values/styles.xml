@@ -19,4 +19,12 @@
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+    <!-- Von Android Auto ueber die car.application.theme-Meta-Data gelesen, um
+         Akzentfarben (u.a. den Wiedergabe-Indikator in der Folgenliste) statt im
+         Standard-Grau in unserem Gruen einzufaerben. -->
+    <style name="CarTheme" parent="@android:style/Theme.DeviceDefault">
+        <item name="android:colorPrimary">#77B538</item>
+        <item name="android:colorPrimaryDark">#5C8E2C</item>
+        <item name="android:colorAccent">#77B538</item>
+    </style>
 </resources>

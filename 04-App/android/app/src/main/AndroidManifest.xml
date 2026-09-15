@@ -51,6 +51,11 @@
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
+        <!-- Ohne dieses Theme faerbt Android Auto den Wiedergabe-Indikator in der
+             Folgenliste (das kleine "laeuft gerade"-Symbol) grau statt im Marken-Gruen. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application.theme"
+            android:resource="@style/CarTheme" />
 
         <!-- audio_service braucht diesen MediaBrowserService + Receiver von Hand im
              Manifest - anders als zunaechst angenommen registriert das Plugin sie

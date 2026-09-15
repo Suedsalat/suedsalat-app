@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Verhindert, dass der Android-Release-Build (R8-Ressourcen-Shrinking) die vom
+     audio_service-Plugin mitgelieferten Icons (Play/Pause/Stop/Vor-/Zurueckspulen)
+     als "ungenutzt" entfernt - das Plugin laedt sie zur Laufzeit per Namen
+     ("drawable/audio_service_stop" usw.), was R8s statische Analyse nicht erkennt.
+     Ohne diese Datei wirft der native Notification-Aufbau eine
+     IllegalArgumentException ("You must specify an icon resource id to build a
+     CustomAction") und die komplette Wiedergabe-Benachrichtigung/Android-Auto-
+     Steuerung bleibt aus - genau der ursprünglich gemeldete Fehler. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/*" />

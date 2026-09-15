@@ -4,5 +4,9 @@
 <dict>
 	<key>aps-environment</key>
 	<string>development</string>
+	<!-- CarPlay-Audio-App-Berechtigung - von Apple am 2026-09-15 freigegeben,
+	     ohne diesen Eintrag lehnt CarPlay die App beim Verbinden ab. -->
+	<key>com.apple.developer.carplay-audio</key>
+	<true/>
 </dict>
 </plist>

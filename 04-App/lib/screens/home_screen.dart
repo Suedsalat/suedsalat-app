@@ -4,7 +4,6 @@ import '../services/api_service.dart';
 import '../services/seen_items_service.dart';
 import '../widgets/app_bottom_nav_bar.dart';
 import '../widgets/mini_player_bar.dart';
-import 'debug/audio_debug_screen.dart';
 import 'episodes/episodes_list_screen.dart';
 import 'events/events_list_screen.dart';
 import 'feedback/feedback_screen.dart';
@@ -181,16 +180,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
         title: Text(_titles[_currentIndex]),
         actions: [
-          // TEMPORAER fuer die Android-Auto-Fehlersuche - danach wieder entfernen.
-          IconButton(
-            icon: const Icon(Icons.bug_report_outlined),
-            tooltip: 'Auto-Diagnose',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AudioDebugScreen()),
-              );
-            },
-          ),
           IconButton(
             icon: Image.asset('assets/images/feedback_rand.png', width: 24, height: 24),
             tooltip: 'Feedback',
