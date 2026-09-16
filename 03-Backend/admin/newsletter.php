@@ -109,11 +109,18 @@ function load_recipients(string $emailsFile): array
 
 // Loest die Formular-Auswahl "An wen senden?" auf: 'all' = die normale oeffentliche
 // Abonnenten-Liste (emails.txt), 'list:<id>' = eine im Admin-Bereich gepflegte eigene
-// Empfaengerliste (z.B. eine Testergruppe), siehe admin/newsletter-lists.php.
+// Empfaengerliste (z.B. eine Testergruppe), 'single:<email>' = eine einzelne
+// Adresse (siehe resolve_target_post_value()), siehe admin/newsletter-lists.php.
 // Gibt ['recipients'=>string[], 'label'=>string] zurueck - das Label landet zu
 // Dokumentationszwecken in newsletter_sends.recipient_list_name.
 function resolve_newsletter_target(string $target, string $emailsFile, PDO $pdo): array
 {
+    if (str_starts_with($target, 'single:')) {
+        $email = substr($target, 7);
+        return $email !== ''
+            ? ['recipients' => [$email], 'label' => 'Einzelne Adresse (' . $email . ')']
+            : ['recipients' => [], 'label' => 'Einzelne Adresse'];
+    }
     if (str_starts_with($target, 'list:')) {
         $listId = (int) substr($target, 5);
         $listStmt = $pdo->prepare('SELECT name FROM newsletter_lists WHERE id = :id');
@@ -126,6 +133,23 @@ function resolve_newsletter_target(string $target, string $emailsFile, PDO $pdo)
         }
     }
     return ['recipients' => load_recipients($emailsFile), 'label' => 'Newsletter'];
+}
+
+// Liest den "target"-Wert aus dem Formular-POST. Normalfall: der Wert aus dem
+// <select> (z.B. "all"/"list:3") wird 1:1 durchgereicht - auch dann, wenn er
+// bereits als "single:<email>" aus einem vorherigen Schritt (Vorschau/Zurück
+// zum Bearbeiten) als verstecktes Feld mitkommt. Nur bei der frischen Auswahl
+// "single" aus dem Formular wird die separat eingegebene Adresse
+// (single_email) angehaengt, damit ab dann wieder ein einzelner String durch
+// alle folgenden Schritte gereicht werden kann, genau wie bei "list:<id>".
+function resolve_target_post_value(array $post): string
+{
+    $raw = (string) ($post['target'] ?? 'all');
+    if ($raw !== 'single') {
+        return $raw;
+    }
+    $email = normalize_recipient_email((string) ($post['single_email'] ?? '')) ?? '';
+    return 'single:' . $email;
 }
 
 // Erlaubte Formatierungs-Tags aus der kleinen Toolbar im Textfeld (Fett,
@@ -435,7 +459,7 @@ if ($action === 'send') {
     $episodeLink = trim((string) ($_POST['episode_link'] ?? ''));
     $bodyText = (string) ($_POST['body_text'] ?? '');
     $photos = collect_photos_from_request($allowedImageTypes, $maxImageBytes);
-    $target = (string) ($_POST['target'] ?? 'all');
+    $target = resolve_target_post_value($_POST);
     $fromEmail = array_key_exists($_POST['from_email'] ?? '', $availableSenders) ? $_POST['from_email'] : $defaultFromEmail;
 
     $resolvedTarget = resolve_newsletter_target($target, $emailsFile, $pdo);
@@ -583,11 +607,13 @@ if ($action === 'preview') {
     $episodeLink = $useEpisodeLink ? trim((string) ($_POST['episode_link'] ?? '')) : '';
 
     $bodyText = trim((string) ($_POST['body_text'] ?? ''));
-    $target = (string) ($_POST['target'] ?? 'all');
+    $target = resolve_target_post_value($_POST);
     $selectedFromEmail = array_key_exists($_POST['from_email'] ?? '', $availableSenders) ? $_POST['from_email'] : $defaultFromEmail;
 
     if ($bodyText === '') {
         $error = 'Bitte einen Text für die Newsletter-Mail eingeben.';
+    } elseif ($target === 'single:') {
+        $error = 'Bitte eine gültige E-Mail-Adresse für den Einzelversand eingeben.';
     }
 
     $photos = [];
@@ -618,7 +644,7 @@ if ($action === 'preview') {
     $useEpisodeLink = isset($_POST['use_episode_link']);
     $episodeLink = $useEpisodeLink ? trim((string) ($_POST['episode_link'] ?? '')) : '';
     $bodyText = trim((string) ($_POST['body_text'] ?? ''));
-    $target = (string) ($_POST['target'] ?? 'all');
+    $target = resolve_target_post_value($_POST);
     $selectedFromEmail = array_key_exists($_POST['from_email'] ?? '', $availableSenders) ? $_POST['from_email'] : $defaultFromEmail;
     $photos = [];
     $draftName = trim((string) ($_POST['draft_name'] ?? ''));
@@ -658,7 +684,7 @@ if ($action === 'preview') {
     $bodyText = (string) ($_POST['body_text'] ?? '');
     $useHeadline = isset($_POST['use_headline']);
     $useEpisodeLink = isset($_POST['use_episode_link']);
-    $target = (string) ($_POST['target'] ?? 'all');
+    $target = resolve_target_post_value($_POST);
     $selectedFromEmail = array_key_exists($_POST['from_email'] ?? '', $availableSenders) ? $_POST['from_email'] : $defaultFromEmail;
     $photos = [];
     foreach ($_POST['existing_photos'] ?? [] as $entry) {
@@ -895,19 +921,29 @@ $pastSends = $pdo->query(
                 <input type="text" name="subject" value="<?= htmlspecialchars($subject, ENT_QUOTES) ?>" required>
             </label>
 
+            <?php
+                $targetIsSingle = str_starts_with($target, 'single:');
+                $singleEmailValue = $targetIsSingle ? substr($target, 7) : '';
+            ?>
             <label>An wen senden?
-                <select name="target">
+                <select name="target" id="target_select">
                     <option value="all" <?= $target === 'all' ? 'selected' : '' ?>>Newsletter</option>
                     <?php foreach ($customLists as $list): ?>
                         <option value="list:<?= (int) $list['id'] ?>" <?= $target === 'list:' . $list['id'] ? 'selected' : '' ?>>
                             <?= htmlspecialchars($list['name'], ENT_QUOTES) ?>
                         </option>
                     <?php endforeach; ?>
+                    <option value="single" <?= $targetIsSingle ? 'selected' : '' ?>>Einzelne E-Mail-Adresse</option>
                 </select>
             </label>
             <?php if (empty($customLists)): ?>
                 <p style="font-size:0.85rem;color:#666;">Noch keine eigene Liste angelegt — das geht unter <a href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Empfängerlisten</a>.</p>
             <?php endif; ?>
+            <div id="field_single_email" style="<?= $targetIsSingle ? '' : 'display:none;' ?>">
+                <label>E-Mail-Adresse
+                    <input type="email" name="single_email" value="<?= htmlspecialchars($singleEmailValue, ENT_QUOTES) ?>">
+                </label>
+            </div>
 
             <label>Absender
                 <select name="from_email">
@@ -992,6 +1028,18 @@ $pastSends = $pdo->query(
                 bind('chk_headline', 'field_headline');
                 bind('chk_episode', 'field_episode');
                 bind('chk_photo', 'field_photo');
+
+                // "target_select" ist kein Checkbox, sondern ein <select> - daher
+                // eigene kleine Logik statt bind() (das nur .checked kennt).
+                var targetSelect = document.getElementById('target_select');
+                var singleEmailField = document.getElementById('field_single_email');
+                if (targetSelect && singleEmailField) {
+                    function updateSingleEmailField() {
+                        singleEmailField.style.display = targetSelect.value === 'single' ? '' : 'none';
+                    }
+                    targetSelect.addEventListener('change', updateSingleEmailField);
+                    updateSingleEmailField();
+                }
             })();
         </script>
         </div>
