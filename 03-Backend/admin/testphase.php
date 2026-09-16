@@ -15,6 +15,16 @@ use Suedsalat\Database;
 $adminId = Auth::requireLogin();
 $pdo = Database::connection();
 
+// Nur fuer den Owner (Thorsten) gedacht - genau wie beim Newsletter (siehe
+// admin/newsletter.php) wird der direkte Aufruf hier auch serverseitig
+// abgeblockt, nicht nur ueber die fehlende Nav-Verlinkung.
+$currentAdminRole = $pdo->prepare('SELECT role FROM admins WHERE id = :id');
+$currentAdminRole->execute([':id' => $adminId]);
+if ($currentAdminRole->fetchColumn() !== 'owner') {
+    header('Location: ' . BASE_PATH . '/admin/dashboard.php');
+    exit;
+}
+
 $dateFrom = trim((string) ($_GET['from'] ?? ''));
 $dateTo = trim((string) ($_GET['to'] ?? ''));
 
