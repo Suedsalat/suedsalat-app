@@ -63,6 +63,9 @@ function admin_nav_active(string $page, string $current): string
         <?php endif; ?>
 
         <div class="sidebar-group-label">Konto</div>
+        <?php if ($isOwner): ?>
+        <a class="<?= admin_nav_active('users.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/users.php">Benutzerverwaltung</a>
+        <?php endif; ?>
         <a class="<?= admin_nav_active('change-password.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
         <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
     </nav>
