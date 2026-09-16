@@ -489,6 +489,8 @@ if ($action === 'send') {
         ob_start();
     }
 
+    $sentToEmails = [];
+
     foreach ($recipients as $toEmail) {
         $unsubscribeLink = $abmeldeScriptUrl . '?email=' . urlencode($toEmail);
 
@@ -505,6 +507,7 @@ if ($action === 'send') {
         if (@mail($toEmail, $encodedSubject, $finalContent, $headers, '-f' . $fromEmail)) {
             echo "<li style='color: green;'>Gesendet an: " . htmlspecialchars($toEmail) . "</li>";
             $countSent++;
+            $sentToEmails[] = $toEmail;
             usleep($delayMicrosec);
         } else {
             echo "<li style='color: red;'>Fehler beim Senden an: " . htmlspecialchars($toEmail) . "</li>";
@@ -535,6 +538,14 @@ if ($action === 'send') {
         ':sent_by' => $adminId,
     ]);
     $newSendId = (int) $pdo->lastInsertId();
+    if (!empty($sentToEmails)) {
+        $recipientStmt = $pdo->prepare(
+            'INSERT INTO newsletter_send_recipients (newsletter_send_id, email) VALUES (:send_id, :email)'
+        );
+        foreach ($sentToEmails as $sentEmail) {
+            $recipientStmt->execute([':send_id' => $newSendId, ':email' => $sentEmail]);
+        }
+    }
     if (!empty($photos)) {
         $photoStmt = $pdo->prepare(
             'INSERT INTO newsletter_send_photos (newsletter_send_id, sort_order, photo_url, photo_width, photo_align)
@@ -582,6 +593,34 @@ if ($action === null && isset($_GET['view_id'])) {
                 'width' => normalize_photo_width($viewingSend['photo_width'] ?? 560),
                 'align' => normalize_photo_align($viewingSend['photo_align'] ?? 'center'),
             ]];
+        }
+
+        // Tatsaechlich verwendete Empfaenger-Adressen (siehe newsletter_send_recipients,
+        // wird seit Einfuehrung dieser Funktion bei jedem Versand mitgeschrieben).
+        $recipientsStmt = $pdo->prepare('SELECT email FROM newsletter_send_recipients WHERE newsletter_send_id = :id ORDER BY email ASC');
+        $recipientsStmt->execute([':id' => (int) $viewingSend['id']]);
+        $viewingSendRecipients = $recipientsStmt->fetchAll(PDO::FETCH_COLUMN);
+        $viewingSendRecipientsExact = !empty($viewingSendRecipients);
+
+        // Fallback fuer Sends von VOR dieser Funktion: bestmoegliche Rekonstruktion
+        // ueber die aktuelle Listenmitgliedschaft - kann inzwischen abweichen, da
+        // sich Listen seit dem Versand veraendert haben koennen (Hinweis dazu in der UI).
+        if (!$viewingSendRecipientsExact) {
+            $label = (string) ($viewingSend['recipient_list_name'] ?? '');
+            if (preg_match('/^Einzelne Adresse \((.+)\)$/', $label, $m)) {
+                $viewingSendRecipients = [$m[1]];
+            } elseif ($label === 'Newsletter') {
+                $viewingSendRecipients = load_recipients($emailsFile);
+            } elseif ($label !== '') {
+                $listStmt = $pdo->prepare('SELECT id FROM newsletter_lists WHERE name = :name');
+                $listStmt->execute([':name' => $label]);
+                $listId = $listStmt->fetchColumn();
+                if ($listId !== false) {
+                    $membersStmt = $pdo->prepare('SELECT email FROM newsletter_list_members WHERE list_id = :id ORDER BY email ASC');
+                    $membersStmt->execute([':id' => $listId]);
+                    $viewingSendRecipients = $membersStmt->fetchAll(PDO::FETCH_COLUMN);
+                }
+            }
         }
     }
 }
@@ -822,7 +861,26 @@ $pastSends = $pdo->query(
 
     <?php if ($viewingSend !== null): ?>
         <h2>Vorschau: <?= htmlspecialchars($viewingSend['subject'], ENT_QUOTES) ?></h2>
-        <p>Verschickt am <?= htmlspecialchars(date('d.m.Y', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> um <?= htmlspecialchars(date('H:i', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> Uhr an <strong><?= (int) $viewingSend['recipient_count'] ?></strong> Empfänger.</p>
+        <p>Verschickt am <?= htmlspecialchars(date('d.m.Y', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> um <?= htmlspecialchars(date('H:i', strtotime($viewingSend['sent_at'])), ENT_QUOTES) ?> Uhr an <strong><?= (int) $viewingSend['recipient_count'] ?></strong> Empfänger.
+            <?php if (!empty($viewingSendRecipients)): ?>
+                <button type="button" class="button-secondary" style="margin-bottom:0;margin-left:8px;padding:4px 10px;font-size:0.85rem;" data-show-create-form="recipients-list-<?= (int) $viewingSend['id'] ?>">Empfänger anzeigen</button>
+            <?php endif; ?>
+        </p>
+        <?php if (!empty($viewingSendRecipients)): ?>
+            <div id="recipients-list-<?= (int) $viewingSend['id'] ?>" style="display:none;margin-bottom:16px;">
+                <button type="button" class="button-secondary" style="margin-bottom:8px;" data-hide-create-form="recipients-list-<?= (int) $viewingSend['id'] ?>">Empfänger ausblenden</button>
+                <?php if (!$viewingSendRecipientsExact): ?>
+                    <p style="font-size:0.85rem;color:#666;">Für diesen Versand wurde die Empfängerliste nicht mit gespeichert (vor Einführung dieser Funktion) - unten steht stattdessen die <strong>aktuelle</strong> Mitgliedschaft der damaligen Zielgruppe, die inzwischen abweichen kann.</p>
+                <?php endif; ?>
+                <div class="table-scroll" style="max-height:300px;overflow-y:auto;">
+                    <ul style="margin:0;padding-left:20px;">
+                        <?php foreach ($viewingSendRecipients as $recipientEmail): ?>
+                            <li><?= htmlspecialchars($recipientEmail, ENT_QUOTES) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </div>
+        <?php endif; ?>
         <iframe srcdoc="<?= htmlspecialchars(render_email_html($templateFile, $viewingSend['headline'] ?? '', $viewingSend['episode_link'] ?? '', $viewingSend['body_text'], $viewingSendPhotos), ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
         <div class="button-row" style="margin-top:16px;">
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?reuse_id=<?= (int) $viewingSend['id'] ?>">Für neuen Newsletter übernehmen</a>
