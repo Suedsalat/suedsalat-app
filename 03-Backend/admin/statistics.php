@@ -13,6 +13,25 @@ $currentAdminRole = $pdo->prepare('SELECT role FROM admins WHERE id = :id');
 $currentAdminRole->execute([':id' => $adminId]);
 $isOwner = $currentAdminRole->fetchColumn() === 'owner';
 
+// "Zaehler zuruecksetzen"/"Zaehler wieder anzeigen ab Anfang" - setzt/loescht
+// ein Startdatum, ab dem die Statistiken unten standardmaessig zaehlen (siehe
+// $statsBaseline weiter unten). Die Rohdaten bleiben dabei unangetastet, es
+// wird nur der Standard-Filter verschoben - z.B. um die eigene Nutzung
+// waehrend der Google-Play-Testphase aus den "echten" Zahlen rauszurechnen.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['baseline_action'])) {
+    if ($_POST['baseline_action'] === 'reset_to_today') {
+        set_app_setting($pdo, 'stats_baseline_date', date('Y-m-d'));
+    } elseif ($_POST['baseline_action'] === 'clear') {
+        set_app_setting($pdo, 'stats_baseline_date', '');
+    }
+    header('Location: ' . BASE_PATH . '/admin/statistics.php');
+    exit;
+}
+$statsBaseline = get_app_setting($pdo, 'stats_baseline_date');
+if ($statsBaseline === '') {
+    $statsBaseline = null;
+}
+
 // Alle Folgen fuer den Filter-Dropdown, neueste zuerst.
 $allEpisodes = $pdo->query('SELECT guid, title, pub_date FROM episodes_cache ORDER BY pub_date DESC')->fetchAll();
 
@@ -43,6 +62,15 @@ if ($dateFrom !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFrom)) {
 }
 if ($dateTo !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateTo)) {
     $dateTo = '';
+}
+
+// Ohne explizit gesetztes "Von"-Datum in der URL (auch beim Wechseln
+// zwischen den Ansichten oben, die nur "view" in der URL tragen) greift das
+// Statistik-Startdatum als Standard - so zeigen alle Ansichten automatisch
+// "seit dem Reset". Nur ein bewusst leer abgeschicktes Filterformular
+// ("von Anfang an anzeigen", $_GET['from'] === '') überschreibt das wieder.
+if (!isset($_GET['from']) && $statsBaseline !== null) {
+    $dateFrom = $statsBaseline;
 }
 
 // Baut ein "AND day BETWEEN ... AND ..."-Fragment + zugehoerige Parameter,
@@ -275,9 +303,25 @@ $episodeShortLabel = static function (string $title): string {
         </div>
         <div class="button-row">
             <button type="submit">Anzeigen</button>
-            <a class="button button-secondary" style="margin-bottom:0;" href="<?= BASE_PATH ?>/admin/statistics.php">Filter zurücksetzen</a>
+            <a class="button button-secondary" style="margin-bottom:0;" href="<?= BASE_PATH ?>/admin/statistics.php?from=">Filter zurücksetzen (alle Daten)</a>
         </div>
     </form>
+
+    <div class="stats-baseline-box">
+        <?php if ($statsBaseline !== null): ?>
+            <p>Die Zähler unten zeigen standardmäßig nur Daten <strong>ab dem <?= htmlspecialchars(date('d.m.Y', strtotime($statsBaseline)), ENT_QUOTES) ?></strong> (z.B. um die eigene Nutzung während der Testphase aus den Zahlen rauszurechnen). Die älteren Daten sind nicht gelöscht, nur ausgeblendet — über "Filter zurücksetzen (alle Daten)" oben siehst du wieder alles.</p>
+            <form method="post" style="display:inline;">
+                <input type="hidden" name="baseline_action" value="clear">
+                <button type="submit" class="button-secondary" style="margin-bottom:0;">Startdatum wieder entfernen</button>
+            </form>
+        <?php else: ?>
+            <p>Die Zähler unten zeigen aktuell alle Daten seit Beginn der Aufzeichnung.</p>
+            <form method="post" style="display:inline;">
+                <input type="hidden" name="baseline_action" value="reset_to_today">
+                <button type="submit" class="button-secondary" style="margin-bottom:0;">Zähler jetzt zurücksetzen (ab heute neu zählen)</button>
+            </form>
+        <?php endif; ?>
+    </div>
 
     <?php if ($view === 'funnel'): ?>
         <h2>Hördauer-Trichter</h2>

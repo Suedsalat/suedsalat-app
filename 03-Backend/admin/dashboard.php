@@ -52,24 +52,39 @@ $screenLabels = [
     'gallery' => 'Galerie',
     'feedback' => 'Feedback',
 ];
-$totalViews = $pdo->query('SELECT screen, SUM(count) AS total FROM screen_views GROUP BY screen')
-    ->fetchAll(PDO::FETCH_KEY_PAIR);
+// Statistik-Startdatum (siehe admin/statistics.php "Zähler zurücksetzen") -
+// wenn gesetzt, zählen auch die Dashboard-Summen hier nur noch ab diesem
+// Datum, z.B. um die eigene Nutzung während der Google-Play-Testphase aus
+// den "echten" Zahlen rauszurechnen. Rohdaten bleiben unberührt.
+$statsBaseline = get_app_setting($pdo, 'stats_baseline_date');
+if ($statsBaseline === '') {
+    $statsBaseline = null;
+}
+$baselineFilterSql = $statsBaseline !== null ? ' AND day >= :baseline' : '';
+$baselineFilterParams = $statsBaseline !== null ? [':baseline' => $statsBaseline] : [];
+
+$totalViewsStmt = $pdo->prepare("SELECT screen, SUM(count) AS total FROM screen_views WHERE 1=1$baselineFilterSql GROUP BY screen");
+$totalViewsStmt->execute($baselineFilterParams);
+$totalViews = $totalViewsStmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $recentViews = $pdo->query(
     "SELECT screen, SUM(count) AS total FROM screen_views WHERE day >= CURDATE() - INTERVAL 7 DAY GROUP BY screen"
 )->fetchAll(PDO::FETCH_KEY_PAIR);
 
 // Anonyme Folgen-Wiedergaben (siehe api/track-episode-play.php): wie oft welche
-// Folge abgespielt wurde, gesamt und in den letzten 7 Tagen. LEFT JOIN, damit
-// auch Folgen ohne bisherige Wiedergabe mit 0 auftauchen.
-$episodePlayCounts = $pdo->query(
+// Folge abgespielt wurde, gesamt (ab Statistik-Startdatum, falls gesetzt) und
+// in den letzten 7 Tagen. LEFT JOIN, damit auch Folgen ohne bisherige
+// Wiedergabe mit 0 auftauchen.
+$episodePlayCountsStmt = $pdo->prepare(
     "SELECT e.guid, e.title, e.pub_date,
-        COALESCE(SUM(c.count), 0) AS total_plays,
+        COALESCE(SUM(CASE WHEN 1=1$baselineFilterSql THEN c.count ELSE 0 END), 0) AS total_plays,
         COALESCE(SUM(CASE WHEN c.day >= CURDATE() - INTERVAL 7 DAY THEN c.count ELSE 0 END), 0) AS recent_plays
      FROM episodes_cache e
      LEFT JOIN episode_play_counts c ON c.episode_guid = e.guid
      GROUP BY e.guid, e.title, e.pub_date
      ORDER BY total_plays DESC, e.pub_date DESC"
-)->fetchAll();
+);
+$episodePlayCountsStmt->execute($baselineFilterParams);
+$episodePlayCounts = $episodePlayCountsStmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -120,6 +135,9 @@ $episodePlayCounts = $pdo->query(
 
 <section class="content-box">
     <h2>Nutzung nach Bereich <span style="font-weight:normal;font-size:0.85rem;">(anonym, ohne Personenbezug)</span></h2>
+    <?php if ($statsBaseline !== null): ?>
+        <p style="font-size:0.85rem;color:#666;">"Gesamt" zählt ab <?= htmlspecialchars(date('d.m.Y', strtotime($statsBaseline)), ENT_QUOTES) ?> (Statistik-Startdatum gesetzt, siehe <a href="<?= BASE_PATH ?>/admin/statistics.php">Statistiken</a>).</p>
+    <?php endif; ?>
     <button type="button" class="button" data-show-create-form="screen-views-table">+ anzeigen</button>
     <div id="screen-views-table" style="display:none;">
     <button type="button" class="button-secondary" data-hide-create-form="screen-views-table">- ausblenden</button>
@@ -144,6 +162,9 @@ $episodePlayCounts = $pdo->query(
 
 <section class="content-box">
     <h2>Folgen-Wiedergaben <span style="font-weight:normal;font-size:0.85rem;">(anonym, ohne Personenbezug)</span></h2>
+    <?php if ($statsBaseline !== null): ?>
+        <p style="font-size:0.85rem;color:#666;">"Gesamt" zählt ab <?= htmlspecialchars(date('d.m.Y', strtotime($statsBaseline)), ENT_QUOTES) ?> (Statistik-Startdatum gesetzt, siehe <a href="<?= BASE_PATH ?>/admin/statistics.php">Statistiken</a>).</p>
+    <?php endif; ?>
     <button type="button" class="button" data-show-create-form="episode-plays-table">+ anzeigen</button>
     <div id="episode-plays-table" style="display:none;">
     <button type="button" class="button-secondary" data-hide-create-form="episode-plays-table">- ausblenden</button>

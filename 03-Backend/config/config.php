@@ -121,3 +121,25 @@ function verify_admin_password(\PDO $pdo, int $adminId, string $password): bool
     $hash = $stmt->fetchColumn();
     return $hash !== false && password_verify($password, $hash);
 }
+
+// Kleine Key-Value-Ablage (Tabelle app_settings) fuer admin-weite Einstellungen,
+// die keinen eigenen Ort haben - aktuell nur genutzt fuer "stats_baseline_date"
+// (siehe admin/statistics.php/dashboard.php: Wiedergabe-/Nutzungszaehler blenden
+// alles vor diesem Datum standardmaessig aus, z.B. um die eigene Testphasen-Nutzung
+// aus den "echten" Hoererzahlen rauszurechnen, ohne die Rohdaten zu loeschen).
+function get_app_setting(\PDO $pdo, string $key): ?string
+{
+    $stmt = $pdo->prepare('SELECT setting_value FROM app_settings WHERE setting_key = :key');
+    $stmt->execute([':key' => $key]);
+    $value = $stmt->fetchColumn();
+    return $value === false ? null : $value;
+}
+
+function set_app_setting(\PDO $pdo, string $key, string $value): void
+{
+    $stmt = $pdo->prepare(
+        'INSERT INTO app_settings (setting_key, setting_value) VALUES (:key, :value)
+         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)'
+    );
+    $stmt->execute([':key' => $key, ':value' => $value]);
+}
