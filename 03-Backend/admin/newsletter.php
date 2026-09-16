@@ -1046,7 +1046,7 @@ $pastSends = $pdo->query(
                         </div>
                     <?php endforeach; ?>
                 </div>
-                <button type="button" id="add_single_email_row" class="button-secondary" style="margin-bottom:16px;">+ Weitere Adresse</button>
+                <button type="button" id="add_single_email_row" class="button" style="margin-bottom:16px;">+ Weitere Adresse</button>
             </div>
 
             <label>Absender
