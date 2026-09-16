@@ -609,7 +609,10 @@ if ($action === null && isset($_GET['view_id'])) {
             $label = (string) ($viewingSend['recipient_list_name'] ?? '');
             if (preg_match('/^Einzelne Adresse \((.+)\)$/', $label, $m)) {
                 $viewingSendRecipients = [$m[1]];
-            } elseif ($label === 'Newsletter') {
+            } elseif ($label === 'Newsletter' || $label === '') {
+                // Leeres Label = Sends von vor Einfuehrung der Listen-/Label-Spalte
+                // (recipient_list_name) - damals gab es nur die oeffentliche
+                // Newsletter-Liste als Ziel, also derselbe Fallback wie "Newsletter".
                 $viewingSendRecipients = load_recipients($emailsFile);
             } elseif ($label !== '') {
                 $listStmt = $pdo->prepare('SELECT id FROM newsletter_lists WHERE name = :name');
