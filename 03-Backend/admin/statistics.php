@@ -220,26 +220,7 @@ $episodeShortLabel = static function (string $title): string {
     <link rel="stylesheet" href="<?= BASE_PATH ?>/admin/assets/admin.css?v=<?= @filemtime(__DIR__ . '/assets/admin.css') ?>">
 </head>
 <body>
-<header class="admin-header">
-    <img src="<?= BASE_PATH ?>/admin/assets/img/logo.png?v=<?= @filemtime(__DIR__ . '/assets/img/logo.png') ?>" alt="Südsalat">
-    <p>APP-Administrationsbereich</p>
-</header>
-<nav class="admin-nav">
-    <a href="<?= BASE_PATH ?>/admin/dashboard.php">Dashboard</a>
-    <a href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
-    <a class="nav-gap" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
-    <a href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
-    <a href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
-    <a href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
-    <a href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
-    <a href="<?= BASE_PATH ?>/admin/statistics.php">Statistiken</a>
-    <?php if ($isOwner): ?>
-    <a href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a>
-    <a href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Empfängerlisten</a>
-    <?php endif; ?>
-    <a href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
-    <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
-</nav>
+<?php require __DIR__ . '/partials/sidebar-open.php'; ?>
 <main class="content-box">
     <h1>Statistiken <span style="font-weight:normal;font-size:0.85rem;">(anonym, ohne Personenbezug)</span></h1>
 
@@ -502,6 +483,7 @@ $episodeShortLabel = static function (string $title): string {
         <?php endif; ?>
     <?php endif; ?>
 </main>
+<?php require __DIR__ . '/partials/sidebar-close.php'; ?>
 <script src="<?= BASE_PATH ?>/admin/assets/table-scroll-sync.js?v=<?= @filemtime(__DIR__ . '/assets/table-scroll-sync.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/session-countdown.js?v=<?= @filemtime(__DIR__ . '/assets/session-countdown.js') ?>"></script>
 <script src="<?= BASE_PATH ?>/admin/assets/scroll-restore.js?v=<?= @filemtime(__DIR__ . '/assets/scroll-restore.js') ?>"></script>

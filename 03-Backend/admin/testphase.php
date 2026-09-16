@@ -85,16 +85,29 @@ $episodePlays = $stmt->fetchAll();
     <link rel="stylesheet" href="<?= BASE_PATH ?>/admin/assets/admin.css?v=<?= @filemtime(__DIR__ . '/assets/admin.css') ?>">
 </head>
 <body>
-<header class="admin-header">
-    <img src="<?= BASE_PATH ?>/admin/assets/img/logo.png?v=<?= @filemtime(__DIR__ . '/assets/img/logo.png') ?>" alt="Südsalat">
-    <p>APP-Administrationsbereich</p>
-</header>
-<nav class="admin-nav">
-    <a href="<?= BASE_PATH ?>/admin/dashboard.php">Dashboard</a>
-    <a href="<?= BASE_PATH ?>/admin/statistics.php">Statistiken</a>
-    <a href="<?= BASE_PATH ?>/admin/testphase.php">Testphase</a>
-    <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
-</nav>
+<?php
+// Eigene, kurze Sidebar statt der gemeinsamen partials/sidebar-open.php -
+// diese Seite ist bewusst nirgends sonst verlinkt (siehe Kommentar oben),
+// die gemeinsame Sidebar wuerde den Testphase-Link auf jeder Admin-Seite
+// zeigen, was genau der ungewollten Sichtbarkeit entspraeche.
+?>
+<div class="admin-shell">
+    <button type="button" class="sidebar-toggle" id="sidebar-toggle">
+        <span class="bars"><span></span><span></span><span></span></span>
+        Menü
+    </button>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+    <nav class="admin-sidebar" id="admin-sidebar">
+        <div class="sidebar-brand">
+            <img src="<?= BASE_PATH ?>/admin/assets/img/logo.png?v=<?= @filemtime(__DIR__ . '/assets/img/logo.png') ?>" alt="Südsalat">
+            <span>APP-Administrationsbereich</span>
+        </div>
+        <a href="<?= BASE_PATH ?>/admin/dashboard.php">Dashboard</a>
+        <a href="<?= BASE_PATH ?>/admin/statistics.php">Statistiken</a>
+        <a class="is-active" href="<?= BASE_PATH ?>/admin/testphase.php">Testphase</a>
+        <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
+    </nav>
+    <div class="admin-main">
 <main class="content-box">
     <h1>Testphase-Übersicht <span style="font-weight:normal;font-size:0.85rem;">(anonym, ohne Personenbezug)</span></h1>
     <p style="font-size:0.85rem;color:#666;">Temporäre Seite nur für die Google-Play-Testphase - kann danach wieder gelöscht werden.</p>
@@ -144,5 +157,8 @@ $episodePlays = $stmt->fetchAll();
     </table>
     </div>
 </main>
+    </div>
+</div>
+<script src="<?= BASE_PATH ?>/admin/assets/admin-sidebar.js?v=<?= @filemtime(__DIR__ . '/assets/admin-sidebar.js') ?>"></script>
 </body>
 </html>

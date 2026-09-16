@@ -1,0 +1,53 @@
+<?php
+declare(strict_types=1);
+
+// Gemeinsame Sidebar-Navigation fuer alle admin/*.php-Seiten (ausser den
+// Auth-Seiten login/2fa/logout/setup-account/forgot-password/reset-password,
+// die keine Navigation brauchen) - ersetzt die bis 2026-09-16 in jeder Datei
+// einzeln kopierte <header>+<nav>. Erwartet $isOwner (bool) im Scope der
+// einbindenden Datei (ueberall bereits vorhanden). Einbindung: require direkt
+// nach <body>, Gegenstueck ist sidebar-close.php kurz vor den <script>-Tags.
+if (!isset($isOwner)) {
+    throw new \RuntimeException('sidebar-open.php benoetigt $isOwner im Scope der einbindenden Seite.');
+}
+
+$currentAdminPage = basename($_SERVER['SCRIPT_NAME']);
+
+function admin_nav_active(string $page, string $current): string
+{
+    return $page === $current ? 'is-active' : '';
+}
+?>
+<div class="admin-shell">
+    <button type="button" class="sidebar-toggle" id="sidebar-toggle">
+        <span class="bars"><span></span><span></span><span></span></span>
+        Menü
+    </button>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+    <nav class="admin-sidebar" id="admin-sidebar">
+        <div class="sidebar-brand">
+            <img src="<?= BASE_PATH ?>/admin/assets/img/logo.png?v=<?= @filemtime(__DIR__ . '/../assets/img/logo.png') ?>" alt="Südsalat">
+            <span>APP-Administrationsbereich</span>
+        </div>
+
+        <div class="sidebar-group-label">Inhalte</div>
+        <a class="<?= admin_nav_active('dashboard.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/dashboard.php">Dashboard</a>
+        <a class="<?= admin_nav_active('feedback.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/feedback.php">Aktivitäten</a>
+        <a class="<?= admin_nav_active('events.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/events.php">Veranstaltungen</a>
+        <a class="<?= admin_nav_active('gallery.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/gallery.php">Galerie</a>
+        <a class="<?= admin_nav_active('movie-tips.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
+        <a class="<?= admin_nav_active('location-tips.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
+        <a class="<?= admin_nav_active('tip-reviews.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
+
+        <div class="sidebar-group-label">Auswertung</div>
+        <a class="<?= admin_nav_active('statistics.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/statistics.php">Statistiken</a>
+        <?php if ($isOwner): ?>
+        <a class="<?= admin_nav_active('newsletter.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/newsletter.php">Newsletter</a>
+        <a class="<?= admin_nav_active('newsletter-lists.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Empfängerlisten</a>
+        <?php endif; ?>
+
+        <div class="sidebar-group-label">Konto</div>
+        <a class="<?= admin_nav_active('change-password.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/change-password.php">Passwort ändern</a>
+        <a href="<?= BASE_PATH ?>/admin/logout.php">Abmelden (<span id="logout-countdown" data-timeout-seconds="<?= ADMIN_IDLE_TIMEOUT_MINUTES * 60 ?>"></span>)</a>
+    </nav>
+    <div class="admin-main">
