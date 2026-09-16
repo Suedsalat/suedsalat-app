@@ -109,17 +109,23 @@ function load_recipients(string $emailsFile): array
 
 // Loest die Formular-Auswahl "An wen senden?" auf: 'all' = die normale oeffentliche
 // Abonnenten-Liste (emails.txt), 'list:<id>' = eine im Admin-Bereich gepflegte eigene
-// Empfaengerliste (z.B. eine Testergruppe), 'single:<email>' = eine einzelne
-// Adresse (siehe resolve_target_post_value()), siehe admin/newsletter-lists.php.
+// Empfaengerliste (z.B. eine Testergruppe), 'single:<email1>,<email2>,...' = eine
+// oder mehrere frei eingegebene Adressen ohne eigene Liste (siehe
+// resolve_target_post_value()), siehe admin/newsletter-lists.php.
 // Gibt ['recipients'=>string[], 'label'=>string] zurueck - das Label landet zu
 // Dokumentationszwecken in newsletter_sends.recipient_list_name.
 function resolve_newsletter_target(string $target, string $emailsFile, PDO $pdo): array
 {
     if (str_starts_with($target, 'single:')) {
-        $email = substr($target, 7);
-        return $email !== ''
-            ? ['recipients' => [$email], 'label' => 'Einzelne Adresse (' . $email . ')']
-            : ['recipients' => [], 'label' => 'Einzelne Adresse'];
+        $emailsPart = substr($target, 7);
+        $emails = $emailsPart === '' ? [] : explode(',', $emailsPart);
+        if ($emails === []) {
+            return ['recipients' => [], 'label' => 'Einzelne Adresse(n)'];
+        }
+        $label = count($emails) === 1
+            ? 'Einzelne Adresse (' . $emails[0] . ')'
+            : 'Einzelne Adressen (' . implode(', ', $emails) . ')';
+        return ['recipients' => $emails, 'label' => $label];
     }
     if (str_starts_with($target, 'list:')) {
         $listId = (int) substr($target, 5);
@@ -137,19 +143,30 @@ function resolve_newsletter_target(string $target, string $emailsFile, PDO $pdo)
 
 // Liest den "target"-Wert aus dem Formular-POST. Normalfall: der Wert aus dem
 // <select> (z.B. "all"/"list:3") wird 1:1 durchgereicht - auch dann, wenn er
-// bereits als "single:<email>" aus einem vorherigen Schritt (Vorschau/Zurück
-// zum Bearbeiten) als verstecktes Feld mitkommt. Nur bei der frischen Auswahl
-// "single" aus dem Formular wird die separat eingegebene Adresse
-// (single_email) angehaengt, damit ab dann wieder ein einzelner String durch
-// alle folgenden Schritte gereicht werden kann, genau wie bei "list:<id>".
+// bereits als "single:<email1>,<email2>" aus einem vorherigen Schritt (Vorschau/
+// Zurück zum Bearbeiten) als verstecktes Feld mitkommt. Nur bei der frischen
+// Auswahl "single" aus dem Formular werden die separat eingegebenen Adressen
+// (single_emails[], eine pro Zeile im Formular) normalisiert, dedupliziert und
+// zusammengefuegt, damit ab dann wieder ein einzelner String durch alle
+// folgenden Schritte gereicht werden kann, genau wie bei "list:<id>".
 function resolve_target_post_value(array $post): string
 {
     $raw = (string) ($post['target'] ?? 'all');
     if ($raw !== 'single') {
         return $raw;
     }
-    $email = normalize_recipient_email((string) ($post['single_email'] ?? '')) ?? '';
-    return 'single:' . $email;
+    $rawEmails = $post['single_emails'] ?? [];
+    if (!is_array($rawEmails)) {
+        $rawEmails = [$rawEmails];
+    }
+    $emails = [];
+    foreach ($rawEmails as $rawEmail) {
+        $normalized = normalize_recipient_email((string) $rawEmail);
+        if ($normalized !== null && !in_array($normalized, $emails, true)) {
+            $emails[] = $normalized;
+        }
+    }
+    return 'single:' . implode(',', $emails);
 }
 
 // Erlaubte Formatierungs-Tags aus der kleinen Toolbar im Textfeld (Fett,
@@ -607,8 +624,8 @@ if ($action === null && isset($_GET['view_id'])) {
         // sich Listen seit dem Versand veraendert haben koennen (Hinweis dazu in der UI).
         if (!$viewingSendRecipientsExact) {
             $label = (string) ($viewingSend['recipient_list_name'] ?? '');
-            if (preg_match('/^Einzelne Adresse \((.+)\)$/', $label, $m)) {
-                $viewingSendRecipients = [$m[1]];
+            if (preg_match('/^Einzelne Adressen? \((.+)\)$/', $label, $m)) {
+                $viewingSendRecipients = array_map('trim', explode(',', $m[1]));
             } elseif ($label === 'Newsletter' || $label === '') {
                 // Leeres Label = Sends von vor Einfuehrung der Listen-/Label-Spalte
                 // (recipient_list_name) - damals gab es nur die oeffentliche
@@ -655,7 +672,7 @@ if ($action === 'preview') {
     if ($bodyText === '') {
         $error = 'Bitte einen Text für die Newsletter-Mail eingeben.';
     } elseif ($target === 'single:') {
-        $error = 'Bitte eine gültige E-Mail-Adresse für den Einzelversand eingeben.';
+        $error = 'Bitte mindestens eine gültige E-Mail-Adresse eingeben.';
     }
 
     $photos = [];
@@ -776,14 +793,30 @@ if ($action === 'preview') {
         $selectedFromEmail = array_key_exists($loadedDraft['from_email'] ?? '', $availableSenders) ? $loadedDraft['from_email'] : $defaultFromEmail;
         $currentDraftName = $loadedDraft['name'];
     } elseif ($reusedSend) {
-        // Bewusst nur die Text-Bestandteile uebernehmen (Betreff, Ueberschrift,
-        // Folgen-Link, Fliesstext) - ein eventuelles Foto NICHT, das soll bei
-        // jedem Newsletter bewusst neu ausgewaehlt werden (siehe Hinweis im Formular).
         $subject = $reusedSend['subject'];
         $headline = $reusedSend['headline'] ?? '';
         $episodeLink = $reusedSend['episode_link'] ?? '';
         $bodyText = $reusedSend['body_text'];
-        $photos = [];
+
+        // Foto(s) des alten Sends werden jetzt mit uebernommen (Thorstens
+        // ausdruecklicher Wunsch) - ueber den bestehenden Foto-Editor lassen sie
+        // sich direkt hier anpassen/entfernen/ersetzen, ganz wie bei "Fotos
+        // zurechtruecken" in der Vorschau. Gleicher Fallback wie bei "Ansehen"
+        // fuer sehr alte Sends von vor der Mehrfachfoto-Tabelle.
+        $photosStmt = $pdo->prepare('SELECT * FROM newsletter_send_photos WHERE newsletter_send_id = :id ORDER BY sort_order ASC');
+        $photosStmt->execute([':id' => (int) $reusedSend['id']]);
+        $photos = array_map(
+            static fn (array $row) => ['url' => $row['photo_url'], 'width' => (int) $row['photo_width'], 'align' => $row['photo_align']],
+            $photosStmt->fetchAll()
+        );
+        if (empty($photos) && !empty($reusedSend['photo_url'])) {
+            $photos = [[
+                'url' => $reusedSend['photo_url'],
+                'width' => normalize_photo_width($reusedSend['photo_width'] ?? 560),
+                'align' => normalize_photo_align($reusedSend['photo_align'] ?? 'center'),
+            ]];
+        }
+
         $useHeadline = $headline !== '';
         $useEpisodeLink = $episodeLink !== '';
         $target = 'all';
@@ -972,7 +1005,7 @@ $pastSends = $pdo->query(
         <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
         <button type="button" class="button-secondary" data-hide-create-form="create-form">- Newsletter verfassen</button>
         <?php if ($reusedSend): ?>
-            <p style="font-size:0.9rem;color:#666;">Betreff, Überschrift, Folgen-Link und Text wurden aus dem gewählten Newsletter übernommen. Etwaige Fotos werden bewusst <strong>nicht</strong> mit übernommen – bei Bedarf bitte neu hochladen.</p>
+            <p style="font-size:0.9rem;color:#666;">Betreff, Überschrift, Folgen-Link, Text und Foto(s) wurden aus dem gewählten Newsletter übernommen – im Foto-Bereich unten kannst du sie entfernen, ersetzen oder weitere hinzufügen.</p>
         <?php endif; ?>
         <?php if ($loadedDraft): ?>
             <p style="font-size:0.9rem;color:#666;">Vorlage „<?= htmlspecialchars($loadedDraft['name'], ENT_QUOTES) ?>" geladen. Etwaige Fotos werden bewusst <strong>nicht</strong> mit übernommen – bei Bedarf bitte neu hochladen.</p>
@@ -984,7 +1017,10 @@ $pastSends = $pdo->query(
 
             <?php
                 $targetIsSingle = str_starts_with($target, 'single:');
-                $singleEmailValue = $targetIsSingle ? substr($target, 7) : '';
+                $singleEmailValues = $targetIsSingle ? explode(',', substr($target, 7)) : [];
+                if ($singleEmailValues === []) {
+                    $singleEmailValues = [''];
+                }
             ?>
             <label>An wen senden?
                 <select name="target" id="target_select">
@@ -1001,9 +1037,16 @@ $pastSends = $pdo->query(
                 <p style="font-size:0.85rem;color:#666;">Noch keine eigene Liste angelegt — das geht unter <a href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Empfängerlisten</a>.</p>
             <?php endif; ?>
             <div id="field_single_email" style="<?= $targetIsSingle ? '' : 'display:none;' ?>">
-                <label>E-Mail-Adresse
-                    <input type="email" name="single_email" value="<?= htmlspecialchars($singleEmailValue, ENT_QUOTES) ?>">
-                </label>
+                <label>E-Mail-Adresse(n)</label>
+                <div id="single_email_rows">
+                    <?php foreach ($singleEmailValues as $email): ?>
+                        <div class="single-email-row" style="display:flex;gap:8px;align-items:center;max-width:50%;margin-bottom:8px;">
+                            <input type="email" name="single_emails[]" value="<?= htmlspecialchars($email, ENT_QUOTES) ?>" style="flex:1;margin-top:0;">
+                            <button type="button" class="button-secondary" data-remove-email-row title="Diese Zeile entfernen" style="margin-bottom:0;padding:6px 12px;">×</button>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <button type="button" id="add_single_email_row" class="button-secondary" style="margin-bottom:16px;">+ Weitere Adresse</button>
             </div>
 
             <label>Absender
@@ -1100,6 +1143,37 @@ $pastSends = $pdo->query(
                     }
                     targetSelect.addEventListener('change', updateSingleEmailField);
                     updateSingleEmailField();
+                }
+
+                // "+ Weitere Adresse" haengt eine weitere leere Zeile an, die
+                // "×"-Buttons entfernen ihre eigene Zeile wieder - mindestens eine
+                // Zeile bleibt aber immer stehen, sonst laesst sich gar keine
+                // Adresse mehr eingeben.
+                var singleEmailRows = document.getElementById('single_email_rows');
+                var addSingleEmailRowButton = document.getElementById('add_single_email_row');
+
+                function bindRemoveButton(row) {
+                    var removeButton = row.querySelector('[data-remove-email-row]');
+                    if (!removeButton) return;
+                    removeButton.addEventListener('click', function () {
+                        if (singleEmailRows.children.length > 1) {
+                            row.remove();
+                        } else {
+                            row.querySelector('input').value = '';
+                        }
+                    });
+                }
+
+                if (singleEmailRows && addSingleEmailRowButton) {
+                    Array.prototype.forEach.call(singleEmailRows.children, bindRemoveButton);
+
+                    addSingleEmailRowButton.addEventListener('click', function () {
+                        var newRow = singleEmailRows.children[0].cloneNode(true);
+                        newRow.querySelector('input').value = '';
+                        singleEmailRows.appendChild(newRow);
+                        bindRemoveButton(newRow);
+                        newRow.querySelector('input').focus();
+                    });
                 }
             })();
         </script>
