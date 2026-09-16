@@ -4,14 +4,25 @@ declare(strict_types=1);
 // Gemeinsame Sidebar-Navigation fuer alle admin/*.php-Seiten (ausser den
 // Auth-Seiten login/2fa/logout/setup-account/forgot-password/reset-password,
 // die keine Navigation brauchen) - ersetzt die bis 2026-09-16 in jeder Datei
-// einzeln kopierte <header>+<nav>. Erwartet $isOwner (bool) im Scope der
-// einbindenden Datei (ueberall bereits vorhanden). Einbindung: require direkt
-// nach <body>, Gegenstueck ist sidebar-close.php kurz vor den <script>-Tags.
+// einzeln kopierte <header>+<nav>. Erwartet $isOwner (bool) sowie $adminId
+// und $pdo im Scope der einbindenden Datei (ueberall bereits vorhanden).
+// Einbindung: require direkt nach <body>, Gegenstueck ist sidebar-close.php
+// kurz vor den <script>-Tags.
 if (!isset($isOwner)) {
     throw new \RuntimeException('sidebar-open.php benoetigt $isOwner im Scope der einbindenden Seite.');
 }
 
 $currentAdminPage = basename($_SERVER['SCRIPT_NAME']);
+
+// Name des gerade angemeldeten Admins - eigene kleine Abfrage statt den
+// jeweils schon vorhandenen $admin/$currentAdminRole-Variablen der
+// einzelnen Seiten zu vertrauen (die heissen nicht ueberall gleich).
+$sidebarAdminName = null;
+if (isset($adminId, $pdo)) {
+    $sidebarAdminNameStmt = $pdo->prepare('SELECT name FROM admins WHERE id = :id');
+    $sidebarAdminNameStmt->execute([':id' => $adminId]);
+    $sidebarAdminName = $sidebarAdminNameStmt->fetchColumn() ?: null;
+}
 
 function admin_nav_active(string $page, string $current): string
 {
@@ -27,7 +38,12 @@ function admin_nav_active(string $page, string $current): string
     <nav class="admin-sidebar" id="admin-sidebar">
         <div class="sidebar-brand">
             <img src="<?= BASE_PATH ?>/admin/assets/img/logo.png?v=<?= @filemtime(__DIR__ . '/../assets/img/logo.png') ?>" alt="Südsalat">
-            <span>APP-Administrationsbereich</span>
+            <span>
+                APP-Administrationsbereich
+                <?php if ($sidebarAdminName !== null): ?>
+                    <small>Angemeldet als <?= htmlspecialchars($sidebarAdminName, ENT_QUOTES) ?></small>
+                <?php endif; ?>
+            </span>
         </div>
 
         <div class="sidebar-group-label">Inhalte</div>

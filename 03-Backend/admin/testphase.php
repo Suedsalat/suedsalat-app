@@ -100,7 +100,13 @@ $episodePlays = $stmt->fetchAll();
     <nav class="admin-sidebar" id="admin-sidebar">
         <div class="sidebar-brand">
             <img src="<?= BASE_PATH ?>/admin/assets/img/logo.png?v=<?= @filemtime(__DIR__ . '/assets/img/logo.png') ?>" alt="Südsalat">
-            <span>APP-Administrationsbereich</span>
+            <span>
+                APP-Administrationsbereich
+                <?php $testphaseAdminName = $pdo->prepare('SELECT name FROM admins WHERE id = :id'); $testphaseAdminName->execute([':id' => $adminId]); $testphaseAdminNameValue = $testphaseAdminName->fetchColumn(); ?>
+                <?php if ($testphaseAdminNameValue): ?>
+                    <small>Angemeldet als <?= htmlspecialchars($testphaseAdminNameValue, ENT_QUOTES) ?></small>
+                <?php endif; ?>
+            </span>
         </div>
         <a href="<?= BASE_PATH ?>/admin/dashboard.php">Dashboard</a>
         <a href="<?= BASE_PATH ?>/admin/statistics.php">Statistiken</a>
