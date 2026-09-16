@@ -474,7 +474,11 @@ if ($action === 'send') {
         $finalContent = str_replace('[EPISODE_BUTTON]', $episodeButtonHtml, $finalContent);
         $finalContent = str_replace('[UNSUBSCRIBE_LINK]', $unsubscribeLink, $finalContent);
 
-        if (@mail($toEmail, $encodedSubject, $finalContent, $headers)) {
+        // 5. Parameter (-f ...) setzt den Envelope-Sender/Return-Path, nicht nur die
+        // sichtbare "From:"-Kopfzeile - ohne den geht eine Unzustellbarkeits-
+        // Meldung (Bounce) je nach Strato-Mailserver-Konfiguration an eine System-
+        // Adresse statt an die im Formular gewaehlte Absenderadresse.
+        if (@mail($toEmail, $encodedSubject, $finalContent, $headers, '-f' . $fromEmail)) {
             echo "<li style='color: green;'>Gesendet an: " . htmlspecialchars($toEmail) . "</li>";
             $countSent++;
             usleep($delayMicrosec);
