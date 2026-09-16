@@ -263,11 +263,61 @@ $episodeShortLabel = static function (string $title): string {
     <?php if ($view === 'funnel'): ?>
         <h2>Hördauer-Trichter</h2>
         <p style="font-size:0.85rem;color:#666;">Jede Stufe zählt automatisch alle mit, die auch die höheren Stufen erreicht haben (z. B. sind alle "über 45 Minuten"-Hörer auch in "über 5 Minuten" enthalten) - so lässt sich der Abfall zwischen den Stufen ablesen.</p>
+
+        <?php
+            $startTotal = $funnelRows['start'] ?? 0;
+            $tierKeys = array_keys($tierLabels);
+            $stageCount = count($tierKeys);
+            // Balkenhoehe je Stufe relativ zur groessten Stufe (= "Gestartet"),
+            // nicht absolut - sonst waere der Trichter bei wenigen Wiedergaben
+            // insgesamt nur eine duenne Linie statt die volle Zeichenflaeche
+            // auszunutzen.
+            $funnelMaxHeight = 150;
+            $funnelCenterY = 90;
+            $funnelSegmentWidth = 100;
+            $funnelHeights = [];
+            foreach ($tierKeys as $tier) {
+                $count = $funnelRows[$tier] ?? 0;
+                $funnelHeights[] = $startTotal > 0 ? ($count / $startTotal) * $funnelMaxHeight : 0;
+            }
+        ?>
+        <div class="funnel-scroll">
+        <div class="funnel-chart">
+            <svg viewBox="0 0 <?= $stageCount * $funnelSegmentWidth ?> 180" preserveAspectRatio="none" class="funnel-svg" role="img" aria-label="Hördauer-Trichter, von links (Gestartet) nach rechts (Bis zum Ende) abnehmend">
+                <?php foreach ($tierKeys as $i => $tier): ?>
+                    <?php
+                        $x0 = $i * $funnelSegmentWidth;
+                        $x1 = $x0 + $funnelSegmentWidth;
+                        $leftHalf = $funnelHeights[$i] / 2;
+                        $rightHalf = ($i + 1 < $stageCount ? $funnelHeights[$i + 1] : $funnelHeights[$i]) / 2;
+                        $points = sprintf(
+                            '%d,%.1f %d,%.1f %d,%.1f %d,%.1f',
+                            $x0, $funnelCenterY - $leftHalf,
+                            $x1, $funnelCenterY - $rightHalf,
+                            $x1, $funnelCenterY + $rightHalf,
+                            $x0, $funnelCenterY + $leftHalf
+                        );
+                    ?>
+                    <polygon points="<?= $points ?>" class="funnel-segment" style="--funnel-step: <?= $i + 1 ?>;"></polygon>
+                <?php endforeach; ?>
+            </svg>
+            <div class="funnel-labels" style="grid-template-columns: repeat(<?= $stageCount ?>, 1fr);">
+                <?php foreach ($tierKeys as $i => $tier): ?>
+                    <?php $count = $funnelRows[$tier] ?? 0; ?>
+                    <div class="funnel-label">
+                        <strong><?= htmlspecialchars($tierLabels[$tier], ENT_QUOTES) ?></strong>
+                        <span><?= $count ?></span>
+                        <small><?= $startTotal > 0 ? number_format($count / $startTotal * 100, 1, ',', '.') . ' %' : '—' ?></small>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        </div>
+
         <div class="table-scroll">
         <table>
             <thead><tr><th>Stufe</th><th>Anzahl</th><th>Anteil an "Gestartet"</th></tr></thead>
             <tbody>
-            <?php $startTotal = $funnelRows['start'] ?? 0; ?>
             <?php foreach ($tierLabels as $tier => $label): ?>
                 <?php $count = $funnelRows[$tier] ?? 0; ?>
                 <tr>

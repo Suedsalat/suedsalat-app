@@ -6,6 +6,18 @@
   --color-text-light: #fff;
   --radius-container: 12px;
   --radius-input: 6px;
+
+  /* Gruen-Verlauf fuer den Hoerdauer-Trichter (Statistiken) - sieben Stufen
+     hell->dunkel, validiert mit dataviz-Skill-Farbvalidator (ordinal-Modus,
+     gegen die jeweilige Oberflaeche): alle Stufenabstaende >= 0.06 OKLCH-L,
+     hellstes/dunkelstes Ende erreicht 2:1 Kontrast zur Oberflaeche. */
+  --funnel-1: #4ca022;
+  --funnel-2: #3e821c;
+  --funnel-3: #326916;
+  --funnel-4: #265011;
+  --funnel-5: #1c3b0c;
+  --funnel-6: #122609;
+  --funnel-7: #0a1604;
 }
 
 * { box-sizing: border-box; }
@@ -288,6 +300,30 @@ button:hover, .button:hover { background: var(--color-primary-hover); }
 .table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; min-width: 640px; border-collapse: collapse; margin-top: 20px; }
 
+/* Hoerdauer-Trichter (Statistiken): echte Trichterform statt nur einer Tabelle -
+   sieben nebeneinanderliegende Segmente, deren Hoehe die Wiedergaben je Stufe
+   abbildet, in einem Gruenverlauf von hell (Gestartet) nach dunkel (Bis zum
+   Ende) - siehe --funnel-1..7 oben in :root. */
+.funnel-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 16px; }
+.funnel-chart { min-width: 560px; }
+.funnel-svg { width: 100%; height: 160px; display: block; }
+.funnel-segment {
+  stroke: var(--color-secondary);
+  stroke-width: 2;
+}
+.funnel-segment:nth-child(1) { fill: var(--funnel-1); }
+.funnel-segment:nth-child(2) { fill: var(--funnel-2); }
+.funnel-segment:nth-child(3) { fill: var(--funnel-3); }
+.funnel-segment:nth-child(4) { fill: var(--funnel-4); }
+.funnel-segment:nth-child(5) { fill: var(--funnel-5); }
+.funnel-segment:nth-child(6) { fill: var(--funnel-6); }
+.funnel-segment:nth-child(7) { fill: var(--funnel-7); }
+.funnel-labels { display: grid; gap: 2px; margin-top: 8px; text-align: center; }
+.funnel-label { display: flex; flex-direction: column; gap: 2px; padding: 0 4px; }
+.funnel-label strong { font-size: 0.72rem; font-weight: 700; line-height: 1.2; }
+.funnel-label span { font-size: 0.95rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--color-text); }
+.funnel-label small { font-size: 0.72rem; color: rgba(16, 32, 36, 0.6); font-variant-numeric: tabular-nums; }
+
 /* Duplizierte Scrollleiste direkt ueber breiten Tabellen (siehe table-scroll-sync.js) -
    ohne sie muesste man bis ganz nach unten scrollen, um die untere Scrollleiste zu
    erreichen, dann seitwaerts scrollen und wieder nach oben, um die oberste Zeile
@@ -427,6 +463,23 @@ tr[id]:target { outline: 3px solid var(--color-primary); outline-offset: -3px; }
   .sidebar-group-label { color: rgba(255, 255, 255, 0.5); }
   .admin-sidebar a { color: #eee; }
   .admin-sidebar a:not(.is-active):hover { background: rgba(119, 181, 56, 0.28); }
+
+  .funnel-segment { stroke: #1f1f1f; }
+  .funnel-label span { color: #eee; }
+  .funnel-label small { color: rgba(255, 255, 255, 0.6); }
+
+  /* Eigener, hellerer Gruen-Verlauf fuer den dunklen Hintergrund - gegen die
+     dunkle Karten-Oberflaeche (#1f1f1f) validiert, nicht einfach dieselben
+     hex-Werte wie im Hellmodus. */
+  :root {
+    --funnel-1: #e4f5db;
+    --funnel-2: #c0e7ac;
+    --funnel-3: #9bd97d;
+    --funnel-4: #71c945;
+    --funnel-5: #5aaa31;
+    --funnel-6: #458226;
+    --funnel-7: #36671e;
+  }
 }
 
 @media (max-width: 480px) {
