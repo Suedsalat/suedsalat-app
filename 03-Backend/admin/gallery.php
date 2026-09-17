@@ -407,6 +407,10 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                 <td>
                     <div class="actions">
                         <a class="button" href="<?= BASE_PATH ?>/admin/gallery.php?edit=<?= (int) $photo['id'] ?>">Bearbeiten</a>
+                        <?php $photoRelPath = $photo['media_type'] !== 'video' ? upload_url_to_relative_path($photo['image_path']) : null; ?>
+                        <?php if ($photoRelPath !== null): ?>
+                            <a class="button" href="<?= BASE_PATH ?>/admin/photo-editor.php?path=<?= urlencode($photoRelPath) ?>&amp;return=<?= urlencode(BASE_PATH . '/admin/gallery.php') ?>">Retuschieren</a>
+                        <?php endif; ?>
                         <a class="button" download href="<?= htmlspecialchars($photo['image_path'], ENT_QUOTES) ?>">Download</a>
                         <form method="post" onsubmit="return false;">
                             <input type="hidden" name="delete_id" value="<?= (int) $photo['id'] ?>">

@@ -240,12 +240,24 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                             <div class="actions">
                                 <?php if (!empty($item['extra_photos'])): ?>
                                     <?php foreach ($item['extra_photos'] as $i => $photoRow): ?>
+                                        <?php $extraPhotoRelPath = upload_url_to_relative_path($photoRow['image_path']); ?>
+                                        <?php if ($extraPhotoRelPath !== null): ?>
+                                            <a class="button" href="<?= BASE_PATH ?>/admin/photo-editor.php?path=<?= urlencode($extraPhotoRelPath) ?>&amp;return=<?= urlencode(BASE_PATH . '/admin/feedback.php') ?>">Foto <?= $i + 1 ?> retuschieren</a>
+                                        <?php endif; ?>
                                         <?php if (empty($photoRow['imported_at'])): ?>
                                             <a class="button" href="<?= BASE_PATH ?>/admin/gallery.php?import_feedback_media_id=<?= (int) $photoRow['id'] ?>">Foto <?= $i + 1 ?> in Galerie übernehmen</a>
                                         <?php endif; ?>
                                     <?php endforeach; ?>
-                                <?php elseif (!empty($msg['image_path']) && empty($msg['photo_imported_at']) && ($msg['media_type'] ?? 'image') !== 'audio'): ?>
-                                    <a class="button" href="<?= BASE_PATH ?>/admin/gallery.php?import_feedback_id=<?= (int) $msg['id'] ?>">Foto in Galerie übernehmen</a>
+                                <?php elseif (!empty($msg['image_path']) && ($msg['media_type'] ?? 'image') !== 'audio'): ?>
+                                    <?php if (($msg['media_type'] ?? 'image') === 'image'): ?>
+                                        <?php $singlePhotoRelPath = upload_url_to_relative_path($msg['image_path']); ?>
+                                        <?php if ($singlePhotoRelPath !== null): ?>
+                                            <a class="button" href="<?= BASE_PATH ?>/admin/photo-editor.php?path=<?= urlencode($singlePhotoRelPath) ?>&amp;return=<?= urlencode(BASE_PATH . '/admin/feedback.php') ?>">Retuschieren</a>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                    <?php if (empty($msg['photo_imported_at'])): ?>
+                                        <a class="button" href="<?= BASE_PATH ?>/admin/gallery.php?import_feedback_id=<?= (int) $msg['id'] ?>">Foto in Galerie übernehmen</a>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                                 <?php if (!empty($msg['image_path'])): ?>
                                     <a class="button" download href="<?= htmlspecialchars($msg['image_path'], ENT_QUOTES) ?>">Download</a>

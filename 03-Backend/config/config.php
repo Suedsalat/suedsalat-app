@@ -121,3 +121,35 @@ function verify_admin_password(\PDO $pdo, int $adminId, string $password): bool
     $hash = $stmt->fetchColumn();
     return $hash !== false && password_verify($password, $hash);
 }
+
+// Wandelt eine volle Bild-URL (z.B. UPLOAD_URL_BASE.'/gallery/xyz.jpg') in den
+// Pfad relativ zu UPLOAD_DIR um ('gallery/xyz.jpg') - fuer admin/photo-editor.php,
+// das nur mit Pfaden unterhalb von uploads/ arbeiten darf. Gibt null zurueck,
+// wenn die URL gar nicht aus uploads/ stammt (z.B. ein extern verlinktes Bild).
+function upload_url_to_relative_path(string $url): ?string
+{
+    $prefix = UPLOAD_URL_BASE . '/';
+    if (!str_starts_with($url, $prefix)) {
+        return null;
+    }
+    return substr($url, strlen($prefix));
+}
+
+// Prueft, dass ein vom Nutzer kommender relativer Pfad tatsaechlich innerhalb
+// von UPLOAD_DIR liegt (kein "../" o.ae. nach draussen) und dort bereits eine
+// echte Datei ist - admin/photo-editor(-save).php duerfen nur bestehende,
+// bereits hochgeladene Bilder ueberschreiben, keine beliebigen Dateien anlegen
+// oder lesen. Gibt bei Erfolg den absoluten, aufgeloesten Pfad zurueck.
+function resolve_upload_path(string $relativePath): ?string
+{
+    $relativePath = ltrim($relativePath, '/');
+    if ($relativePath === '' || str_contains($relativePath, '..')) {
+        return null;
+    }
+    $real = realpath(UPLOAD_DIR . '/' . $relativePath);
+    $uploadRoot = realpath(UPLOAD_DIR);
+    if ($real === false || $uploadRoot === false || !str_starts_with($real, $uploadRoot . DIRECTORY_SEPARATOR)) {
+        return null;
+    }
+    return $real;
+}
