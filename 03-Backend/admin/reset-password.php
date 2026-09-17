@@ -3,75 +3,117 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/bootstrap.php';
 
+use Suedsalat\Auth;
 use Suedsalat\Database;
+
+Auth::startSession();
 
 $pdo = Database::connection();
 $error = null;
-$success = false;
-$codeVerified = false;
 
-$email = normalize_email((string) ($_POST['email'] ?? ''));
-$code = trim((string) ($_POST['code'] ?? ''));
+$maskedEmail = $_SESSION['pending_reset_masked_email'] ?? null;
+$pendingAdminId = $_SESSION['pending_reset_admin_id'] ?? null;
 
-// Sucht einen noch gueltigen, unbenutzten Reset-Code fuer genau diese
-// E-Mail-Adresse - Code UND E-Mail muessen zusammenpassen (nicht nur der
-// Code fuer sich), sonst koennte ein erratener/abgefangener Code fuer ein
-// fremdes Konto durchprobiert werden.
-function find_valid_reset(PDO $pdo, string $email, string $code): ?array
+if ($maskedEmail === null) {
+    // Kein laufender Reset in dieser Session (z.B. Seite direkt aufgerufen,
+    // oder Sitzung abgelaufen) - kann nur ueber "Passwort vergessen" neu starten.
+    ?>
+    <!DOCTYPE html>
+    <html lang="de">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="https://www.xn--sdsalat-n2a.eu/favicon.png">
+        <title>Neues Passwort – Südsalat</title>
+        <link rel="stylesheet" href="<?= BASE_PATH ?>/admin/assets/admin.css?v=<?= @filemtime(__DIR__ . '/assets/admin.css') ?>">
+    </head>
+    <body>
+    <header class="admin-header">
+        <img src="<?= BASE_PATH ?>/admin/assets/img/logo.png?v=<?= @filemtime(__DIR__ . '/assets/img/logo.png') ?>" alt="Südsalat">
+        <p>APP-Administrationsbereich</p>
+    </header>
+    <main class="auth-box">
+        <h1>Neues Passwort</h1>
+        <p class="error">Es läuft gerade kein Passwort-Reset. Bitte fordere zuerst einen Code an.</p>
+        <p><a href="<?= BASE_PATH ?>/admin/forgot-password.php">Code anfordern</a></p>
+    </main>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
+// Sucht einen noch gueltigen, unbenutzten Reset-Code fuer den in der Session
+// hinterlegten Admin - der Code allein reicht nicht, er muss zum zuvor per
+// E-Mail-Adresse angeforderten Konto passen.
+function find_valid_reset(PDO $pdo, ?int $adminId, string $code): ?array
 {
-    if ($email === '' || $code === '') {
+    if ($adminId === null || $code === '') {
         return null;
     }
     $codeHash = hash('sha256', $code);
     $stmt = $pdo->prepare(
-        'SELECT pr.id, pr.admin_id FROM password_resets pr
-         JOIN admins a ON a.id = pr.admin_id
-         WHERE a.email = :email AND pr.token_hash = :hash AND pr.used_at IS NULL AND pr.expires_at > NOW()'
+        'SELECT id, admin_id FROM password_resets
+         WHERE admin_id = :admin_id AND token_hash = :hash AND used_at IS NULL AND expires_at > NOW()'
     );
-    $stmt->execute([':email' => $email, ':hash' => $codeHash]);
+    $stmt->execute([':admin_id' => $adminId, ':hash' => $codeHash]);
     return $stmt->fetch() ?: null;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $reset = find_valid_reset($pdo, $email, $code);
+$verifiedResetId = $_SESSION['pending_reset_verified_id'] ?? null;
 
-    if (isset($_POST['password'])) {
-        // Stufe 2: Code wurde bereits geprueft, jetzt zusammen mit dem neuen
-        // Passwort abgeschickt - nochmal frisch pruefen statt dem versteckten
-        // Formularfeld blind zu vertrauen (Code koennte zwischenzeitlich
-        // abgelaufen/schon benutzt worden sein).
-        if ($reset === null) {
-            $error = 'Der Code ist ungültig oder abgelaufen. Bitte fordere einen neuen an.';
-        } else {
-            $password = (string) $_POST['password'];
-            $passwordConfirm = (string) ($_POST['password_confirm'] ?? '');
-            if (strlen($password) < 10) {
-                $error = 'Das Passwort muss mindestens 10 Zeichen lang sein.';
-                $codeVerified = true;
-            } elseif ($password !== $passwordConfirm) {
-                $error = 'Die Passwörter stimmen nicht überein.';
-                $codeVerified = true;
-            } else {
-                $pdo->beginTransaction();
-                $pdo->prepare('UPDATE admins SET password_hash = :hash WHERE id = :id')->execute([
-                    ':hash' => password_hash($password, PASSWORD_DEFAULT),
-                    ':id' => $reset['admin_id'],
-                ]);
-                $pdo->prepare('UPDATE password_resets SET used_at = NOW() WHERE id = :id')->execute([':id' => $reset['id']]);
-                $pdo->commit();
-                $success = true;
-            }
-        }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['code']) && $verifiedResetId === null) {
+    // Stufe 1: Code eingegeben.
+    $code = trim((string) $_POST['code']);
+    $reset = find_valid_reset($pdo, $pendingAdminId, $code);
+    if ($reset === null) {
+        $error = 'Der Code ist ungültig oder abgelaufen. Bitte prüfe deine Eingabe oder fordere einen neuen Code an.';
     } else {
-        // Stufe 1: nur E-Mail + Code abgeschickt - pruefen und bei Erfolg
-        // direkt die Maske fuer das neue Passwort zeigen.
-        if ($reset === null) {
-            $error = 'Der Code ist ungültig oder abgelaufen. Bitte prüfe deine Eingabe oder fordere einen neuen Code an.';
+        $_SESSION['pending_reset_verified_id'] = $reset['id'];
+        header('Location: ' . BASE_PATH . '/admin/reset-password.php');
+        exit;
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password']) && $verifiedResetId !== null) {
+    // Stufe 2: neues Passwort - Reset-Zeile nochmal frisch pruefen (nicht dem
+    // Session-Wert blind vertrauen, koennte zwischenzeitlich abgelaufen sein).
+    $stmt = $pdo->prepare(
+        'SELECT id, admin_id FROM password_resets WHERE id = :id AND admin_id = :admin_id AND used_at IS NULL AND expires_at > NOW()'
+    );
+    $stmt->execute([':id' => $verifiedResetId, ':admin_id' => $pendingAdminId]);
+    $reset = $stmt->fetch();
+
+    if ($reset === null) {
+        $error = 'Der Code ist abgelaufen. Bitte fordere einen neuen an.';
+        unset($_SESSION['pending_reset_verified_id']);
+        $verifiedResetId = null;
+    } else {
+        $password = (string) $_POST['password'];
+        $passwordConfirm = (string) ($_POST['password_confirm'] ?? '');
+        if (strlen($password) < 10) {
+            $error = 'Das Passwort muss mindestens 10 Zeichen lang sein.';
+        } elseif ($password !== $passwordConfirm) {
+            $error = 'Die Passwörter stimmen nicht überein.';
         } else {
-            $codeVerified = true;
+            $pdo->beginTransaction();
+            $pdo->prepare('UPDATE admins SET password_hash = :hash WHERE id = :id')->execute([
+                ':hash' => password_hash($password, PASSWORD_DEFAULT),
+                ':id' => $reset['admin_id'],
+            ]);
+            $pdo->prepare('UPDATE password_resets SET used_at = NOW() WHERE id = :id')->execute([':id' => $reset['id']]);
+            $pdo->commit();
+
+            unset($_SESSION['pending_reset_masked_email'], $_SESSION['pending_reset_admin_id'], $_SESSION['pending_reset_verified_id']);
+
+            // Direkt einloggen - Passwort ist ja gerade erst mit vollem
+            // Nachweis (Code aus der E-Mail) bestaetigt worden.
+            Auth::login((int) $reset['admin_id']);
+            header('Location: ' . BASE_PATH . '/admin/dashboard.php');
+            exit;
         }
     }
 }
+
+$verifiedResetId = $_SESSION['pending_reset_verified_id'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -88,38 +130,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p>APP-Administrationsbereich</p>
 </header>
 <main class="auth-box">
-    <?php if ($success): ?>
-        <h1>Neues Passwort</h1>
-        <p class="info">Dein Passwort wurde geändert. Du kannst dich jetzt anmelden.</p>
-        <p><a href="<?= BASE_PATH ?>/admin/login.php">Zum Login</a></p>
-    <?php elseif ($codeVerified): ?>
+    <?php if ($verifiedResetId !== null): ?>
         <h1>Neues Passwort vergeben</h1>
         <?php if ($error): ?>
             <p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
         <?php endif; ?>
         <form method="post">
-            <input type="hidden" name="email" value="<?= htmlspecialchars($email, ENT_QUOTES) ?>">
-            <input type="hidden" name="code" value="<?= htmlspecialchars($code, ENT_QUOTES) ?>">
             <label>Neues Passwort
                 <input type="password" name="password" minlength="10" required autofocus>
             </label>
-            <label>Passwort bestätigen
+            <label>Passwort wiederholen
                 <input type="password" name="password_confirm" minlength="10" required>
             </label>
-            <button type="submit">Passwort speichern</button>
+            <button type="submit">Anmelden</button>
         </form>
     <?php else: ?>
         <h1>Freischaltungscode eingeben</h1>
-        <p style="font-size:0.9rem;color:#666;">Du hast per E-Mail einen 6-stelligen Code bekommen (gültig <?= (int) round(PASSWORD_RESET_TTL_MINUTES / 60) ?> Stunden).</p>
+        <p style="font-size:0.9rem;color:#666;">Es wurde eine E-Mail mit einem sechsstelligen Code an <strong><?= htmlspecialchars($maskedEmail, ENT_QUOTES) ?></strong> geschickt. Der Code ist <?= PASSWORD_RESET_TTL_MINUTES ?> Minuten gültig.</p>
         <?php if ($error): ?>
             <p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
         <?php endif; ?>
         <form method="post">
-            <label>E-Mail
-                <input type="text" inputmode="email" autocomplete="email" name="email" value="<?= htmlspecialchars($email, ENT_QUOTES) ?>" required autofocus>
-            </label>
-            <label>Code
-                <input type="text" inputmode="numeric" autocomplete="one-time-code" name="code" maxlength="6" pattern="\d{6}" required>
+            <label>Code eingeben
+                <input type="text" inputmode="numeric" autocomplete="one-time-code" name="code" maxlength="6" pattern="\d{6}" required autofocus>
             </label>
             <div class="button-row">
                 <button type="submit">Code prüfen</button>

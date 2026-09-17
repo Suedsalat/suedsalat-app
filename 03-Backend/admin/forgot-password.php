@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/bootstrap.php';
 
+use Suedsalat\Auth;
 use Suedsalat\Database;
 use Suedsalat\Mailer;
 
-$message = null;
+Auth::startSession();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     $email = normalize_email((string) $_POST['email']);
@@ -15,10 +16,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     $stmt->execute([':email' => $email]);
     $admin = $stmt->fetch();
 
+    // Session merkt sich, fuer wen gerade ein Reset laeuft - reset-password.php
+    // fragt dadurch nur noch den Code ab, nicht nochmal die E-Mail-Adresse.
+    unset($_SESSION['pending_reset_verified_id']);
+    $_SESSION['pending_reset_masked_email'] = mask_email_for_display($email);
+    $_SESSION['pending_reset_admin_id'] = $admin ? (int) $admin['id'] : null;
+
     if ($admin) {
         // Kurzer, per Hand eintippbarer Zahlencode statt eines Links im
-        // Anhang - laesst sich auf der Anmeldeseite direkt eingeben, ohne
-        // zwischen E-Mail-App und Browser hin- und herzuwechseln zu muessen.
+        // Anhang - laesst sich direkt auf der Seite eingeben, ohne zwischen
+        // E-Mail-App und Browser hin- und herzuwechseln zu muessen.
         $code = (string) random_int(100000, 999999);
         $codeHash = hash('sha256', $code);
         $expiresAt = (new DateTime())->modify('+' . PASSWORD_RESET_TTL_MINUTES . ' minutes')->format('Y-m-d H:i:s');
@@ -32,7 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             ':expires_at' => $expiresAt,
         ]);
 
-        $validHours = (int) round(PASSWORD_RESET_TTL_MINUTES / 60);
         try {
             Mailer::send(
                 $email,
@@ -41,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
                 "<p>Hallo {$admin['name']},</p>
                  <p>Dein Freischaltungscode zum Zurücksetzen deines Passworts lautet:</p>
                  <p style=\"font-size:28px;font-weight:bold;letter-spacing:4px;\">$code</p>
-                 <p>Gib ihn zusammen mit deiner E-Mail-Adresse auf der Seite \"Neues Passwort vergeben\" ein. Der Code ist $validHours Stunden gültig.</p>
+                 <p>Gib ihn auf der Seite \"Neues Passwort vergeben\" ein. Der Code ist " . PASSWORD_RESET_TTL_MINUTES . " Minuten gültig.</p>
                  <p>Falls du das nicht angefordert hast, ignoriere diese E-Mail.</p>"
             );
         } catch (\Throwable $e) {
@@ -49,8 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         }
     }
 
-    // Immer dieselbe Meldung, unabhaengig davon ob die E-Mail existiert (kein Enumerations-Leck).
-    $message = 'Falls die E-Mail-Adresse bekannt ist, wurde ein Freischaltungscode verschickt.';
+    header('Location: ' . BASE_PATH . '/admin/reset-password.php');
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -69,23 +75,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
 </header>
 <main class="auth-box">
     <h1>Passwort vergessen</h1>
-    <?php if ($message): ?>
-        <p class="info"><?= htmlspecialchars($message, ENT_QUOTES) ?></p>
+    <form method="post">
+        <label>E-Mail
+            <input type="text" inputmode="email" autocomplete="email" name="email" required autofocus>
+        </label>
         <div class="button-row">
-            <a class="button" href="<?= BASE_PATH ?>/admin/reset-password.php">Code eingeben</a>
+            <button type="submit">Code anfordern</button>
             <a class="button button-secondary" style="margin-bottom:0;" href="<?= BASE_PATH ?>/admin/login.php">Zurück zum Login</a>
         </div>
-    <?php else: ?>
-        <form method="post">
-            <label>E-Mail
-                <input type="text" inputmode="email" autocomplete="email" name="email" required autofocus>
-            </label>
-            <div class="button-row">
-                <button type="submit">Code anfordern</button>
-                <a class="button" href="<?= BASE_PATH ?>/admin/login.php">Zurück zum Login</a>
-            </div>
-        </form>
-    <?php endif; ?>
+    </form>
 </main>
 </body>
 </html>

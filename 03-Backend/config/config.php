@@ -95,7 +95,7 @@ define('UPLOAD_URL_BASE', APP_URL . '/uploads');
 // Feste Konstanten fuer Login-Sicherheit (siehe Konzept.md).
 define('LOGIN_MAX_ATTEMPTS', 5);
 define('LOGIN_LOCKOUT_MINUTES', 15);
-define('PASSWORD_RESET_TTL_MINUTES', 240); // 4 Stunden
+define('PASSWORD_RESET_TTL_MINUTES', 60); // 1 Stunde
 define('ADMIN_IDLE_TIMEOUT_MINUTES', 8);
 
 // --- API-Auth fuer die App (anonyme Geraete-Tokens, siehe lib/Jwt.php, lib/ApiAuth.php) ---
@@ -139,6 +139,32 @@ function verify_admin_delete_confirmation(\PDO $pdo, int $adminId, string $submi
 function verify_admin_password(\PDO $pdo, int $adminId, string $password): bool
 {
     return verify_admin_delete_confirmation($pdo, $adminId, $password);
+}
+
+// Verschleiert eine E-Mail-Adresse fuer die Anzeige beim Passwort-Reset
+// ("Code wurde an th**@****.net geschickt") - zeigt die ersten 4 Zeichen des
+// lokalen Teils, den Rest als Sternchen, und beim Domainteil nur noch die
+// Endung (.de/.net/.com/...). Arbeitet rein auf der vom Nutzer selbst
+// eingegebenen Adresse, verraet also nichts, was der Nutzer nicht ohnehin
+// schon selbst eingetippt hat (kein Konto-Enumerations-Leck).
+function mask_email_for_display(string $email): string
+{
+    $atPos = strrpos($email, '@');
+    if ($atPos === false) {
+        return $email;
+    }
+    $local = substr($email, 0, $atPos);
+    $domain = substr($email, $atPos + 1);
+
+    $visibleLocal = mb_substr($local, 0, 4);
+    $hiddenLocalLength = max(0, mb_strlen($local) - mb_strlen($visibleLocal));
+    $maskedLocal = $visibleLocal . str_repeat('*', $hiddenLocalLength);
+
+    $lastDot = strrpos($domain, '.');
+    $extension = $lastDot !== false ? substr($domain, $lastDot) : '';
+    $maskedDomain = str_repeat('*', 4) . $extension;
+
+    return $maskedLocal . '@' . $maskedDomain;
 }
 
 // Wandelt eine volle Bild-URL (z.B. UPLOAD_URL_BASE.'/gallery/xyz.jpg') in den
