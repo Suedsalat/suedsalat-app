@@ -74,6 +74,16 @@ class _NewsletterScreenState extends State<NewsletterScreen> {
           TextField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            enableInteractiveSelection: true,
+            // Manche Samsung-Tastatur-/Android-Kombinationen zeigen bei einem
+            // TextField sonst kein Kopieren/Ausschneiden/Einfügen-Menü an
+            // (gemeldetes Testerproblem) - das explizite Setzen des Standard-
+            // Kontextmenüs behebt das in der Praxis oft, ohne das Verhalten
+            // auf anderen Geräten zu verändern.
+            contextMenuBuilder: (context, editableTextState) {
+              return AdaptiveTextSelectionToolbar.editableText(editableTextState: editableTextState);
+            },
             decoration: const InputDecoration(labelText: 'Deine E-Mail'),
           ),
           const SizedBox(height: 8),
