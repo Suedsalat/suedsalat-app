@@ -82,6 +82,8 @@ function resize_location_tip_image(string $sourcePath, string $targetPath, strin
         $image = $resized;
     }
 
+    apply_mic_watermark_to_gd_image($image);
+
     $saved = match ($mime) {
         'image/jpeg' => imagejpeg($image, $targetPath, 82),
         'image/png' => imagepng($image, $targetPath, 6),

@@ -98,8 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_id'])
         if (!is_file($sourceLocal) || !copy($sourceLocal, $destLocal)) {
             $error = 'Datei konnte nicht übernommen werden.';
         } else {
-            $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $newFilename;
             $mediaType = ($fb['media_type'] ?? 'image') === 'video' ? 'video' : 'photo';
+            if ($mediaType === 'photo') {
+                apply_mic_watermark($destLocal);
+            }
+            $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $newFilename;
             $insert = $pdo->prepare(
                 'INSERT INTO photos (image_path, media_type, description, created_by, created_via_feedback_id)
                  VALUES (:path, :media_type, :description, :created_by, :feedback_id)'
@@ -151,6 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_media
         if (!is_file($sourceLocal) || !copy($sourceLocal, $destLocal)) {
             $error = 'Datei konnte nicht übernommen werden.';
         } else {
+            apply_mic_watermark($destLocal);
             $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $newFilename;
             $insert = $pdo->prepare(
                 'INSERT INTO photos (image_path, media_type, description, created_by, created_via_feedback_id)
@@ -212,7 +216,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
                     mkdir($galleryDir, 0755, true);
                 }
                 $filename = bin2hex(random_bytes(16)) . '.' . $result['extension'];
-                move_uploaded_file($file['tmp_name'], $galleryDir . '/' . $filename);
+                $newLocalPath = $galleryDir . '/' . $filename;
+                move_uploaded_file($file['tmp_name'], $newLocalPath);
+                if ($result['media_type'] === 'photo') {
+                    apply_mic_watermark($newLocalPath);
+                }
 
                 $oldLocalPath = UPLOAD_DIR . '/gallery/' . basename($existing['image_path']);
                 if (is_file($oldLocalPath)) {
@@ -251,7 +259,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo']) && !isset($
             mkdir($galleryDir, 0755, true);
         }
         $filename = bin2hex(random_bytes(16)) . '.' . $result['extension'];
-        move_uploaded_file($file['tmp_name'], $galleryDir . '/' . $filename);
+        $newLocalPath = $galleryDir . '/' . $filename;
+        move_uploaded_file($file['tmp_name'], $newLocalPath);
+        if ($result['media_type'] === 'photo') {
+            apply_mic_watermark($newLocalPath);
+        }
 
         $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $filename;
         $stmt = $pdo->prepare(

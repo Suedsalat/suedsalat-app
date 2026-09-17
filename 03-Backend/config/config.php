@@ -135,6 +135,95 @@ function upload_url_to_relative_path(string $url): ?string
     return substr($url, strlen($prefix));
 }
 
+// Druckt das Mikro-Wasserzeichen (05-Assets/Mikro/Mikro_transparent.png, als
+// admin/assets/img/watermark-mikro.png mit ausgeliefert) unten rechts auf ein
+// bereits geladenes GD-Bild - genutzt beim Veroeffentlichen eines Fotos in
+// Galerie/Filmtipps/Locations/Veranstaltungen (siehe apply_mic_watermark()
+// fuer die Datei-basierte Variante ohne eigenen Resize-Schritt). Bewusst mit
+// reduzierter Deckkraft (~45%), damit es als Branding erkennbar, aber nicht
+// aufdringlich ist. Tut nichts, wenn die Wasserzeichen-Datei fehlt.
+function apply_mic_watermark_to_gd_image($image): void
+{
+    $watermarkSource = __DIR__ . '/../admin/assets/img/watermark-mikro.png';
+    if (!is_file($watermarkSource)) {
+        return;
+    }
+    $watermark = @imagecreatefrompng($watermarkSource);
+    if ($watermark === false) {
+        return;
+    }
+
+    $targetWidth = imagesx($image);
+    $targetHeight = imagesy($image);
+    $wmWidth = max(28, min(140, (int) round($targetWidth * 0.12)));
+    $wmHeight = (int) round($wmWidth * imagesy($watermark) / imagesx($watermark));
+    if ($wmWidth < 1 || $wmHeight < 1) {
+        imagedestroy($watermark);
+        return;
+    }
+
+    $resizedWm = imagecreatetruecolor($wmWidth, $wmHeight);
+    imagealphablending($resizedWm, false);
+    imagesavealpha($resizedWm, true);
+    $transparent = imagecolorallocatealpha($resizedWm, 0, 0, 0, 127);
+    imagefill($resizedWm, 0, 0, $transparent);
+    imagecopyresampled($resizedWm, $watermark, 0, 0, 0, 0, $wmWidth, $wmHeight, imagesx($watermark), imagesy($watermark));
+    imagedestroy($watermark);
+
+    // Deckkraft je Pixel Richtung transparent verschieben (~45% der
+    // urspruenglichen Deckkraft bleibt uebrig) - imagecopymerge() allein
+    // wuerde die Alpha-Kanten des Wasserzeichens sonst haesslich verfaelschen.
+    for ($y = 0; $y < $wmHeight; $y++) {
+        for ($x = 0; $x < $wmWidth; $x++) {
+            $rgba = imagecolorat($resizedWm, $x, $y);
+            $alpha = ($rgba >> 24) & 0x7F;
+            $newAlpha = (int) min(127, $alpha + round((127 - $alpha) * 0.45));
+            $colors = imagecolorsforindex($resizedWm, $rgba);
+            $newColor = imagecolorallocatealpha($resizedWm, $colors['red'], $colors['green'], $colors['blue'], $newAlpha);
+            imagesetpixel($resizedWm, $x, $y, $newColor);
+        }
+    }
+
+    $margin = max(8, (int) round($targetWidth * 0.02));
+    $destX = $targetWidth - $wmWidth - $margin;
+    $destY = $targetHeight - $wmHeight - $margin;
+
+    imagealphablending($image, true);
+    imagesavealpha($image, true);
+    imagecopy($image, $resizedWm, $destX, $destY, 0, 0, $wmWidth, $wmHeight);
+    imagedestroy($resizedWm);
+}
+
+// Datei-basierte Variante fuer Stellen ohne eigenen Resize-Schritt (z.B.
+// admin/gallery.php, das Fotos bisher unveraendert speichert) - laedt,
+// stempelt, speichert wieder. Tut nichts bei Videos oder wenn GD fehlt.
+function apply_mic_watermark(string $absPath): void
+{
+    if (!function_exists('imagecreatetruecolor')) {
+        return;
+    }
+    $mime = mime_content_type($absPath);
+    $image = match ($mime) {
+        'image/jpeg' => @imagecreatefromjpeg($absPath),
+        'image/png' => @imagecreatefrompng($absPath),
+        'image/webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($absPath) : false,
+        default => false,
+    };
+    if ($image === false) {
+        return;
+    }
+
+    apply_mic_watermark_to_gd_image($image);
+
+    match ($mime) {
+        'image/jpeg' => imagejpeg($image, $absPath, 85),
+        'image/png' => imagepng($image, $absPath, 6),
+        'image/webp' => function_exists('imagewebp') ? imagewebp($image, $absPath, 85) : null,
+        default => null,
+    };
+    imagedestroy($image);
+}
+
 // Prueft, dass ein vom Nutzer kommender relativer Pfad tatsaechlich innerhalb
 // von UPLOAD_DIR liegt (kein "../" o.ae. nach draussen) und dort bereits eine
 // echte Datei ist - admin/photo-editor(-save).php duerfen nur bestehende,
