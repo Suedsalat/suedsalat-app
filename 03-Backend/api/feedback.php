@@ -241,8 +241,8 @@ $typeLabels = [
 $displayName = $senderName !== '' ? $senderName : 'Anonym';
 $activityLink = APP_URL . '/admin/feedback.php';
 
-$emailBody = "<p>Neue Nachricht über das Feedback-Formular der App:</p>"
-    . "<p><strong>Von:</strong> " . htmlspecialchars($displayName, ENT_QUOTES) . "<br>"
+$emailBody = "<p style=\"margin:0 0 16px;font-size:16px;line-height:1.5;\">Neue Nachricht über das Feedback-Formular der App:</p>"
+    . "<p style=\"margin:0 0 16px;font-size:16px;line-height:1.5;\"><strong>Von:</strong> " . htmlspecialchars($displayName, ENT_QUOTES) . "<br>"
     . "<strong>Typ:</strong> " . htmlspecialchars($typeLabels[$type] ?? 'Allgemeines Feedback', ENT_QUOTES);
 if ($type === 'sprachnachricht') {
     $emailBody .= "<br><strong>Veröffentlichung im Podcast:</strong> " . ($consentPublish ? 'Ja' : 'Nein');
@@ -256,8 +256,8 @@ if ($episodeGuid !== null) {
     }
 }
 $emailBody .= "</p>"
-    . "<p>" . nl2br(htmlspecialchars($message, ENT_QUOTES)) . "</p>"
-    . "<p><a href=\"{$activityLink}\">Im Admin-Bereich ansehen</a></p>";
+    . "<p style=\"margin:0 0 16px;font-size:16px;line-height:1.5;\">" . nl2br(htmlspecialchars($message, ENT_QUOTES)) . "</p>"
+    . "<p style=\"margin:0;font-size:16px;line-height:1.5;\"><a href=\"{$activityLink}\">Im Admin-Bereich ansehen</a></p>";
 
 try {
     $admins = $pdo->query('SELECT name, email FROM admins')->fetchAll();
@@ -266,7 +266,7 @@ try {
             $adminRow['email'],
             $adminRow['name'],
             'Neues Feedback – Südsalat',
-            $emailBody
+            render_branded_email_html('Neues Feedback', $emailBody)
         );
     }
 } catch (\Throwable $e) {
