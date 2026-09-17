@@ -30,7 +30,9 @@ $templateFile = $newsletterDir . '/email_template.html';
 $abmeldeScriptUrl = 'https://www.xn--sdsalat-n2a.eu/newsletter/abmelden.php';
 
 $defaultSubject = 'Eine neue Folge vom Südsalat Podcast ist da!';
-$defaultHeadline = 'Es gibt eine neue Folge!';
+// Steht jetzt direkt im Briefkopf der Mail (ersetzt den frueher dort fest
+// eingetragenen Text) - bewusst aenderbar, z.B. fuer eine Testphase.
+$defaultHeadline = 'Frischer Salat für deine Ohren!';
 // Vorausgefuellt bis zum Episoden-Praefix, damit nur noch die Nummer ergaenzt werden
 // muss (Folgen sind durchgaengig 3-stellig, z.B. "episode034") statt jedes Mal die
 // komplette URL einzutippen.
@@ -276,13 +278,13 @@ function build_email_body_html(string $bodyText): string
     return '<div style="margin: 0 0 20px; font-size: 16px; line-height: 1.5; color: #102024;">' . $sanitized . '</div>';
 }
 
-function build_email_headline_html(string $headline): string
+// Die Ueberschrift steht direkt im gruenen Briefkopf (ersetzt dort den frueher
+// fest eingetragenen Text "Frischer Salat fuer deine Ohren!") - daher hier nur
+// reiner, escapeter Text statt eines eigenen HTML-Blocks; der Fallback greift
+// nur, falls das Formular ausnahmsweise mal leer uebermittelt wird.
+function build_email_banner_headline_html(string $headline, string $defaultHeadline): string
 {
-    if ($headline === '') {
-        return '';
-    }
-    return '<h2 style="margin: 0 0 20px; font-size: 22px; color: #102024; text-align: center;">'
-        . htmlspecialchars($headline, ENT_QUOTES) . '</h2>';
+    return htmlspecialchars($headline !== '' ? $headline : $defaultHeadline, ENT_QUOTES);
 }
 
 // Begrenzt die vom Formular kommende Fotobreite auf einen sinnvollen Bereich
@@ -344,12 +346,12 @@ function build_episode_button_html(string $episodeLink): string
         . '</td></tr></table>';
 }
 
-function render_email_html(string $templateFile, string $headline, string $episodeLink, string $bodyText, array $photos): string
+function render_email_html(string $templateFile, string $headline, string $episodeLink, string $bodyText, array $photos, string $defaultHeadline): string
 {
     $template = file_get_contents($templateFile);
-    $search = ['[EMAIL_HEADLINE_BLOCK]', '[EMAIL_PHOTO]', '[EMAIL_BODY]', '[EPISODE_BUTTON]', '[UNSUBSCRIBE_LINK]'];
+    $search = ['[EMAIL_BANNER_HEADLINE]', '[EMAIL_PHOTO]', '[EMAIL_BODY]', '[EPISODE_BUTTON]', '[UNSUBSCRIBE_LINK]'];
     $replace = [
-        build_email_headline_html($headline),
+        build_email_banner_headline_html($headline, $defaultHeadline),
         build_email_photos_html($photos),
         build_email_body_html($bodyText),
         build_episode_button_html($episodeLink),
@@ -509,7 +511,7 @@ if ($action === 'send') {
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
     $encodedSubject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
 
-    $headlineHtml = build_email_headline_html($headline);
+    $bannerHeadlineHtml = build_email_banner_headline_html($headline, $defaultHeadline);
     $photoHtml = build_email_photos_html($photos);
     $bodyHtml = build_email_body_html($bodyText);
     $episodeButtonHtml = build_episode_button_html($episodeLink);
@@ -530,7 +532,7 @@ if ($action === 'send') {
     foreach ($recipients as $toEmail) {
         $unsubscribeLink = $abmeldeScriptUrl . '?email=' . urlencode($toEmail);
 
-        $finalContent = str_replace('[EMAIL_HEADLINE_BLOCK]', $headlineHtml, $template);
+        $finalContent = str_replace('[EMAIL_BANNER_HEADLINE]', $bannerHeadlineHtml, $template);
         $finalContent = str_replace('[EMAIL_PHOTO]', $photoHtml, $finalContent);
         $finalContent = str_replace('[EMAIL_BODY]', $bodyHtml, $finalContent);
         $finalContent = str_replace('[EPISODE_BUTTON]', $episodeButtonHtml, $finalContent);
@@ -707,7 +709,7 @@ if ($action === 'preview') {
         $resolvedTarget = resolve_newsletter_target($target, $emailsFile, $pdo);
         $recipientCount = count($resolvedTarget['recipients']);
         $targetLabel = $resolvedTarget['label'];
-        $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photos);
+        $previewHtml = render_email_html($templateFile, $headline, $episodeLink, $bodyText, $photos, $defaultHeadline);
     }
 } elseif ($action === 'save_draft') {
     // Speichert die aktuell im Formular stehenden Werte als benannte Vorlage
@@ -917,7 +919,7 @@ $pastSends = $pdo->query(
                 </div>
             </div>
         <?php endif; ?>
-        <iframe srcdoc="<?= htmlspecialchars(render_email_html($templateFile, $viewingSend['headline'] ?? '', $viewingSend['episode_link'] ?? '', $viewingSend['body_text'], $viewingSendPhotos), ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
+        <iframe srcdoc="<?= htmlspecialchars(render_email_html($templateFile, $viewingSend['headline'] ?? '', $viewingSend['episode_link'] ?? '', $viewingSend['body_text'], $viewingSendPhotos, $defaultHeadline), ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
         <div class="button-row" style="margin-top:16px;">
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?reuse_id=<?= (int) $viewingSend['id'] ?>">Für neuen Newsletter übernehmen</a>
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php">Zurück</a>
@@ -1059,24 +1061,18 @@ $pastSends = $pdo->query(
                 </select>
             </label>
 
-            <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
-                <input type="checkbox" id="chk_headline" name="use_headline" <?= $useHeadline ? 'checked' : '' ?> style="width:auto;">
-                Überschrift anzeigen
+            <input type="hidden" name="use_headline" value="1">
+            <label>Überschrift (steht im Briefkopf der Mail)
+                <input type="text" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>" placeholder="<?= htmlspecialchars($defaultHeadline, ENT_QUOTES) ?>" required>
             </label>
-            <div id="field_headline">
-                <label>Überschrift in der Mail
-                    <input type="text" name="headline" value="<?= htmlspecialchars($headline, ENT_QUOTES) ?>">
-                </label>
-            </div>
 
             <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
-                <input type="checkbox" id="chk_episode" name="use_episode_link" <?= $useEpisodeLink ? 'checked' : '' ?> style="width:auto;">
-                Link zur Folge einbauen
+                <input type="checkbox" id="chk_photo" <?= $showPhotosSection ? 'checked' : '' ?> style="width:auto;">
+                Foto(s) einbinden
             </label>
-            <div id="field_episode">
-                <label>Episoden-Link (nur Nummer ergänzen)
-                    <input type="text" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
-                </label>
+            <div id="field_photo">
+                <?php render_photo_editor_fields($photos); ?>
+                <p style="font-size:0.85rem;color:#666;">Breite/Ausrichtung lassen sich nach der Vorschau noch feinjustieren.</p>
             </div>
 
             <label>Text der Newsletter-Mail</label>
@@ -1095,15 +1091,16 @@ $pastSends = $pdo->query(
             <textarea name="body_text" id="body_text_hidden" style="display:none;"></textarea>
 
             <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">
-                <input type="checkbox" id="chk_photo" <?= $showPhotosSection ? 'checked' : '' ?> style="width:auto;">
-                Foto(s) einbinden
+                <input type="checkbox" id="chk_episode" name="use_episode_link" <?= $useEpisodeLink ? 'checked' : '' ?> style="width:auto;">
+                Link zur Folge einbauen
             </label>
-            <div id="field_photo">
-                <?php render_photo_editor_fields($photos); ?>
-                <p style="font-size:0.85rem;color:#666;">Breite/Ausrichtung lassen sich nach der Vorschau noch feinjustieren.</p>
+            <div id="field_episode">
+                <label>Episoden-Link (nur Nummer ergänzen)
+                    <input type="text" name="episode_link" value="<?= htmlspecialchars($episodeLink, ENT_QUOTES) ?>">
+                </label>
             </div>
 
-            <p style="font-size:0.85rem;color:#666;">Logo und Fußzeile (Impressum/Datenschutz/Abmelden) der Vorlage bleiben immer unverändert. Nicht angehakte Module (Überschrift/Folgen-Link) bzw. eine leere Fotoliste erscheinen gar nicht erst im Newsletter.</p>
+            <p style="font-size:0.85rem;color:#666;">Logo und Fußzeile (Impressum/Datenschutz/Abmelden) der Vorlage bleiben immer unverändert. Der Folgen-Link erscheint nur bei angehakter Checkbox, die Fotoliste nur bei mindestens einem Foto.</p>
 
             <label>Vorlagenname (nur zum Speichern als Vorlage nötig)
                 <input type="text" name="draft_name" value="<?= htmlspecialchars($currentDraftName, ENT_QUOTES) ?>" placeholder="z.B. Neue-Folge-Standard">
@@ -1129,7 +1126,6 @@ $pastSends = $pdo->query(
                     checkbox.addEventListener('change', update);
                     update();
                 }
-                bind('chk_headline', 'field_headline');
                 bind('chk_episode', 'field_episode');
                 bind('chk_photo', 'field_photo');
 
