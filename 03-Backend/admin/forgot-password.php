@@ -16,8 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     $admin = $stmt->fetch();
 
     if ($admin) {
-        $token = bin2hex(random_bytes(32));
-        $tokenHash = hash('sha256', $token);
+        // Kurzer, per Hand eintippbarer Zahlencode statt eines Links im
+        // Anhang - laesst sich auf der Anmeldeseite direkt eingeben, ohne
+        // zwischen E-Mail-App und Browser hin- und herzuwechseln zu muessen.
+        $code = (string) random_int(100000, 999999);
+        $codeHash = hash('sha256', $code);
         $expiresAt = (new DateTime())->modify('+' . PASSWORD_RESET_TTL_MINUTES . ' minutes')->format('Y-m-d H:i:s');
 
         $insert = $pdo->prepare(
@@ -25,19 +28,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         );
         $insert->execute([
             ':admin_id' => $admin['id'],
-            ':token_hash' => $tokenHash,
+            ':token_hash' => $codeHash,
             ':expires_at' => $expiresAt,
         ]);
 
-        $resetLink = APP_URL . '/admin/reset-password.php?token=' . $token;
+        $validHours = (int) round(PASSWORD_RESET_TTL_MINUTES / 60);
         try {
             Mailer::send(
                 $email,
                 $admin['name'],
-                'Passwort zuruecksetzen – Südsalat',
+                'Dein Freischaltungscode – Südsalat',
                 "<p>Hallo {$admin['name']},</p>
-                 <p>Klicke auf den folgenden Link, um dein Passwort zurueckzusetzen (gueltig " . PASSWORD_RESET_TTL_MINUTES . " Minuten):</p>
-                 <p><a href=\"$resetLink\">$resetLink</a></p>
+                 <p>Dein Freischaltungscode zum Zurücksetzen deines Passworts lautet:</p>
+                 <p style=\"font-size:28px;font-weight:bold;letter-spacing:4px;\">$code</p>
+                 <p>Gib ihn zusammen mit deiner E-Mail-Adresse auf der Seite \"Neues Passwort vergeben\" ein. Der Code ist $validHours Stunden gültig.</p>
                  <p>Falls du das nicht angefordert hast, ignoriere diese E-Mail.</p>"
             );
         } catch (\Throwable $e) {
@@ -46,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     }
 
     // Immer dieselbe Meldung, unabhaengig davon ob die E-Mail existiert (kein Enumerations-Leck).
-    $message = 'Falls die E-Mail-Adresse bekannt ist, wurde ein Link zum Zuruecksetzen verschickt.';
+    $message = 'Falls die E-Mail-Adresse bekannt ist, wurde ein Freischaltungscode verschickt.';
 }
 ?>
 <!DOCTYPE html>
@@ -67,14 +71,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     <h1>Passwort vergessen</h1>
     <?php if ($message): ?>
         <p class="info"><?= htmlspecialchars($message, ENT_QUOTES) ?></p>
-        <a class="button" href="<?= BASE_PATH ?>/admin/login.php">Zurück zum Login</a>
+        <div class="button-row">
+            <a class="button" href="<?= BASE_PATH ?>/admin/reset-password.php">Code eingeben</a>
+            <a class="button button-secondary" style="margin-bottom:0;" href="<?= BASE_PATH ?>/admin/login.php">Zurück zum Login</a>
+        </div>
     <?php else: ?>
         <form method="post">
             <label>E-Mail
                 <input type="text" inputmode="email" autocomplete="email" name="email" required autofocus>
             </label>
             <div class="button-row">
-                <button type="submit">Link anfordern</button>
+                <button type="submit">Code anfordern</button>
                 <a class="button" href="<?= BASE_PATH ?>/admin/login.php">Zurück zum Login</a>
             </div>
         </form>

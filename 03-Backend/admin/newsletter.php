@@ -469,6 +469,25 @@ if ($action === 'delete_draft') {
     exit;
 }
 
+// --- VERSAND AUS DEM VERLAUF LÖSCHEN (nur per POST mit action=delete_send) ---
+// Loescht nur den Protokoll-Eintrag (Betreff/Text/Empfaengerzahl usw.) - die
+// eigentlichen Mails sind natuerlich laengst raus, das hier betrifft nur die
+// Uebersicht "Bisherige Newsletter". Fotos/Empfaenger-Sidecars zum Send
+// werden per Fremdschluessel-CASCADE mitentfernt (siehe newsletter_send_photos/
+// newsletter_send_recipients in sql/).
+if ($action === 'delete_send') {
+    if (!verify_admin_password($pdo, $adminId, (string) ($_POST['confirm_password'] ?? ''))) {
+        header('Location: ' . BASE_PATH . '/admin/newsletter.php?delete_error=1');
+        exit;
+    }
+    $sendId = (int) ($_POST['send_id'] ?? 0);
+    if ($sendId > 0) {
+        $pdo->prepare('DELETE FROM newsletter_sends WHERE id = :id')->execute([':id' => $sendId]);
+    }
+    header('Location: ' . BASE_PATH . '/admin/newsletter.php');
+    exit;
+}
+
 // --- STUFE 2: ECHTER VERSAND (nur per POST mit action=send) ---
 if ($action === 'send') {
     $subject = trim((string) ($_POST['subject'] ?? $defaultSubject));
@@ -1182,6 +1201,11 @@ $pastSends = $pdo->query(
                         <div class="actions">
                             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?view_id=<?= (int) $send['id'] ?>">Ansehen</a>
                             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?reuse_id=<?= (int) $send['id'] ?>">Übernehmen</a>
+                            <form method="post" onsubmit="return false;">
+                                <input type="hidden" name="action" value="delete_send">
+                                <input type="hidden" name="send_id" value="<?= (int) $send['id'] ?>">
+                                <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Der Newsletter-Eintrag „<?= htmlspecialchars(addslashes($send['subject']), ENT_QUOTES) ?>“ wird dauerhaft aus dem Verlauf gelöscht (der Versand selbst ist bereits geschehen, das betrifft nur den Eintrag hier).')">Löschen</button>
+                            </form>
                         </div>
                     </td>
                 </tr>
@@ -1236,8 +1260,9 @@ $pastSends = $pdo->query(
 </div>
 <div id="confirm-step2" class="modal-overlay">
     <div class="modal-box">
-        <p><strong>Zur Bestätigung: dein Passwort</strong></p>
-        <input type="password" id="confirm-password" placeholder="Passwort">
+        <p><strong>Zur Bestätigung: Code aus deiner Authenticator-App</strong></p>
+        <p style="font-size:0.85rem;color:#666;margin-top:-8px;">Falls du noch kein 2FA eingerichtet hast, geht hier auch dein normales Passwort.</p>
+        <input type="text" inputmode="numeric" autocomplete="one-time-code" id="confirm-password" placeholder="Code oder Passwort">
         <p id="confirm-error" class="error" style="display:none;"></p>
         <div class="modal-actions">
             <button type="button" onclick="confirmStep2Cancel()">Abbrechen</button>

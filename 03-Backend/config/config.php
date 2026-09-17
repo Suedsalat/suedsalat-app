@@ -95,7 +95,7 @@ define('UPLOAD_URL_BASE', APP_URL . '/uploads');
 // Feste Konstanten fuer Login-Sicherheit (siehe Konzept.md).
 define('LOGIN_MAX_ATTEMPTS', 5);
 define('LOGIN_LOCKOUT_MINUTES', 15);
-define('PASSWORD_RESET_TTL_MINUTES', 60);
+define('PASSWORD_RESET_TTL_MINUTES', 240); // 4 Stunden
 define('ADMIN_IDLE_TIMEOUT_MINUTES', 8);
 
 // --- API-Auth fuer die App (anonyme Geraete-Tokens, siehe lib/Jwt.php, lib/ApiAuth.php) ---
@@ -108,18 +108,37 @@ define('API_AUTH_ENFORCE', env('API_AUTH_ENFORCE', 'false') === 'true');
 define('JWT_ACCESS_TTL_MINUTES', 60);
 define('JWT_REFRESH_TTL_DAYS', 180);
 
-// Zusaetzliche Passwort-Bestaetigung vor endgueltigen Loeschvorgaengen im
-// Admin-Bereich (Termine/Fotos/Aktivitaeten) - prueft das Passwort des
-// AKTUELL eingeloggten Admins, unabhaengig davon, wessen Datensatz geloescht wird.
-function verify_admin_password(\PDO $pdo, int $adminId, string $password): bool
+// Zusaetzliche Bestaetigung vor endgueltigen Loeschvorgaengen/sensiblen
+// Aktionen im gesamten Admin-Bereich - prueft die AKTUELL eingeloggte Person,
+// unabhaengig davon, wessen Datensatz betroffen ist. Bevorzugt den 6-stelligen
+// Authenticator-App-Code (TOTP), wenn 2FA fuer diesen Account aktiv ist -
+// faellt sonst (Account ohne aktivierte 2FA) automatisch aufs normale
+// Passwort zurueck, damit niemand ausgesperrt wird, der (noch) kein 2FA
+// eingerichtet hat. Ein Admin MIT aktivem 2FA kann hier weiterhin auch sein
+// Passwort eingeben, nicht nur den Code - schadet nicht, ist aber bewusst
+// nicht die im UI beworbene Standardeingabe.
+function verify_admin_delete_confirmation(\PDO $pdo, int $adminId, string $submitted): bool
 {
-    if ($password === '') {
+    if ($submitted === '') {
         return false;
     }
-    $stmt = $pdo->prepare('SELECT password_hash FROM admins WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT password_hash, totp_secret, totp_enabled FROM admins WHERE id = :id');
     $stmt->execute([':id' => $adminId]);
-    $hash = $stmt->fetchColumn();
-    return $hash !== false && password_verify($password, $hash);
+    $admin = $stmt->fetch(\PDO::FETCH_ASSOC);
+    if ($admin === false) {
+        return false;
+    }
+    if ($admin['totp_enabled'] && $admin['totp_secret'] && \Suedsalat\Totp::verify($admin['totp_secret'], $submitted)) {
+        return true;
+    }
+    return password_verify($submitted, $admin['password_hash']);
+}
+
+// Alter Name als duenner Alias beibehalten, falls irgendwo noch referenziert -
+// verhaelt sich identisch zu verify_admin_delete_confirmation().
+function verify_admin_password(\PDO $pdo, int $adminId, string $password): bool
+{
+    return verify_admin_delete_confirmation($pdo, $adminId, $password);
 }
 
 // Wandelt eine volle Bild-URL (z.B. UPLOAD_URL_BASE.'/gallery/xyz.jpg') in den
