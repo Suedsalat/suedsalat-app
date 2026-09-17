@@ -30,7 +30,30 @@ if (!str_starts_with($returnUrl, BASE_PATH . '/admin/')) {
     $returnUrl = BASE_PATH . '/admin/gallery.php';
 }
 
-$imageUrl = UPLOAD_URL_BASE . '/' . $relPath;
+// Fotos, die ueber die neuen Upload-Pipelines veroeffentlicht wurden, haben
+// ein separates, unangetastetes Original (originals/<datei>) - der Editor
+// bearbeitet IMMER dieses Original, nie das veroeffentlichte (mit
+// Wasserzeichen versehene) Bild, damit Aufkleber jederzeit wieder verschoben/
+// entfernt werden koennen, statt sich mit jedem Speichern fester "einzubrennen".
+// Aeltere Fotos von VOR dieser Funktion haben noch kein solches Original -
+// fuer die bleibt es (nur fuer dieses eine Mal) beim alten, direkten
+// Bearbeiten der veroeffentlichten Datei.
+$originalRelPath = original_path_for_relative($relPath);
+$originalAbsPath = resolve_upload_path($originalRelPath);
+$hasOriginal = $originalAbsPath !== null;
+
+$imageUrl = UPLOAD_URL_BASE . '/' . ($hasOriginal ? $originalRelPath : $relPath);
+
+$existingStickers = [];
+if ($hasOriginal) {
+    $stickersAbsPath = resolve_upload_path(stickers_json_path_for_relative($relPath));
+    if ($stickersAbsPath !== null) {
+        $decoded = json_decode((string) file_get_contents($stickersAbsPath), true);
+        if (is_array($decoded)) {
+            $existingStickers = $decoded;
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -60,6 +83,11 @@ $imageUrl = UPLOAD_URL_BASE . '/' . $relPath;
     <h1>Foto bearbeiten</h1>
     <p class="editor-hint">
         Emoji unten auswählen, dann aufs Bild klicken, um es dort abzulegen (z. B. über ein Gesicht) - Kindesrechte gehen vor. Aufkleber lassen sich anschließend verschieben (ziehen), über den Anfasser unten rechts vergrößern/verkleinern, und über "Löschen" oder die Entf-Taste wieder entfernen.
+        <?php if ($hasOriginal): ?>
+            Das unveränderte Originalfoto bleibt dabei immer erhalten - du kannst die Aufkleber jederzeit später wieder anpassen oder entfernen.
+        <?php else: ?>
+            <strong>Hinweis:</strong> Dieses Foto ist älter als diese Funktion, es gibt noch kein separates Original dazu. Diesmal wird direkt im sichtbaren Bild gespeichert (danach nicht mehr rückgängig zu machen) - ab jetzt neu hochgeladene Fotos bleiben dagegen dauerhaft nachbearbeitbar.
+        <?php endif; ?>
     </p>
 
     <div class="editor-toolbar">
@@ -97,6 +125,8 @@ $imageUrl = UPLOAD_URL_BASE . '/' . $relPath;
         savePath: <?= json_encode($relPath) ?>,
         saveUrl: <?= json_encode(BASE_PATH . '/admin/photo-editor-save.php') ?>,
         returnUrl: <?= json_encode($returnUrl) ?>,
+        nonDestructive: <?= json_encode($hasOriginal) ?>,
+        existingStickers: <?= json_encode($existingStickers) ?>,
     });
 </script>
 </body>

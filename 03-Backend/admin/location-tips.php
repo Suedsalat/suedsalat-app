@@ -36,20 +36,25 @@ function upload_location_tip_photo(array $file, array $allowedImageTypes, int $m
     }
 
     $locationTipsDir = UPLOAD_DIR . '/location-tips';
-    if (!is_dir($locationTipsDir)) {
-        mkdir($locationTipsDir, 0755, true);
+    $originalsDir = $locationTipsDir . '/originals';
+    if (!is_dir($originalsDir)) {
+        mkdir($originalsDir, 0755, true);
     }
     $filename = bin2hex(random_bytes(16)) . '.' . $allowedImageTypes[$mime];
-    $targetPath = $locationTipsDir . '/' . $filename;
+    $originalPath = $originalsDir . '/' . $filename;
+    $publishedPath = $locationTipsDir . '/' . $filename;
 
-    if (!resize_location_tip_image($file['tmp_name'], $targetPath, $mime, 1600)) {
-        move_uploaded_file($file['tmp_name'], $targetPath);
+    if (!resize_location_tip_image($file['tmp_name'], $originalPath, $mime, 1600)) {
+        move_uploaded_file($file['tmp_name'], $originalPath);
+    }
+    if (!apply_mic_watermark_copy($originalPath, $publishedPath)) {
+        copy($originalPath, $publishedPath);
     }
 
     return UPLOAD_URL_BASE . '/location-tips/' . $filename;
 }
 
-/** Skaliert ein Bild auf max. Kantenlaenge und speichert es komprimiert unter $targetPath.
+/** Skaliert ein Bild auf max. Kantenlaenge und speichert es komprimiert unter $targetPath (ohne Wasserzeichen - reines Original).
  *  Gibt false zurueck, wenn GD fehlt oder das Bild nicht gelesen werden konnte (dann Original unveraendert uebernehmen). */
 function resize_location_tip_image(string $sourcePath, string $targetPath, string $mime, int $maxDimension): bool
 {
@@ -81,8 +86,6 @@ function resize_location_tip_image(string $sourcePath, string $targetPath, strin
         imagedestroy($image);
         $image = $resized;
     }
-
-    apply_mic_watermark_to_gd_image($image);
 
     $saved = match ($mime) {
         'image/jpeg' => imagejpeg($image, $targetPath, 82),
@@ -255,17 +258,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
                 goto render_location_tips_page;
             }
             if ($existingImagePath) {
-                $oldLocal = UPLOAD_DIR . '/location-tips/' . basename($existingImagePath);
-                if (is_file($oldLocal)) {
-                    unlink($oldLocal);
+                $oldRel = upload_url_to_relative_path($existingImagePath);
+                if ($oldRel !== null) {
+                    delete_published_photo_and_original($oldRel);
                 }
             }
             $imagePath = $uploaded;
         } elseif (!empty($_POST['remove_photo'])) {
             if ($existingImagePath) {
-                $oldLocal = UPLOAD_DIR . '/location-tips/' . basename($existingImagePath);
-                if (is_file($oldLocal)) {
-                    unlink($oldLocal);
+                $oldRel = upload_url_to_relative_path($existingImagePath);
+                if ($oldRel !== null) {
+                    delete_published_photo_and_original($oldRel);
                 }
             }
             $imagePath = null;

@@ -194,34 +194,72 @@ function apply_mic_watermark_to_gd_image($image): void
     imagedestroy($resizedWm);
 }
 
-// Datei-basierte Variante fuer Stellen ohne eigenen Resize-Schritt (z.B.
-// admin/gallery.php, das Fotos bisher unveraendert speichert) - laedt,
-// stempelt, speichert wieder. Tut nichts bei Videos oder wenn GD fehlt.
-function apply_mic_watermark(string $absPath): void
+// Laedt $sourcePath, stempelt das Wasserzeichen drauf, speichert als
+// $targetPath (kann identisch mit $sourcePath sein). Tut nichts bei Videos
+// oder wenn GD fehlt. Das ist bewusst die EINZIGE Stelle, die ein Bild mit
+// Wasserzeichen versieht - Original bleibt unangetastet, wenn $targetPath
+// != $sourcePath (siehe apply_mic_watermark() fuer den alten In-Place-Fall).
+function apply_mic_watermark_copy(string $sourcePath, string $targetPath): bool
 {
     if (!function_exists('imagecreatetruecolor')) {
-        return;
+        return false;
     }
-    $mime = mime_content_type($absPath);
+    $mime = mime_content_type($sourcePath);
     $image = match ($mime) {
-        'image/jpeg' => @imagecreatefromjpeg($absPath),
-        'image/png' => @imagecreatefrompng($absPath),
-        'image/webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($absPath) : false,
+        'image/jpeg' => @imagecreatefromjpeg($sourcePath),
+        'image/png' => @imagecreatefrompng($sourcePath),
+        'image/webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($sourcePath) : false,
         default => false,
     };
     if ($image === false) {
-        return;
+        return false;
     }
 
     apply_mic_watermark_to_gd_image($image);
 
-    match ($mime) {
-        'image/jpeg' => imagejpeg($image, $absPath, 85),
-        'image/png' => imagepng($image, $absPath, 6),
-        'image/webp' => function_exists('imagewebp') ? imagewebp($image, $absPath, 85) : null,
-        default => null,
+    $targetDir = dirname($targetPath);
+    if (!is_dir($targetDir)) {
+        mkdir($targetDir, 0755, true);
+    }
+
+    $saved = match ($mime) {
+        'image/jpeg' => imagejpeg($image, $targetPath, 85),
+        'image/png' => imagepng($image, $targetPath, 6),
+        'image/webp' => function_exists('imagewebp') ? imagewebp($image, $targetPath, 85) : false,
+        default => false,
     };
     imagedestroy($image);
+
+    return (bool) $saved;
+}
+
+// Bequemlichkeits-Wrapper fuer den (seltenen) Fall, dass wirklich in derselben
+// Datei gestempelt werden soll, ohne ein separates Original zu behalten.
+function apply_mic_watermark(string $absPath): void
+{
+    apply_mic_watermark_copy($absPath, $absPath);
+}
+
+// Ordnet einem veroeffentlichten Bildpfad ("gallery/xyz.jpg") den Pfad seines
+// unangetasteten Originals zu ("gallery/originals/xyz.jpg") - siehe
+// [[project-suedsalat-app]]-Update zur Foto-Retusche: das Original bleibt
+// IMMER ohne Wasserzeichen/Aufkleber erhalten, damit sich Aufkleber jederzeit
+// nachtraeglich aendern/entfernen lassen, statt fest ins Bild "eingebrannt"
+// zu sein. Das veroeffentlichte Bild (in der App/auf der Seite sichtbar) ist
+// eine daraus erzeugte Kopie mit Wasserzeichen (+ ggf. Aufklebern).
+function original_path_for_relative(string $relPublishedPath): string
+{
+    $dir = dirname($relPublishedPath);
+    $file = basename($relPublishedPath);
+    return ($dir !== '.' ? $dir . '/' : '') . 'originals/' . $file;
+}
+
+// Pfad der Aufkleber-Metadaten (JSON-Array aus {emoji,x,y,size}, Koordinaten
+// in Pixeln des ORIGINALS) - liegt als "Sidecar"-Datei neben dem Original,
+// keine eigene DB-Tabelle noetig.
+function stickers_json_path_for_relative(string $relPublishedPath): string
+{
+    return original_path_for_relative($relPublishedPath) . '.json';
 }
 
 // Prueft, dass ein vom Nutzer kommender relativer Pfad tatsaechlich innerhalb
@@ -241,4 +279,37 @@ function resolve_upload_path(string $relativePath): ?string
         return null;
     }
     return $real;
+}
+
+// Loescht ein veroeffentlichtes Foto vollstaendig (Datei selbst, Original,
+// evtl. Aufkleber-Metadaten) - genutzt beim Ersetzen/Entfernen eines Posters/
+// Fotos in events.php/movie-tips.php/location-tips.php/gallery.php, damit in
+// originals/ keine verwaisten Dateien liegen bleiben.
+function delete_published_photo_and_original(string $relPublishedPath): void
+{
+    $publishedAbs = resolve_upload_path($relPublishedPath);
+    if ($publishedAbs !== null) {
+        unlink($publishedAbs);
+    }
+    $originalAbs = resolve_upload_path(original_path_for_relative($relPublishedPath));
+    if ($originalAbs !== null) {
+        unlink($originalAbs);
+    }
+    $stickersAbs = resolve_upload_path(stickers_json_path_for_relative($relPublishedPath));
+    if ($stickersAbs !== null) {
+        unlink($stickersAbs);
+    }
+}
+
+// Wie resolve_upload_path(), aber fuer einen Zielpfad, der noch NICHT
+// existieren muss (z.B. beim erstmaligen Anlegen eines Originals) - prueft
+// nur, dass er syntaktisch innerhalb von UPLOAD_DIR liegen WUERDE (kein
+// "../"), ohne realpath() auf eine bereits vorhandene Datei zu verlangen.
+function resolve_upload_write_path(string $relativePath): ?string
+{
+    $relativePath = ltrim($relativePath, '/');
+    if ($relativePath === '' || str_contains($relativePath, '..')) {
+        return null;
+    }
+    return UPLOAD_DIR . '/' . $relativePath;
 }

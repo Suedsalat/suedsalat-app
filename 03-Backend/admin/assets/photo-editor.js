@@ -1,13 +1,23 @@
 // Einfacher Foto-Editor: laedt ein Bild in ein <canvas>, laesst Emoji-Aufkleber
 // (z.B. ein Smilie ueber ein Kindergesicht) platzieren/verschieben/vergroessern
-// und exportiert das Ergebnis als flaches Bild, das dann die Original-Datei
-// auf dem Server ueberschreibt (siehe admin/photo-editor-save.php).
+// und exportiert das Ergebnis als flaches Bild. Bei Fotos mit erhaltenem
+// Original (options.nonDestructive) laedt das Canvas das unveraenderte
+// Original, die Aufkleber-Liste wird zusaetzlich als JSON mitgeschickt, damit
+// sie beim naechsten Bearbeiten wieder als bewegliche Objekte startet, statt
+// endgueltig ins Bild "eingebrannt" zu sein (siehe admin/photo-editor-save.php).
 window.PhotoEditor = (function () {
     function init(options) {
         var canvas = document.getElementById('editorCanvas');
         var ctx = canvas.getContext('2d');
         var img = new Image();
-        var stickers = []; // {emoji, x, y, size} - x/y/size in Bild-Pixeln (nicht CSS-Pixeln)
+        // {emoji, x, y, size} - x/y/size in Bild-Pixeln (nicht CSS-Pixeln). Bei
+        // einem Foto mit erhaltenem Original (options.nonDestructive) startet
+        // das mit den zuletzt gespeicherten Aufklebern, nicht leer - die lassen
+        // sich dann direkt weiter verschieben/entfernen statt neu platziert
+        // werden zu muessen.
+        var stickers = (options.existingStickers || []).map(function (s) {
+            return { emoji: s.emoji, x: s.x, y: s.y, size: s.size };
+        });
         var selectedIndex = -1;
         var selectedEmoji = '😊';
         var scale = 1; // CSS-Pixel pro Bild-Pixel
@@ -232,6 +242,13 @@ window.PhotoEditor = (function () {
                 var formData = new FormData();
                 formData.append('path', options.savePath);
                 formData.append('image', blob, 'edited.jpg');
+                formData.append('nondestructive', options.nonDestructive ? '1' : '0');
+                if (options.nonDestructive) {
+                    // Aufkleber-Liste separat mitschicken, damit sie beim naechsten
+                    // Oeffnen wieder als bewegliche/loeschbare Objekte geladen werden
+                    // koennen, statt nur als fest gespeicherte Pixel im Bild.
+                    formData.append('stickers', JSON.stringify(stickers));
+                }
 
                 fetch(options.saveUrl, { method: 'POST', body: formData, credentials: 'same-origin' })
                     .then(function (res) { return res.json(); })

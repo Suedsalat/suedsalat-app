@@ -36,20 +36,27 @@ function upload_event_poster(array $file, array $allowedImageTypes, int $maxSize
     }
 
     $eventsDir = UPLOAD_DIR . '/events';
-    if (!is_dir($eventsDir)) {
-        mkdir($eventsDir, 0755, true);
+    $originalsDir = $eventsDir . '/originals';
+    if (!is_dir($originalsDir)) {
+        mkdir($originalsDir, 0755, true);
     }
     $filename = bin2hex(random_bytes(16)) . '.' . $allowedImageTypes[$mime];
-    $targetPath = $eventsDir . '/' . $filename;
+    $originalPath = $originalsDir . '/' . $filename;
+    $publishedPath = $eventsDir . '/' . $filename;
 
-    if (!resize_poster_image($file['tmp_name'], $targetPath, $mime, 1600)) {
-        move_uploaded_file($file['tmp_name'], $targetPath);
+    if (!resize_poster_image($file['tmp_name'], $originalPath, $mime, 1600)) {
+        move_uploaded_file($file['tmp_name'], $originalPath);
+    }
+    // Original (originalPath) bleibt ohne Wasserzeichen - veroeffentlicht wird
+    // eine Kopie davon mit Wasserzeichen, siehe apply_mic_watermark_copy().
+    if (!apply_mic_watermark_copy($originalPath, $publishedPath)) {
+        copy($originalPath, $publishedPath);
     }
 
     return UPLOAD_URL_BASE . '/events/' . $filename;
 }
 
-/** Skaliert ein Bild auf max. Kantenlaenge und speichert es komprimiert unter $targetPath.
+/** Skaliert ein Bild auf max. Kantenlaenge und speichert es komprimiert unter $targetPath (ohne Wasserzeichen - reines Original).
  *  Gibt false zurueck, wenn GD fehlt oder das Bild nicht gelesen werden konnte (dann Original unveraendert uebernehmen). */
 function resize_poster_image(string $sourcePath, string $targetPath, string $mime, int $maxDimension): bool
 {
@@ -82,8 +89,6 @@ function resize_poster_image(string $sourcePath, string $targetPath, string $mim
         $image = $resized;
     }
 
-    apply_mic_watermark_to_gd_image($image);
-
     $saved = match ($mime) {
         'image/jpeg' => imagejpeg($image, $targetPath, 82),
         'image/png' => imagepng($image, $targetPath, 6),
@@ -103,16 +108,21 @@ function copy_feedback_photo_as_poster(string $feedbackImagePath, string $destDi
         return null;
     }
     $destDir = UPLOAD_DIR . '/' . $destDirName;
-    if (!is_dir($destDir)) {
-        mkdir($destDir, 0755, true);
+    $originalsDir = $destDir . '/originals';
+    if (!is_dir($originalsDir)) {
+        mkdir($originalsDir, 0755, true);
     }
     $extension = pathinfo($sourceLocal, PATHINFO_EXTENSION);
     $mime = mime_content_type($sourceLocal);
     $filename = bin2hex(random_bytes(16)) . '.' . $extension;
-    $targetPath = $destDir . '/' . $filename;
+    $originalPath = $originalsDir . '/' . $filename;
+    $publishedPath = $destDir . '/' . $filename;
 
-    if (!resize_poster_image($sourceLocal, $targetPath, $mime, 1600)) {
-        copy($sourceLocal, $targetPath);
+    if (!resize_poster_image($sourceLocal, $originalPath, $mime, 1600)) {
+        copy($sourceLocal, $originalPath);
+    }
+    if (!apply_mic_watermark_copy($originalPath, $publishedPath)) {
+        copy($originalPath, $publishedPath);
     }
 
     return UPLOAD_URL_BASE . '/' . $destDirName . '/' . $filename;
@@ -191,17 +201,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
                 goto render_events_page;
             }
             if ($existingImagePath) {
-                $oldLocal = UPLOAD_DIR . '/events/' . basename($existingImagePath);
-                if (is_file($oldLocal)) {
-                    unlink($oldLocal);
+                $oldRel = upload_url_to_relative_path($existingImagePath);
+                if ($oldRel !== null) {
+                    delete_published_photo_and_original($oldRel);
                 }
             }
             $imagePath = $uploaded;
         } elseif (!empty($_POST['remove_poster'])) {
             if ($existingImagePath) {
-                $oldLocal = UPLOAD_DIR . '/events/' . basename($existingImagePath);
-                if (is_file($oldLocal)) {
-                    unlink($oldLocal);
+                $oldRel = upload_url_to_relative_path($existingImagePath);
+                if ($oldRel !== null) {
+                    delete_published_photo_and_original($oldRel);
                 }
             }
             $imagePath = null;

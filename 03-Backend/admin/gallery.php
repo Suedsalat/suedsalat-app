@@ -64,9 +64,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     $stmt->execute([':id' => $id]);
     $photo = $stmt->fetch();
     if ($photo) {
-        $localPath = UPLOAD_DIR . '/gallery/' . basename($photo['image_path']);
-        if (is_file($localPath)) {
-            unlink($localPath);
+        $relPath = upload_url_to_relative_path($photo['image_path']);
+        if ($relPath !== null) {
+            delete_published_photo_and_original($relPath);
         }
         $pdo->prepare('DELETE FROM photos WHERE id = :id')->execute([':id' => $id]);
     }
@@ -94,13 +94,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_id'])
         $extension = pathinfo($sourceLocal, PATHINFO_EXTENSION);
         $newFilename = bin2hex(random_bytes(16)) . '.' . $extension;
         $destLocal = $galleryDir . '/' . $newFilename;
+        $originalsDir = $galleryDir . '/originals';
+        if (!is_dir($originalsDir)) {
+            mkdir($originalsDir, 0755, true);
+        }
+        $originalLocal = $originalsDir . '/' . $newFilename;
 
-        if (!is_file($sourceLocal) || !copy($sourceLocal, $destLocal)) {
+        if (!is_file($sourceLocal) || !copy($sourceLocal, $originalLocal)) {
             $error = 'Datei konnte nicht übernommen werden.';
         } else {
             $mediaType = ($fb['media_type'] ?? 'image') === 'video' ? 'video' : 'photo';
             if ($mediaType === 'photo') {
-                apply_mic_watermark($destLocal);
+                // Original bleibt unangetastet (originals/) - das oeffentlich
+                // sichtbare Foto ist eine Kopie mit Wasserzeichen, siehe
+                // apply_mic_watermark_copy() in config/config.php.
+                if (!apply_mic_watermark_copy($originalLocal, $destLocal)) {
+                    copy($originalLocal, $destLocal);
+                }
+            } else {
+                copy($originalLocal, $destLocal);
             }
             $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $newFilename;
             $insert = $pdo->prepare(
@@ -150,11 +162,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_media
         $extension = pathinfo($sourceLocal, PATHINFO_EXTENSION);
         $newFilename = bin2hex(random_bytes(16)) . '.' . $extension;
         $destLocal = $galleryDir . '/' . $newFilename;
+        $originalsDir = $galleryDir . '/originals';
+        if (!is_dir($originalsDir)) {
+            mkdir($originalsDir, 0755, true);
+        }
+        $originalLocal = $originalsDir . '/' . $newFilename;
 
-        if (!is_file($sourceLocal) || !copy($sourceLocal, $destLocal)) {
+        if (!is_file($sourceLocal) || !copy($sourceLocal, $originalLocal)) {
             $error = 'Datei konnte nicht übernommen werden.';
         } else {
-            apply_mic_watermark($destLocal);
+            if (!apply_mic_watermark_copy($originalLocal, $destLocal)) {
+                copy($originalLocal, $destLocal);
+            }
             $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $newFilename;
             $insert = $pdo->prepare(
                 'INSERT INTO photos (image_path, media_type, description, created_by, created_via_feedback_id)
@@ -217,14 +236,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
                 }
                 $filename = bin2hex(random_bytes(16)) . '.' . $result['extension'];
                 $newLocalPath = $galleryDir . '/' . $filename;
-                move_uploaded_file($file['tmp_name'], $newLocalPath);
-                if ($result['media_type'] === 'photo') {
-                    apply_mic_watermark($newLocalPath);
+                $originalsDir = $galleryDir . '/originals';
+                if (!is_dir($originalsDir)) {
+                    mkdir($originalsDir, 0755, true);
+                }
+                $newOriginalPath = $originalsDir . '/' . $filename;
+                move_uploaded_file($file['tmp_name'], $newOriginalPath);
+                if ($result['media_type'] === 'photo' && !apply_mic_watermark_copy($newOriginalPath, $newLocalPath)) {
+                    copy($newOriginalPath, $newLocalPath);
+                } elseif ($result['media_type'] !== 'photo') {
+                    copy($newOriginalPath, $newLocalPath);
                 }
 
-                $oldLocalPath = UPLOAD_DIR . '/gallery/' . basename($existing['image_path']);
-                if (is_file($oldLocalPath)) {
-                    unlink($oldLocalPath);
+                // Altes Foto komplett aufraeumen (veroeffentlichte Datei,
+                // Original, evtl. Aufkleber-Metadaten) - es wird durch das
+                // neu hochgeladene ersetzt.
+                $oldRelPath = upload_url_to_relative_path($existing['image_path']);
+                if ($oldRelPath !== null) {
+                    $oldLocalPath = resolve_upload_path($oldRelPath);
+                    if ($oldLocalPath !== null) {
+                        unlink($oldLocalPath);
+                    }
+                    $oldOriginalPath = resolve_upload_path(original_path_for_relative($oldRelPath));
+                    if ($oldOriginalPath !== null) {
+                        unlink($oldOriginalPath);
+                    }
+                    $oldStickersPath = resolve_upload_path(stickers_json_path_for_relative($oldRelPath));
+                    if ($oldStickersPath !== null) {
+                        unlink($oldStickersPath);
+                    }
                 }
                 $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $filename;
                 $mediaType = $result['media_type'];
@@ -260,9 +300,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo']) && !isset($
         }
         $filename = bin2hex(random_bytes(16)) . '.' . $result['extension'];
         $newLocalPath = $galleryDir . '/' . $filename;
-        move_uploaded_file($file['tmp_name'], $newLocalPath);
-        if ($result['media_type'] === 'photo') {
-            apply_mic_watermark($newLocalPath);
+        $originalsDir = $galleryDir . '/originals';
+        if (!is_dir($originalsDir)) {
+            mkdir($originalsDir, 0755, true);
+        }
+        $newOriginalPath = $originalsDir . '/' . $filename;
+        move_uploaded_file($file['tmp_name'], $newOriginalPath);
+        if ($result['media_type'] === 'photo' && !apply_mic_watermark_copy($newOriginalPath, $newLocalPath)) {
+            copy($newOriginalPath, $newLocalPath);
+        } elseif ($result['media_type'] !== 'photo') {
+            copy($newOriginalPath, $newLocalPath);
         }
 
         $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $filename;
