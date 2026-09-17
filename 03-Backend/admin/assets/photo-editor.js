@@ -214,10 +214,19 @@ window.PhotoEditor = (function () {
             var statusEl = document.getElementById('saveStatus');
             statusEl.style.color = '';
             statusEl.textContent = 'Speichert …';
+            // Vor dem Export die Auswahl-Markierung (gestrichelter Rahmen +
+            // Anfasser-Punkt) abwaehlen und neu zeichnen - die ist nur eine
+            // Bearbeitungshilfe und darf nicht mit ins gespeicherte Bild.
+            var previousSelection = selectedIndex;
+            selectedIndex = -1;
+            redraw();
             canvas.toBlob(function (blob) {
                 if (!blob) {
                     statusEl.style.color = '#b00020';
                     statusEl.textContent = 'Export fehlgeschlagen.';
+                    selectedIndex = previousSelection;
+                    updateSizeSlider();
+                    redraw();
                     return;
                 }
                 var formData = new FormData();
@@ -234,11 +243,17 @@ window.PhotoEditor = (function () {
                         } else {
                             statusEl.style.color = '#b00020';
                             statusEl.textContent = (data && data.error) || 'Speichern fehlgeschlagen.';
+                            selectedIndex = previousSelection;
+                            updateSizeSlider();
+                            redraw();
                         }
                     })
                     .catch(function () {
                         statusEl.style.color = '#b00020';
                         statusEl.textContent = 'Speichern fehlgeschlagen (Netzwerk).';
+                        selectedIndex = previousSelection;
+                        updateSizeSlider();
+                        redraw();
                     });
             }, 'image/jpeg', 0.9);
         });

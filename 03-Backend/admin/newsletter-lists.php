@@ -244,7 +244,7 @@ $allLists = $pdo->query(
         <?php if (!$showPublicEditForm): ?>
             <form method="post" onsubmit="return false;">
                 <input type="hidden" name="action" value="unlock_public_edit">
-                <button type="button" class="button-secondary" onclick="requestDelete(this.form, 'Die öffentliche Newsletter-Liste zum Bearbeiten öffnen?')">Bearbeiten</button>
+                <button type="button" class="button" onclick="requestDelete(this.form, 'Die öffentliche Newsletter-Liste zum Bearbeiten öffnen?')">Bearbeiten</button>
             </form>
         <?php endif; ?>
     </div>
