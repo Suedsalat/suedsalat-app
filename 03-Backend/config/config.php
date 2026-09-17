@@ -167,6 +167,22 @@ function mask_email_for_display(string $email): string
     return $maskedLocal . '@' . $maskedDomain;
 }
 
+// Baut aus dem gemeinsamen Briefkopf-Template (Logo + gruener Balken mit
+// Ueberschrift, Inhalt, Fusszeile mit Impressum/Datenschutz) eine fertige
+// HTML-Mail fuer alle Transaktions-Mails (Freischaltungscode, Konto-
+// Bestaetigung usw.) - bewusst getrennt vom Newsletter-eigenen Template
+// (newsletter/email_template.html), das zusaetzlich Foto/Folgen-Link/
+// Abmelde-Fusszeile kennt, was fuer diese Mails nicht passt.
+function render_branded_email_html(string $headline, string $bodyHtml): string
+{
+    $template = file_get_contents(__DIR__ . '/branded_email_template.html');
+    return str_replace(
+        ['[EMAIL_BANNER_HEADLINE]', '[EMAIL_BODY]'],
+        [htmlspecialchars($headline, ENT_QUOTES), $bodyHtml],
+        $template
+    );
+}
+
 // Wandelt eine volle Bild-URL (z.B. UPLOAD_URL_BASE.'/gallery/xyz.jpg') in den
 // Pfad relativ zu UPLOAD_DIR um ('gallery/xyz.jpg') - fuer admin/photo-editor.php,
 // das nur mit Pfaden unterhalb von uploads/ arbeiten darf. Gibt null zurueck,

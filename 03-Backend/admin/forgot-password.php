@@ -29,16 +29,18 @@ function send_reset_code(\PDO $pdo, array $admin, string $email): void
         ':expires_at' => $expiresAt,
     ]);
 
+    $bodyHtml = "<p style=\"margin:0 0 16px;font-size:16px;line-height:1.5;\">Hallo {$admin['name']},</p>
+         <p style=\"margin:0 0 16px;font-size:16px;line-height:1.5;\">dein Freischaltungscode zum Zurücksetzen deines Passworts lautet:</p>
+         <p style=\"margin:0 0 16px;font-size:28px;font-weight:bold;letter-spacing:4px;text-align:center;\">$code</p>
+         <p style=\"margin:0 0 16px;font-size:16px;line-height:1.5;\">Gib ihn auf der Seite \"Neues Passwort vergeben\" ein. Der Code ist eine Stunde gültig.</p>
+         <p style=\"margin:0;font-size:16px;line-height:1.5;\">Falls du das nicht angefordert hast, ignoriere diese E-Mail.</p>";
+
     try {
         Mailer::send(
             $email,
             $admin['name'],
             'Dein Freischaltungscode – Südsalat',
-            "<p>Hallo {$admin['name']},</p>
-             <p>Dein Freischaltungscode zum Zurücksetzen deines Passworts lautet:</p>
-             <p style=\"font-size:28px;font-weight:bold;letter-spacing:4px;\">$code</p>
-             <p>Gib ihn auf der Seite \"Neues Passwort vergeben\" ein. Der Code ist " . PASSWORD_RESET_TTL_MINUTES . " Minuten gültig.</p>
-             <p>Falls du das nicht angefordert hast, ignoriere diese E-Mail.</p>"
+            render_branded_email_html('Passwort zurücksetzen', $bodyHtml)
         );
     } catch (\Throwable $e) {
         error_log('Mailversand fehlgeschlagen: ' . $e->getMessage());
