@@ -1013,6 +1013,16 @@ $pastSends = $pdo->query(
             <p style="font-size:0.9rem;color:#666;">Vorlage „<?= htmlspecialchars($loadedDraft['name'], ENT_QUOTES) ?>" geladen. Etwaige Fotos werden bewusst <strong>nicht</strong> mit übernommen – bei Bedarf bitte neu hochladen.</p>
         <?php endif; ?>
         <form method="post" enctype="multipart/form-data">
+            <label>Absender
+                <select name="from_email">
+                    <?php foreach ($availableSenders as $address => $displayLabel): ?>
+                        <option value="<?= htmlspecialchars($address, ENT_QUOTES) ?>" <?= $selectedFromEmail === $address ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+
             <?php
                 $targetIsSingle = str_starts_with($target, 'single:');
                 $singleEmailValues = $targetIsSingle ? explode(',', substr($target, 7)) : [];
@@ -1091,16 +1101,6 @@ $pastSends = $pdo->query(
             </div>
 
             <p style="font-size:0.85rem;color:#666;">Logo und Fußzeile (Impressum/Datenschutz/Abmelden) der Vorlage bleiben immer unverändert. Der Folgen-Link erscheint nur bei angehakter Checkbox, die Fotoliste nur bei mindestens einem Foto.</p>
-
-            <label>Absender
-                <select name="from_email">
-                    <?php foreach ($availableSenders as $address => $displayLabel): ?>
-                        <option value="<?= htmlspecialchars($address, ENT_QUOTES) ?>" <?= $selectedFromEmail === $address ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($displayLabel, ENT_QUOTES) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
 
             <label>Vorlagenname (nur zum Speichern als Vorlage nötig)
                 <input type="text" name="draft_name" value="<?= htmlspecialchars($currentDraftName, ENT_QUOTES) ?>" placeholder="z.B. Neue-Folge-Standard">
