@@ -72,18 +72,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     <?php if ($error): ?>
         <p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
     <?php endif; ?>
-    <form method="post">
+    <form method="post" id="login-form">
         <label>E-Mail
-            <input type="text" inputmode="email" autocomplete="email" name="email" required autofocus>
+            <input type="text" inputmode="email" autocomplete="email" name="email" id="login-email" required autofocus>
         </label>
         <label>Passwort
             <input type="password" name="password" required>
         </label>
         <div class="button-row">
             <button type="submit">Anmelden</button>
-            <a class="button" href="<?= BASE_PATH ?>/admin/forgot-password.php">Passwort vergessen?</a>
+            <button type="button" class="button" id="forgot-password-btn">Passwort vergessen?</button>
         </div>
     </form>
+
+    <!-- Nimmt die im Login-Feld bereits eingegebene E-Mail-Adresse mit, statt
+         sie auf einer eigenen Seite nochmal abzufragen - siehe admin/forgot-
+         password.php, das direkt den Freischaltungscode verschickt. -->
+    <form method="post" action="<?= BASE_PATH ?>/admin/forgot-password.php" id="forgot-password-form" style="display:none;">
+        <input type="hidden" name="email" id="forgot-password-email">
+    </form>
+    <script>
+        document.getElementById('forgot-password-btn').addEventListener('click', function () {
+            var emailField = document.getElementById('login-email');
+            if (!emailField.value.trim()) {
+                emailField.focus();
+                emailField.reportValidity();
+                return;
+            }
+            document.getElementById('forgot-password-email').value = emailField.value.trim();
+            document.getElementById('forgot-password-form').submit();
+        });
+    </script>
 </main>
 </body>
 </html>

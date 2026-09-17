@@ -34,8 +34,8 @@ if ($maskedEmail === null) {
     </header>
     <main class="auth-box">
         <h1>Neues Passwort</h1>
-        <p class="error">Es läuft gerade kein Passwort-Reset. Bitte fordere zuerst einen Code an.</p>
-        <p><a href="<?= BASE_PATH ?>/admin/forgot-password.php">Code anfordern</a></p>
+        <p class="error">Es läuft gerade kein Passwort-Reset. Bitte fordere zuerst über den Login einen Code an.</p>
+        <p><a href="<?= BASE_PATH ?>/admin/login.php">Zum Login</a></p>
     </main>
     </body>
     </html>
@@ -156,8 +156,11 @@ $verifiedResetId = $_SESSION['pending_reset_verified_id'] ?? null;
             </label>
             <div class="button-row">
                 <button type="submit">Code prüfen</button>
-                <a class="button button-secondary" style="margin-bottom:0;" href="<?= BASE_PATH ?>/admin/forgot-password.php">Neuen Code anfordern</a>
             </div>
+        </form>
+        <form method="post" action="<?= BASE_PATH ?>/admin/forgot-password.php">
+            <input type="hidden" name="resend" value="1">
+            <button type="submit" class="button-secondary">Neuen Code anfordern</button>
         </form>
     <?php endif; ?>
 </main>
