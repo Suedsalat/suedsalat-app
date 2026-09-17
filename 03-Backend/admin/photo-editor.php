@@ -71,6 +71,10 @@ $imageUrl = UPLOAD_URL_BASE . '/' . $relPath;
             <button type="button" data-emoji="⬛">⬛</button>
             <button type="button" data-emoji="⚪">⚪</button>
         </div>
+        <label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:normal;">
+            Größe
+            <input type="range" id="sizeSlider" min="20" max="600" value="80" style="width:140px;margin-top:0;" disabled>
+        </label>
         <button type="button" id="deleteSelectedBtn" class="button-secondary">Ausgewählten Aufkleber löschen</button>
         <button type="button" id="clearAllBtn" class="button-secondary">Alle Aufkleber entfernen</button>
     </div>

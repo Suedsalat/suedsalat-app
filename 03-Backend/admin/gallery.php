@@ -352,7 +352,11 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                 <?php if ($editPhoto['media_type'] === 'video'): ?>
                     <video src="<?= htmlspecialchars($editPhoto['image_path'], ENT_QUOTES) ?>" controls style="width:160px;border-radius:6px;"></video>
                 <?php else: ?>
-                    <img src="<?= htmlspecialchars($editPhoto['image_path'], ENT_QUOTES) ?>" alt="" style="width:120px;border-radius:6px;">
+                    <img src="<?= htmlspecialchars($editPhoto['image_path'], ENT_QUOTES) ?>" alt="" style="width:120px;border-radius:6px;display:block;margin-bottom:8px;">
+                    <?php $editPhotoRelPath = upload_url_to_relative_path($editPhoto['image_path']); ?>
+                    <?php if ($editPhotoRelPath !== null): ?>
+                        <a class="button button-secondary" style="margin-bottom:0;" href="<?= BASE_PATH ?>/admin/photo-editor.php?path=<?= urlencode($editPhotoRelPath) ?>&amp;return=<?= urlencode(BASE_PATH . '/admin/gallery.php?edit=' . (int) $editPhoto['id']) ?>">Retuschieren</a>
+                    <?php endif; ?>
                 <?php endif; ?>
             </p>
             <label>Neues Foto/Video (optional, ersetzt das aktuelle) <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"></label>
@@ -365,7 +369,11 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                 <?php if (($importFeedback['media_type'] ?? 'image') === 'video'): ?>
                     <video src="<?= htmlspecialchars($importFeedback['image_path'], ENT_QUOTES) ?>" controls style="width:200px;border-radius:6px;"></video>
                 <?php else: ?>
-                    <img src="<?= htmlspecialchars($importFeedback['image_path'], ENT_QUOTES) ?>" alt="" style="width:160px;border-radius:6px;">
+                    <img src="<?= htmlspecialchars($importFeedback['image_path'], ENT_QUOTES) ?>" alt="" style="width:160px;border-radius:6px;display:block;margin-bottom:8px;">
+                    <?php $importFeedbackRelPath = upload_url_to_relative_path($importFeedback['image_path']); ?>
+                    <?php if ($importFeedbackRelPath !== null): ?>
+                        <a class="button button-secondary" style="margin-bottom:0;" href="<?= BASE_PATH ?>/admin/photo-editor.php?path=<?= urlencode($importFeedbackRelPath) ?>&amp;return=<?= urlencode(BASE_PATH . '/admin/gallery.php?import_feedback_id=' . (int) $importFeedback['id']) ?>">Retuschieren</a>
+                    <?php endif; ?>
                 <?php endif; ?>
             </p>
             <label>Beschreibung <textarea name="description" rows="3"><?= htmlspecialchars($suggestedDescription, ENT_QUOTES) ?></textarea></label>
@@ -374,7 +382,11 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
         <?php elseif ($importFeedbackMedia): ?>
             <input type="hidden" name="import_feedback_media_id" value="<?= (int) $importFeedbackMedia['id'] ?>">
             <p>
-                <img src="<?= htmlspecialchars($importFeedbackMedia['image_path'], ENT_QUOTES) ?>" alt="" style="width:160px;border-radius:6px;">
+                <img src="<?= htmlspecialchars($importFeedbackMedia['image_path'], ENT_QUOTES) ?>" alt="" style="width:160px;border-radius:6px;display:block;margin-bottom:8px;">
+                <?php $importFeedbackMediaRelPath = upload_url_to_relative_path($importFeedbackMedia['image_path']); ?>
+                <?php if ($importFeedbackMediaRelPath !== null): ?>
+                    <a class="button button-secondary" style="margin-bottom:0;" href="<?= BASE_PATH ?>/admin/photo-editor.php?path=<?= urlencode($importFeedbackMediaRelPath) ?>&amp;return=<?= urlencode(BASE_PATH . '/admin/gallery.php?import_feedback_media_id=' . (int) $importFeedbackMedia['id']) ?>">Retuschieren</a>
+                <?php endif; ?>
             </p>
             <label>Beschreibung <textarea name="description" rows="3"><?= htmlspecialchars($suggestedDescription, ENT_QUOTES) ?></textarea></label>
             <button type="submit">In Galerie übernehmen</button>
@@ -407,10 +419,6 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                 <td>
                     <div class="actions">
                         <a class="button" href="<?= BASE_PATH ?>/admin/gallery.php?edit=<?= (int) $photo['id'] ?>">Bearbeiten</a>
-                        <?php $photoRelPath = $photo['media_type'] !== 'video' ? upload_url_to_relative_path($photo['image_path']) : null; ?>
-                        <?php if ($photoRelPath !== null): ?>
-                            <a class="button" href="<?= BASE_PATH ?>/admin/photo-editor.php?path=<?= urlencode($photoRelPath) ?>&amp;return=<?= urlencode(BASE_PATH . '/admin/gallery.php') ?>">Retuschieren</a>
-                        <?php endif; ?>
                         <a class="button" download href="<?= htmlspecialchars($photo['image_path'], ENT_QUOTES) ?>">Download</a>
                         <form method="post" onsubmit="return false;">
                             <input type="hidden" name="delete_id" value="<?= (int) $photo['id'] ?>">

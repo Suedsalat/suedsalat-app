@@ -14,6 +14,19 @@ window.PhotoEditor = (function () {
 
         var drag = null; // {index, offsetX, offsetY} beim Verschieben
         var resizing = null; // {index} beim Groessenziehen
+        var sizeSlider = document.getElementById('sizeSlider');
+
+        // Haelt den Groessen-Regler mit dem gerade ausgewaehlten Aufkleber
+        // synchron - egal ob die Groesse per Anfasser gezogen oder per Regler
+        // eingestellt wurde, beides soll sich gegenseitig sofort widerspiegeln.
+        function updateSizeSlider() {
+            if (selectedIndex === -1) {
+                sizeSlider.disabled = true;
+                return;
+            }
+            sizeSlider.disabled = false;
+            sizeSlider.value = String(Math.round(stickers[selectedIndex].size));
+        }
 
         function imageToCanvasCoords(evt) {
             var rect = canvas.getBoundingClientRect();
@@ -87,6 +100,7 @@ window.PhotoEditor = (function () {
             if (hit !== -1) {
                 selectedIndex = hit;
                 drag = { index: hit, offsetX: pt.x - stickers[hit].x, offsetY: pt.y - stickers[hit].y };
+                updateSizeSlider();
                 redraw();
                 return;
             }
@@ -96,6 +110,7 @@ window.PhotoEditor = (function () {
             stickers.push({ emoji: selectedEmoji, x: pt.x, y: pt.y, size: defaultSize });
             selectedIndex = stickers.length - 1;
             drag = { index: selectedIndex, offsetX: 0, offsetY: 0 };
+            updateSizeSlider();
             redraw();
         }
 
@@ -108,6 +123,7 @@ window.PhotoEditor = (function () {
                 var s = stickers[resizing.index];
                 var half = Math.max(10, Math.max(Math.abs(pt.x - s.x), Math.abs(pt.y - s.y)));
                 s.size = half * 2;
+                updateSizeSlider();
                 redraw();
                 return;
             }
@@ -129,6 +145,7 @@ window.PhotoEditor = (function () {
             if (selectedIndex === -1) return;
             stickers.splice(selectedIndex, 1);
             selectedIndex = -1;
+            updateSizeSlider();
             redraw();
         }
 
@@ -143,6 +160,11 @@ window.PhotoEditor = (function () {
             if (img.naturalWidth > maxDisplayWidth) {
                 canvas.style.width = maxDisplayWidth + 'px';
             }
+            // Regler-Spanne an die tatsaechliche Bildgroesse anpassen, statt
+            // fixer Pixelwerte, die bei einem sehr kleinen oder sehr grossen
+            // Foto nicht passen wuerden.
+            sizeSlider.min = String(Math.round(canvas.width * 0.02));
+            sizeSlider.max = String(Math.round(canvas.width * 0.6));
             redraw();
         };
         img.onerror = function () {
@@ -178,6 +200,13 @@ window.PhotoEditor = (function () {
         document.getElementById('clearAllBtn').addEventListener('click', function () {
             stickers = [];
             selectedIndex = -1;
+            updateSizeSlider();
+            redraw();
+        });
+
+        sizeSlider.addEventListener('input', function () {
+            if (selectedIndex === -1) return;
+            stickers[selectedIndex].size = Number(sizeSlider.value);
             redraw();
         });
 
