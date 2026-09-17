@@ -142,7 +142,7 @@ function verify_admin_password(\PDO $pdo, int $adminId, string $password): bool
 }
 
 // Verschleiert eine E-Mail-Adresse fuer die Anzeige beim Passwort-Reset
-// ("Code wurde an th**@****.net geschickt") - zeigt die ersten 4 Zeichen des
+// ("Code wurde an th**@****.net geschickt") - zeigt die ersten 2 Zeichen des
 // lokalen Teils, den Rest als Sternchen, und beim Domainteil nur noch die
 // Endung (.de/.net/.com/...). Arbeitet rein auf der vom Nutzer selbst
 // eingegebenen Adresse, verraet also nichts, was der Nutzer nicht ohnehin
@@ -156,7 +156,7 @@ function mask_email_for_display(string $email): string
     $local = substr($email, 0, $atPos);
     $domain = substr($email, $atPos + 1);
 
-    $visibleLocal = mb_substr($local, 0, 4);
+    $visibleLocal = mb_substr($local, 0, 2);
     $hiddenLocalLength = max(0, mb_strlen($local) - mb_strlen($visibleLocal));
     $maskedLocal = $visibleLocal . str_repeat('*', $hiddenLocalLength);
 
