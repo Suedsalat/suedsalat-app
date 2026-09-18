@@ -30,6 +30,25 @@ class AudioPlayerService extends ChangeNotifier {
       notifyListeners();
     });
     _player.onPlayerComplete.listen((_) async {
+      // Ein "complete"-Ereignis weit vor dem tatsaechlichen Ende der Folge
+      // ist kein echtes Ende, sondern ein Streaming-Aussetzer (z.B. kurzer
+      // Netzwerk-Haenger), den manche Player-Backends faelschlich als Ende
+      // melden statt als Fehler/Unterbrechung - gemeldeter Bug: die Folge
+      // "springt" mitten drin auf "beendet". Nur als echtes Ende werten,
+      // wenn die Position auch wirklich nahe am bekannten Ende liegt; sonst
+      // an derselben Stelle weiterspielen statt faelschlich "gehoert" zu
+      // markieren und zur naechsten Folge zu springen.
+      const completionTolerance = Duration(seconds: 15);
+      final reallyAtEnd = duration.inSeconds <= 0 ||
+          position >= duration - completionTolerance;
+
+      if (!reallyAtEnd) {
+        final resumePosition = position;
+        await _player.seek(resumePosition);
+        await _player.resume();
+        return;
+      }
+
       final finished = currentEpisode;
       if (finished != null) {
         await ListenedEpisodesService.markListened(finished.guid);
