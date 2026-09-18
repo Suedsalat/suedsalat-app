@@ -76,26 +76,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     exit;
 }
 
-// Freigeben
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'approve') {
-    $reviewId = (int) $_POST['review_id'];
-    $stmt = $pdo->prepare('UPDATE tip_reviews SET approved = 1, approved_at = NOW(), approved_by = :admin_id WHERE id = :id');
-    $stmt->execute([':admin_id' => $adminId, ':id' => $reviewId]);
-    header('Location: ' . BASE_PATH . '/admin/tip-reviews.php#review-' . $reviewId);
-    exit;
-}
-
-// Freigabe zurueckziehen (kein Passwort noetig, nicht destruktiv - die Rezension bleibt erhalten)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'revoke') {
-    $reviewId = (int) $_POST['review_id'];
-    $stmt = $pdo->prepare('UPDATE tip_reviews SET approved = 0, approved_at = NULL, approved_by = NULL WHERE id = :id');
-    $stmt->execute([':id' => $reviewId]);
-    header('Location: ' . BASE_PATH . '/admin/tip-reviews.php#review-' . $reviewId);
-    exit;
-}
-
-// Ablehnen (loescht die Rezension dauerhaft) - Passwort-Bestaetigung erforderlich wie bei anderen Loeschvorgaengen.
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'reject') {
+// Loeschen - Rezensionen erscheinen seit der Umstellung auf "sofort live"
+// ohne Admin-Freigabe, Moderation passiert dadurch nur noch im Nachhinein
+// per Bearbeiten/Loeschen. Passwort-/2FA-Bestaetigung wie bei anderen
+// Loeschvorgaengen.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_review') {
     if (!verify_admin_password($pdo, $adminId, (string) ($_POST['confirm_password'] ?? ''))) {
         header('Location: ' . BASE_PATH . '/admin/tip-reviews.php?delete_error=1');
         exit;
@@ -119,13 +104,10 @@ if (isset($_GET['edit_review'])) {
     $editReview = $stmt->fetch() ?: null;
 }
 
-/** Laedt Rezensionen (pending oder approved) inkl. eines lesbaren Namens fuer den bewerteten Tipp. */
-function load_tip_reviews(\PDO $pdo, bool $approved, array $tipTypeTables): array
+/** Laedt alle Rezensionen inkl. eines lesbaren Namens fuer den bewerteten Tipp. */
+function load_tip_reviews(\PDO $pdo, array $tipTypeTables): array
 {
-    $stmt = $pdo->prepare(
-        'SELECT * FROM tip_reviews WHERE approved = :approved ORDER BY created_at ' . ($approved ? 'DESC' : 'ASC')
-    );
-    $stmt->execute([':approved' => $approved ? 1 : 0]);
+    $stmt = $pdo->query('SELECT * FROM tip_reviews ORDER BY created_at DESC');
     $reviews = $stmt->fetchAll();
 
     foreach ($reviews as &$review) {
@@ -147,8 +129,7 @@ function load_tip_reviews(\PDO $pdo, bool $approved, array $tipTypeTables): arra
     return $reviews;
 }
 
-$pendingReviews = load_tip_reviews($pdo, false, $tipTypeTables);
-$approvedReviews = load_tip_reviews($pdo, true, $tipTypeTables);
+$allReviews = load_tip_reviews($pdo, $tipTypeTables);
 
 // Dropdown-Optionen fuer das manuelle Eintragen, gruppiert nach Bereich.
 $tipOptions = [];
@@ -170,13 +151,13 @@ foreach ($tipTypeTables as $tipType => $meta) {
 <?php require __DIR__ . '/partials/sidebar-open.php'; ?>
 <main class="content-box">
     <h1>Rezensionen</h1>
-    <p style="font-size:0.9rem;color:#666;">Mikro-Bewertungen und Rezensionstexte, die Nutzer:innen zu Filmtipps und Locationtipps abgegeben haben. Neue Rezensionen erscheinen erst öffentlich in der App, nachdem sie hier freigegeben wurden.</p>
+    <p style="font-size:0.9rem;color:#666;">Mikro-Bewertungen und Rezensionstexte, die Nutzer:innen zu Filmtipps und Locationtipps abgegeben haben. Neue Rezensionen erscheinen sofort öffentlich in der App, ohne Freigabe hier — du kannst sie im Nachhinein bearbeiten oder löschen.</p>
 
     <?php if ($error): ?>
         <p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p>
     <?php endif; ?>
     <?php if ($deleteError): ?>
-        <p class="error text-center">Falsches Passwort — nichts wurde abgelehnt.</p>
+        <p class="error text-center">Falsches Passwort — nichts wurde gelöscht.</p>
     <?php endif; ?>
 
     <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Rezension eintragen</button>
@@ -233,9 +214,9 @@ foreach ($tipTypeTables as $tipType => $meta) {
     </form>
     <?php endif; ?>
 
-    <h2>Ausstehende Rezensionen (<?= count($pendingReviews) ?>)</h2>
-    <?php if (empty($pendingReviews)): ?>
-        <p>Aktuell keine ausstehenden Rezensionen.</p>
+    <h2>Alle Rezensionen (<?= count($allReviews) ?>)</h2>
+    <?php if (empty($allReviews)): ?>
+        <p>Noch keine Rezensionen.</p>
     <?php else: ?>
     <div class="table-scroll">
     <table>
@@ -243,7 +224,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
             <tr><th>Bereich</th><th>Eintrag</th><th>Mikros</th><th>Name</th><th>Rezension</th><th>Eingereicht</th><th></th></tr>
         </thead>
         <tbody>
-        <?php foreach ($pendingReviews as $review): ?>
+        <?php foreach ($allReviews as $review): ?>
             <tr id="review-<?= (int) $review['id'] ?>">
                 <td><?= htmlspecialchars($tipTypeLabels[$review['tip_type']] ?? $review['tip_type'], ENT_QUOTES) ?></td>
                 <td><?= htmlspecialchars($review['tip_label'], ENT_QUOTES) ?></td>
@@ -253,51 +234,11 @@ foreach ($tipTypeTables as $tipType => $meta) {
                 <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime($review['created_at'])), ENT_QUOTES) ?></td>
                 <td>
                     <div class="actions">
-                        <form method="post" style="display:inline;">
-                            <input type="hidden" name="action" value="approve">
-                            <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
-                            <button type="submit">Freigeben</button>
-                        </form>
                         <a class="button" href="<?= BASE_PATH ?>/admin/tip-reviews.php?edit_review=<?= (int) $review['id'] ?>">Bearbeiten</a>
                         <form method="post" onsubmit="return false;">
-                            <input type="hidden" name="action" value="reject">
+                            <input type="hidden" name="action" value="delete_review">
                             <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
-                            <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Die Rezension zu „<?= htmlspecialchars(addslashes($review['tip_label']), ENT_QUOTES) ?>“ wird dauerhaft abgelehnt und gelöscht.')">Ablehnen</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-    </div>
-    <?php endif; ?>
-
-    <h2>Bereits freigegebene Rezensionen (<?= count($approvedReviews) ?>)</h2>
-    <?php if (empty($approvedReviews)): ?>
-        <p>Noch keine freigegebenen Rezensionen.</p>
-    <?php else: ?>
-    <div class="table-scroll">
-    <table>
-        <thead>
-            <tr><th>Bereich</th><th>Eintrag</th><th>Mikros</th><th>Name</th><th>Rezension</th><th>Freigegeben</th><th></th></tr>
-        </thead>
-        <tbody>
-        <?php foreach ($approvedReviews as $review): ?>
-            <tr id="review-<?= (int) $review['id'] ?>">
-                <td><?= htmlspecialchars($tipTypeLabels[$review['tip_type']] ?? $review['tip_type'], ENT_QUOTES) ?></td>
-                <td><?= htmlspecialchars($review['tip_label'], ENT_QUOTES) ?></td>
-                <td><?= (int) $review['rating'] ?> / 5</td>
-                <td><?= htmlspecialchars($review['reviewer_name'] ?? '—', ENT_QUOTES) ?></td>
-                <td><?= $review['review_text'] !== null ? nl2br(htmlspecialchars($review['review_text'], ENT_QUOTES)) : '<em>(kein Text)</em>' ?></td>
-                <td><?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $review['approved_at'])), ENT_QUOTES) ?></td>
-                <td>
-                    <div class="actions">
-                        <a class="button" href="<?= BASE_PATH ?>/admin/tip-reviews.php?edit_review=<?= (int) $review['id'] ?>">Bearbeiten</a>
-                        <form method="post" style="display:inline;">
-                            <input type="hidden" name="action" value="revoke">
-                            <input type="hidden" name="review_id" value="<?= (int) $review['id'] ?>">
-                            <button type="submit" class="button-danger">Freigabe zurückziehen</button>
+                            <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Die Rezension zu „<?= htmlspecialchars(addslashes($review['tip_label']), ENT_QUOTES) ?>“ wird dauerhaft gelöscht.')">Löschen</button>
                         </form>
                     </div>
                 </td>

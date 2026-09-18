@@ -39,6 +39,16 @@ class MikroRatingDisplay extends StatelessWidget {
             reviewCount > 0 ? '($reviewCount)' : 'Noch keine Bewertungen',
             style: Theme.of(context).textTheme.bodySmall,
           ),
+          // Deutliches Antipp-Signal: ohne dieses Chevron war nicht erkennbar,
+          // dass man hier antippen kann, um selbst eine Rezension zu schreiben.
+          if (onTap != null) ...[
+            const SizedBox(width: 2),
+            Icon(
+              Icons.chevron_right,
+              size: iconSize * 0.9,
+              color: Theme.of(context).textTheme.bodySmall?.color,
+            ),
+          ],
         ],
       ],
     );

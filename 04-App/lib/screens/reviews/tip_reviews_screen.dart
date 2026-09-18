@@ -6,9 +6,11 @@ import '../../widgets/async_state_views.dart';
 import '../../widgets/rating/mikro_rating_display.dart';
 import '../../widgets/rating/mikro_rating_input.dart';
 
-/// Zeigt Durchschnittsbewertung + freigegebene Einzelrezensionen zu einem
-/// Filmtipp oder Locationtipp und erlaubt das Einreichen einer eigenen
-/// Rezension. [tipType] ist 'movie_tip' oder 'location_tip'.
+/// Zeigt Durchschnittsbewertung + Einzelrezensionen zu einem Filmtipp oder
+/// Locationtipp und erlaubt das Einreichen einer eigenen Rezension. Neue
+/// Rezensionen erscheinen sofort oeffentlich (keine Admin-Freigabe mehr
+/// noetig), Admins koennen sie im Nachhinein bearbeiten/loeschen.
+/// [tipType] ist 'movie_tip' oder 'location_tip'.
 class TipReviewsScreen extends StatefulWidget {
   final String tipType;
   final int tipId;
@@ -76,10 +78,15 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
         _nameController.clear();
         _reviewTextController.clear();
       });
+      // Rezensionen erscheinen jetzt sofort oeffentlich - Liste neu laden,
+      // damit die eigene Rezension direkt sichtbar ist (vorher bewusst NICHT
+      // optimistisch angezeigt, da sie erst nach Admin-Freigabe live ging).
+      await _reload();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Color(0xFF77B538),
-          content: Text('Danke! Deine Rezension wird nach kurzer Prüfung sichtbar.'),
+          content: Text('Danke für deine Rezension!'),
         ),
       );
     } catch (e) {

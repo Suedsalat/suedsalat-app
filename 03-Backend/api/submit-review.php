@@ -81,9 +81,15 @@ if ($existsStmt->fetchColumn() === false) {
 // die Rezension wird trotzdem angenommen, nur ohne Geraete-Zuordnung.
 $deviceId = $claims['sub'] ?? null;
 
+// Rezensionen erscheinen ab sofort direkt live in der App, ohne Admin-
+// Freigabe - Admins koennen sie im Nachhinein im Admin-Bereich bearbeiten
+// oder loeschen (siehe admin/tip-reviews.php, admin/movie-tips.php,
+// admin/location-tips.php). approved bleibt als Spalte erhalten, damit
+// alte, noch nicht freigegebene Rezensionen aus der Zeit vor dieser
+// Umstellung weiter korrekt behandelt werden.
 $stmt = $pdo->prepare(
-    'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, reviewer_name, device_id)
-     VALUES (:tip_type, :tip_id, :rating, :review_text, :reviewer_name, :device_id)'
+    'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, reviewer_name, device_id, approved, approved_at)
+     VALUES (:tip_type, :tip_id, :rating, :review_text, :reviewer_name, :device_id, 1, NOW())'
 );
 $stmt->execute([
     ':tip_type' => $tipType,
