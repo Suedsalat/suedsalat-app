@@ -326,7 +326,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             }
         }
 
-        FcmSender::sendToAllDevices("Neuer Locationtipp: $name", 'Jenny hat einen neuen Ort empfohlen!');
+        $actingAdminName = $pdo->prepare('SELECT name FROM admins WHERE id = :id');
+        $actingAdminName->execute([':id' => $adminId]);
+        $pushAuthor = (string) ($actingAdminName->fetchColumn() ?: 'Wir');
+        FcmSender::sendToAllDevices("Neuer Locationtipp: $name", "$pushAuthor hat einen neuen Ort empfohlen!");
         // Direkt zur Bearbeiten-Ansicht des neuen Eintrags, damit sofort auch eine
         // Rezension dazu eingetragen werden kann (braucht zwingend die neue ID).
         header('Location: ' . BASE_PATH . '/admin/location-tips.php?edit=' . $newTipId);
