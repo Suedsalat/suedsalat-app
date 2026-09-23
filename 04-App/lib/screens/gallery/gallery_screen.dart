@@ -7,7 +7,6 @@ import '../../services/seen_items_service.dart';
 import '../../widgets/async_state_views.dart';
 import '../../widgets/new_dot.dart';
 import 'photo_viewer_screen.dart';
-import 'video_player_screen.dart';
 
 class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key});
@@ -49,34 +48,27 @@ class _GalleryScreenState extends State<GalleryScreen> {
   void _openItem(Photo photo, List<Photo> allPhotos) {
     _markSeen(photo);
 
-    if (photo.isVideo) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => VideoPlayerScreen(videoUrl: photo.imagePath)),
-      );
-      return;
-    }
-
-    // Im Viewer laesst sich zum naechsten Foto wischen, ohne vorher zurueck in
-    // die Uebersicht zu muessen. Videos bleiben aussen vor - die brauchen den
-    // eigenen Player, im Bild-Viewer koennte man sie nicht abspielen.
-    final images = allPhotos.where((p) => !p.isVideo).toList();
-    final startIndex = images.indexWhere((p) => p.id == photo.id);
+    // Im Viewer laesst sich seitlich weiterwischen, ohne vorher zurueck in die
+    // Uebersicht zu muessen. Videos liegen dabei in derselben Reihenfolge
+    // zwischen den Fotos und bekommen dort ihren eigenen Player.
+    final startIndex = allPhotos.indexWhere((p) => p.id == photo.id);
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PhotoViewerScreen.gallery(
           initialIndex: startIndex < 0 ? 0 : startIndex,
           items: [
-            for (final p in images)
+            for (final p in allPhotos)
               PhotoViewerItem(
                 imageUrl: p.imagePath,
                 description: p.description,
                 publishedAt: p.publishedAt,
+                isVideo: p.isVideo,
               ),
           ],
-          // Auch durchgewischte Fotos gelten als gesehen, sonst bleibt der
+          // Auch durchgewischte Eintraege gelten als gesehen, sonst bleibt der
           // gruene "Neu"-Punkt an Bildern haengen, die man gerade angeschaut hat.
-          onPageShown: (index) => _markSeen(images[index]),
+          onPageShown: (index) => _markSeen(allPhotos[index]),
         ),
       ),
     );

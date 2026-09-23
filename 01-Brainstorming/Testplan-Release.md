@@ -57,8 +57,8 @@ Vorher musste man nach jedem Bild zurück in die Übersicht, um das nächste zu 
 
 **So prüfst du es:** Öffne in der Galerie ein Foto und wisch nach links oder rechts.
 
-**Erwartet:** Du kommst direkt zum nächsten beziehungsweise vorherigen Foto. Oben links steht die
-Position, zum Beispiel "3 / 12". Beschreibung und Datum wechseln passend zum Bild mit.
+**Erwartet:** Du kommst direkt zum nächsten beziehungsweise vorherigen Eintrag. Oben links steht die
+Position, zum Beispiel "3 / 12". Beschreibung und Datum wechseln passend mit.
 
 **Bitte auch das mitprüfen:**
 
@@ -66,9 +66,26 @@ Position, zum Beispiel "3 / 12". Beschreibung und Datum wechseln passend zum Bil
   das Verschieben *nicht* zum nächsten Foto blättern. Erst wieder herausgezoomt soll das Wischen
   wieder blättern.
 - Nach dem Blättern ist das nächste Foto wieder normal groß, nicht im Zoom des vorherigen.
-- Videos werden beim Wischen übersprungen — sie haben weiterhin ihren eigenen Player und öffnen sich
-  nur durch Antippen in der Übersicht. Bitte kurz bestätigen, ob sich das so richtig anfühlt.
 - Die grünen "Neu"-Punkte verschwinden auch an den Fotos, die du nur durchgewischt hast.
+
+### 6. Videos sind ins Blättern eingebunden
+
+Videos liegen in derselben Reihenfolge zwischen den Fotos und lassen sich im Viewer direkt abspielen.
+
+**So prüfst du es:** Wisch in der Galerie über ein Video hinweg und spiel es dort auch einmal ab.
+
+**Erwartet:**
+
+- Blätterst du auf ein Video, startet es **nicht** von allein — du tippst auf Play. Nur wenn du ein
+  Video in der Übersicht direkt antippst, läuft es sofort los, wie bisher.
+- Blätterst du bei laufendem Video weiter, hört der Ton sofort auf. Es darf nichts im Hintergrund
+  weiterlaufen, während du schon das nächste Bild ansiehst.
+- Blätterst du zum Video zurück, steht es noch an der Stelle, an der du es verlassen hast.
+- Die Fortschrittsleiste des Videos lässt sich ziehen, **ohne** dass dabei zum nächsten Bild
+  geblättert wird. Bitte hier besonders genau hinschauen — diese beiden Gesten liegen dicht
+  beieinander.
+
+### 7. Kopieren und Einfügen im Newsletter-Feld
 
 ### 6. Kopieren und Einfügen im Newsletter-Feld
 

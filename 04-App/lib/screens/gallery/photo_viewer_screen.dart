@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'gallery_video_page.dart';
+
 /// Ein einzelnes Bild im Viewer. Bewusst ein eigener kleiner Typ statt des
 /// Photo-Modells: der Viewer wird auch von Veranstaltungen, Film- und
 /// Locationtipps benutzt, die nur eine nackte Bild-URL haben.
@@ -9,7 +11,16 @@ class PhotoViewerItem {
   final String? description;
   final DateTime? publishedAt;
 
-  const PhotoViewerItem({required this.imageUrl, this.description, this.publishedAt});
+  /// Videos liegen in derselben Reihenfolge zwischen den Fotos und bekommen im
+  /// Viewer eine eigene Seite mit Player statt eines zoombaren Bildes.
+  final bool isVideo;
+
+  const PhotoViewerItem({
+    required this.imageUrl,
+    this.description,
+    this.publishedAt,
+    this.isVideo = false,
+  });
 }
 
 class PhotoViewerScreen extends StatefulWidget {
@@ -103,6 +114,14 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
               itemCount: widget.items.length,
               onPageChanged: _onPageChanged,
               itemBuilder: (context, index) {
+                final pageItem = widget.items[index];
+                if (pageItem.isVideo) {
+                  return GalleryVideoPage(
+                    videoUrl: pageItem.imageUrl,
+                    isActive: index == _currentIndex,
+                    autoPlay: index == widget.initialIndex,
+                  );
+                }
                 return InteractiveViewer(
                   // Nur das gerade sichtbare Bild haengt am Controller; die
                   // Nachbarseiten bekommen ihren eigenen, damit ihr Zoomzustand
@@ -111,7 +130,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                   minScale: 1,
                   maxScale: 4,
                   child: Center(
-                    child: Image.network(widget.items[index].imageUrl, fit: BoxFit.contain),
+                    child: Image.network(pageItem.imageUrl, fit: BoxFit.contain),
                   ),
                 );
               },
