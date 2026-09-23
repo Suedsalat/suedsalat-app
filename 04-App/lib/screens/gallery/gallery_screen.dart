@@ -40,19 +40,44 @@ class _GalleryScreenState extends State<GalleryScreen> {
     await _future;
   }
 
-  void _openItem(Photo photo) {
+  void _markSeen(Photo photo) {
     final id = photo.id.toString();
     SeenItemsService.markSeen('photo', id);
-    setState(() => _seenIds = {..._seenIds, id});
+    if (mounted) setState(() => _seenIds = {..._seenIds, id});
+  }
+
+  void _openItem(Photo photo, List<Photo> allPhotos) {
+    _markSeen(photo);
+
+    if (photo.isVideo) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => VideoPlayerScreen(videoUrl: photo.imagePath)),
+      );
+      return;
+    }
+
+    // Im Viewer laesst sich zum naechsten Foto wischen, ohne vorher zurueck in
+    // die Uebersicht zu muessen. Videos bleiben aussen vor - die brauchen den
+    // eigenen Player, im Bild-Viewer koennte man sie nicht abspielen.
+    final images = allPhotos.where((p) => !p.isVideo).toList();
+    final startIndex = images.indexWhere((p) => p.id == photo.id);
+
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => photo.isVideo
-            ? VideoPlayerScreen(videoUrl: photo.imagePath)
-            : PhotoViewerScreen(
-                imageUrl: photo.imagePath,
-                description: photo.description,
-                publishedAt: photo.publishedAt,
+        builder: (_) => PhotoViewerScreen.gallery(
+          initialIndex: startIndex < 0 ? 0 : startIndex,
+          items: [
+            for (final p in images)
+              PhotoViewerItem(
+                imageUrl: p.imagePath,
+                description: p.description,
+                publishedAt: p.publishedAt,
               ),
+          ],
+          // Auch durchgewischte Fotos gelten als gesehen, sonst bleibt der
+          // gruene "Neu"-Punkt an Bildern haengen, die man gerade angeschaut hat.
+          onPageShown: (index) => _markSeen(images[index]),
+        ),
       ),
     );
   }
@@ -96,7 +121,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       child: Stack(
                         children: [
                           InkWell(
-                            onTap: () => _openItem(photo),
+                            onTap: () => _openItem(photo, photos),
                             child: photo.isVideo
                                 ? Container(
                                     width: double.infinity,

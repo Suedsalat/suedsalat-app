@@ -51,7 +51,26 @@ Vorher war nicht zu sehen, dass man die Mikrofone antippen kann, um selbst zu be
 **Erwartet:** Neben der Bewertung steht jetzt ein Pfeil als Hinweis. Ein Tipp darauf öffnet die
 Bewertungen.
 
-### 5. Kopieren und Einfügen im Newsletter-Feld
+### 5. In der Galerie von Foto zu Foto wischen
+
+Vorher musste man nach jedem Bild zurück in die Übersicht, um das nächste zu öffnen. Wunsch von Sarah.
+
+**So prüfst du es:** Öffne in der Galerie ein Foto und wisch nach links oder rechts.
+
+**Erwartet:** Du kommst direkt zum nächsten beziehungsweise vorherigen Foto. Oben links steht die
+Position, zum Beispiel "3 / 12". Beschreibung und Datum wechseln passend zum Bild mit.
+
+**Bitte auch das mitprüfen:**
+
+- Zoom: In ein Foto hineinzoomen und den Ausschnitt verschieben. Solange du hineingezoomt bist, darf
+  das Verschieben *nicht* zum nächsten Foto blättern. Erst wieder herausgezoomt soll das Wischen
+  wieder blättern.
+- Nach dem Blättern ist das nächste Foto wieder normal groß, nicht im Zoom des vorherigen.
+- Videos werden beim Wischen übersprungen — sie haben weiterhin ihren eigenen Player und öffnen sich
+  nur durch Antippen in der Übersicht. Bitte kurz bestätigen, ob sich das so richtig anfühlt.
+- Die grünen "Neu"-Punkte verschwinden auch an den Fotos, die du nur durchgewischt hast.
+
+### 6. Kopieren und Einfügen im Newsletter-Feld
 
 Vorher ließ sich im E-Mail-Feld der Newsletter-Anmeldung nichts kopieren oder einfügen (gemeldet auf
 einem Samsung-Gerät).
