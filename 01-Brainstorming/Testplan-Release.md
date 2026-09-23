@@ -87,8 +87,6 @@ Videos liegen in derselben Reihenfolge zwischen den Fotos und lassen sich im Vie
 
 ### 7. Kopieren und Einfügen im Newsletter-Feld
 
-### 6. Kopieren und Einfügen im Newsletter-Feld
-
 Vorher ließ sich im E-Mail-Feld der Newsletter-Anmeldung nichts kopieren oder einfügen (gemeldet auf
 einem Samsung-Gerät).
 
