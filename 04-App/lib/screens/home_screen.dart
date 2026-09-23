@@ -163,100 +163,106 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       GalleryScreen(key: ValueKey('gallery-$_refreshEpoch')),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        // Bewusst ein Home-Symbol statt eines Pfeils: dieser Button springt
-        // immer zur Startseite (Tab 0), er stellt keine echte Zurueck-Navigation
-        // dar. Mit einem Pfeil-Icon wurde das faelschlich fuer "zurueck zur
-        // vorherigen Seite" gehalten, obwohl das eigentliche Zurueck (z.B. vom
-        // Episoden-Player) bereits korrekt ueber den automatischen Flutter-
-        // Zurueck-Button der jeweiligen Seite funktioniert.
-        leading: _currentIndex == 0
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.home_outlined),
-                tooltip: 'Zur Startseite',
-                onPressed: () => _navigateToTab(0),
-              ),
-        title: Text(_titles[_currentIndex]),
-        actions: [
-          IconButton(
-            icon: Image.asset('assets/images/feedback_rand.png', width: 24, height: 24),
-            tooltip: 'Feedback',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const FeedbackScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Einstellungen',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: screens[_currentIndex],
-      floatingActionButton: _buildTipFab(),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const MiniPlayerBar(),
-          AppBottomNavBar(
-            selectedIndex: _currentIndex,
-            onDestinationSelected: _navigateToTab,
-            items: [
-              AppBottomNavItem(
-                icon: Image.asset('assets/images/home.png', width: 32, height: 32),
-                label: 'Start',
-              ),
-              AppBottomNavItem(
-                icon: Badge(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  isLabelVisible: _hasNewEpisodes,
-                  child: Image.asset('assets/images/folgen.png', width: 32, height: 32),
+    // Die Tabs sind kein echter Navigator-Stack, sondern nur ein Index. Fuer das
+    // System-Zurueck (Wischgeste oder Zurueck-Taste) gab es deshalb nichts zu
+    // poppen und die App wurde sofort geschlossen, auch wenn man mitten in einer
+    // Kategorie war. Auf jedem Tab ausser Start faengt PopScope das ab und
+    // springt stattdessen zur Startseite; erst von dort schliesst Zurueck die
+    // App wie gewohnt.
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _navigateToTab(0);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          // Bewusst ein Home-Symbol statt eines Pfeils: dieser Button springt
+          // immer zur Startseite (Tab 0), er stellt keine echte Zurueck-Navigation
+          // dar. Mit einem Pfeil-Icon wurde das faelschlich fuer "zurueck zur
+          // vorherigen Seite" gehalten, obwohl das eigentliche Zurueck (z.B. vom
+          // Episoden-Player) bereits korrekt ueber den automatischen Flutter-
+          // Zurueck-Button der jeweiligen Seite funktioniert.
+          leading: _currentIndex == 0
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.home_outlined),
+                  tooltip: 'Zur Startseite',
+                  onPressed: () => _navigateToTab(0),
                 ),
-                label: 'Folgen',
-              ),
-              AppBottomNavItem(
-                icon: Badge(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  isLabelVisible: _hasNewEvents,
-                  child: Image.asset('assets/images/kalender.png', width: 32, height: 32),
+          title: Text(_titles[_currentIndex]),
+          actions: [
+            IconButton(
+              icon: Image.asset('assets/images/feedback_rand.png', width: 24, height: 24),
+              tooltip: 'Feedback',
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FeedbackScreen()));
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Einstellungen',
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+              },
+            ),
+          ],
+        ),
+        body: screens[_currentIndex],
+        floatingActionButton: _buildTipFab(),
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const MiniPlayerBar(),
+            AppBottomNavBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: _navigateToTab,
+              items: [
+                AppBottomNavItem(icon: Image.asset('assets/images/home.png', width: 32, height: 32), label: 'Start'),
+                AppBottomNavItem(
+                  icon: Badge(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    isLabelVisible: _hasNewEpisodes,
+                    child: Image.asset('assets/images/folgen.png', width: 32, height: 32),
+                  ),
+                  label: 'Folgen',
                 ),
-                label: 'Veranstaltungen',
-              ),
-              AppBottomNavItem(
-                icon: Badge(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  isLabelVisible: _hasNewMovieTips,
-                  child: Image.asset('assets/images/kino.png', width: 32, height: 32),
+                AppBottomNavItem(
+                  icon: Badge(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    isLabelVisible: _hasNewEvents,
+                    child: Image.asset('assets/images/kalender.png', width: 32, height: 32),
+                  ),
+                  label: 'Veranstaltungen',
                 ),
-                label: 'Filmtipps',
-              ),
-              AppBottomNavItem(
-                icon: Badge(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  isLabelVisible: _hasNewLocationTips,
-                  child: Image.asset('assets/images/location.png', width: 32, height: 32),
+                AppBottomNavItem(
+                  icon: Badge(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    isLabelVisible: _hasNewMovieTips,
+                    child: Image.asset('assets/images/kino.png', width: 32, height: 32),
+                  ),
+                  label: 'Filmtipps',
                 ),
-                label: 'Locations',
-              ),
-              AppBottomNavItem(
-                icon: Badge(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  isLabelVisible: _hasNewPhotos,
-                  child: Image.asset('assets/images/galerie.png', width: 32, height: 32),
+                AppBottomNavItem(
+                  icon: Badge(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    isLabelVisible: _hasNewLocationTips,
+                    child: Image.asset('assets/images/location.png', width: 32, height: 32),
+                  ),
+                  label: 'Locations',
                 ),
-                label: 'Galerie',
-              ),
-            ],
-          ),
-        ],
+                AppBottomNavItem(
+                  icon: Badge(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    isLabelVisible: _hasNewPhotos,
+                    child: Image.asset('assets/images/galerie.png', width: 32, height: 32),
+                  ),
+                  label: 'Galerie',
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
