@@ -167,15 +167,14 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
 - **Rezensionsverwaltung ohne Freigabeschritt:** nur noch Bearbeiten und Löschen, eine gemeinsame
   Liste statt getrennt "Ausstehend"/"Freigegeben".
 - **Galerie:** Button-Farben von Retuschieren/Abbrechen korrigiert.
-- **Noch offen, vor dem Release erledigen:** grüne "Abbrechen"/"Zurück"-Buttons auf oliv
-  (`button-secondary`) umstellen in `events.php`, `location-tips.php`, `movie-tips.php`,
-  `newsletter-lists.php`, `tip-reviews.php` und `newsletter.php`.
 
 ### Bereits live, nicht Teil dieses Release-Tests
 
 - Push-Nachrichten nennen den tatsächlich handelnden Admin statt immer "Jenny".
 - Aus einem eingereichten Locationtipp lässt sich ein Locationtipp anlegen (war nie gebaut).
 - Breite, greifbare Scrollleisten an den Tabellen im Adminbereich.
+- Alle "Abbrechen"/"Zurück"-Links sind oliv statt grün.
+- Die Code-Ordner `lib/` und `config/` sind von außen gesperrt.
 
 ---
 
