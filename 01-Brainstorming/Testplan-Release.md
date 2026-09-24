@@ -1,14 +1,22 @@
 # Testplan für das gesammelte Release
 
-Stand: 2026-09-23 · Letzte ausgelieferte Testfassung: **1.3.6+17** · Nächste Fassung: voraussichtlich **1.3.7+18**
+Stand: 2026-09-24 · Bei den Testern läuft: **1.3.2 (Code 13)**, seit 12.09.2026 · In Prüfung: **1.3.6 (Code 17)** · Nächste Fassung: **1.3.7 (Code 18)**
 
-Diese Liste sammelt alles, was seit der Fassung 1.3.6+17 in Git liegt, aber noch in keinem Build
-bei den Testern angekommen ist. Sie wächst bis zum Release weiter. Beim Bauen der neuen Fassung
-dient Teil A als Prüfliste für die Tester, Teil B prüfen Thorsten und Jenny selbst im Adminbereich.
+**Wichtig zur Ausgangslage:** Die Tester sitzen noch auf 1.3.2. Die Fassungen 1.3.3, 1.3.4 und 1.3.5
+sind nie bei ihnen angekommen — jede wurde durch den nächsten Upload ersetzt, während sie noch in
+der Prüfung war. Wenn 1.3.6 freigegeben wird (oder später 1.3.7), springen die Tester deshalb über
+vier Versionen auf einmal. Sie bekommen dann auch alles zu sehen, was sie bisher nie hatten.
+
+Der Testplan ist danach geteilt: **Teil A** ist neu gebaut und von niemandem geprüft. **Teil B** ist
+schon eine Weile fertig, für die Tester aber trotzdem brandneu. **Teil C** betrifft nur den
+Adminbereich.
+
+> Solange 1.3.6 in Prüfung ist, wird **nichts** hochgeladen — sonst wird sie wie ihre drei Vorgänger
+> ersetzt und die Tester bleiben auf 1.3.2.
 
 ---
 
-## Teil A — Für die Tester (in der App sichtbar)
+## Teil A — Neu in 1.3.7, noch von niemandem geprüft
 
 ### 1. Zurückwischen schließt die App nicht mehr
 
@@ -51,7 +59,7 @@ Vorher war nicht zu sehen, dass man die Mikrofone antippen kann, um selbst zu be
 **Erwartet:** Neben der Bewertung steht jetzt ein Pfeil als Hinweis. Ein Tipp darauf öffnet die
 Bewertungen.
 
-### 5. In der Galerie von Foto zu Foto wischen
+### 5. In der Galerie von Bild zu Bild wischen
 
 Vorher musste man nach jedem Bild zurück in die Übersicht, um das nächste zu öffnen. Wunsch von Sarah.
 
@@ -96,18 +104,55 @@ kopierte Adresse ein.
 **Erwartet:** Das Menü mit Einfügen/Kopieren erscheint und funktioniert. Die Tastatur bietet die
 hinterlegte E-Mail-Adresse zum Ausfüllen an.
 
-### Bitte nebenbei mitprüfen
+---
 
-Diese Bereiche wurden nicht geändert, hängen aber an denselben Stellen — ein kurzer Blick lohnt:
+## Teil B — Aus 1.3.3 bis 1.3.6, für die Tester zum ersten Mal sichtbar
 
-- Android Auto: Folgenliste im Auto öffnen und eine Folge starten.
-- Wiedergabe läuft weiter, wenn der Bildschirm sich sperrt.
-- Der Home-Button oben links führt weiterhin zur Startseite.
-- Die grünen "Neu"-Punkte an den Bereichen unten verschwinden nach dem Ansehen.
+Diese Dinge sind seit Mitte September fertig, kamen aber nie bei den Testern an. Wer von 1.3.2
+kommt, sieht sie jetzt zum ersten Mal — deshalb gehören sie in den Test.
+
+### 8. Android Auto
+
+Die größte Neuerung dieses Sprungs. Die App meldet sich beim Auto als Medien-App an.
+
+**So prüfst du es:** Handy mit Android Auto verbinden und im Auto die Medien-Auswahl öffnen.
+
+**Erwartet:**
+
+- Südsalat taucht in der App-Liste von Android Auto auf.
+- Es gibt eine **Folgenliste**, aus der sich eine Folge direkt starten lässt — nicht nur ein
+  Wiedergabebildschirm.
+- Die Liste lässt sich **durchsuchen**.
+- Play, Pause und Spulen lassen sich über die Autotasten und das Lenkrad bedienen.
+- Die Oberfläche ist im Südsalat-Grün eingefärbt, nicht grau.
+- Folgen ohne eigenes Bild zeigen das Südsalat-Logo statt einer leeren Fläche.
+
+**Bitte unbedingt melden, wenn** "Auswahl konnte nicht geladen werden" erscheint — das war der Fehler,
+der mehrere Anläufe gekostet hat, und der Fix ist in der Fassung, die ihr bekommt.
+
+### 9. Wiedergabe-Anzeige auf dem Sperrbildschirm
+
+**Erwartet:** Beim Abspielen erscheint eine Benachrichtigung mit Titel, Bild und Steuerung. Das
+Symbol in der Statusleiste ist einfarbig, nicht das bunte App-Icon. Läuft eine Folge ohne eigenes
+Bild, steht dort das quadratische Südsalat-Logo mit Schriftzug, kein einzelnes Mikrofon auf leerem
+Grund.
+
+### 10. Feedback einer Folge zuordnen
+
+**So prüfst du es:** Öffne das Feedback-Formular.
+
+**Erwartet:** Es gibt ein zusätzliches, freiwilliges Auswahlfeld für die Folge, um die es geht.
+Leerlassen muss weiterhin möglich sein.
+
+### Nichts zu sehen, und das ist richtig so
+
+In diesen Fassungen steckt zusätzlich eine anonyme Nutzungsstatistik (welche Folgen wie lange gehört
+werden). Davon ist in der App **nichts** sichtbar, und es werden keine persönlichen Daten erhoben —
+also bitte nicht danach suchen.
 
 ---
 
-## Teil B — Adminbereich (Thorsten und Jenny, nicht für Tester)
+## Teil C — Adminbereich (Thorsten und Jenny, nicht für Tester)
 
 Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Release per SFTP hochladen.
 
@@ -128,16 +173,21 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
 
 ### Bereits live, nicht Teil dieses Release-Tests
 
-- Push-Nachrichten nennen den tatsächlich handelnden Admin statt immer "Jenny" (wurde auf
-  ausdrückliche Bitte sofort deployt).
+- Push-Nachrichten nennen den tatsächlich handelnden Admin statt immer "Jenny".
+- Aus einem eingereichten Locationtipp lässt sich ein Locationtipp anlegen (war nie gebaut).
+- Breite, greifbare Scrollleisten an den Tabellen im Adminbereich.
 
 ---
 
 ## Beim Release nicht vergessen
 
-1. Versionsnummer in `04-App/pubspec.yaml` hochsetzen — der Android-`versionCode` muss immer steigen.
-2. Vor dem Codemagic-Build `git push`, sonst baut Codemagic den alten Stand.
-3. Die Admin- und API-Dateien vollständig aus Git per SFTP hochladen, nicht nur einzelne — Live-Server
-   und `main` sind derzeit bewusst auseinander.
-4. Release-Notes decken alles seit der letzten wirklich veröffentlichten Store-Fassung ab, nicht nur
-   seit der letzten Testfassung.
+1. **Erst prüfen, ob im Alpha-Track noch etwas "wird überprüft".** Wenn ja: nicht hochladen. Ein
+   neuer Upload ersetzt die laufende Prüfung und startet sie von vorn — genau daran sind 1.3.3,
+   1.3.4 und 1.3.5 gescheitert.
+2. Versionsnummer in `04-App/pubspec.yaml` hochsetzen — der Android-`versionCode` muss immer steigen.
+3. Vor dem Codemagic-Build `git push`, sonst baut Codemagic den alten Stand.
+4. Die Admin- und API-Dateien vollständig aus Git per SFTP hochladen, nicht nur einzelne — Live-Server
+   und `main` sind derzeit bewusst auseinander. `admin/location-tips.php` ist live ein Mischstand und
+   wird dabei einmal komplett überschrieben.
+5. Release-Notes decken alles seit **1.3.2** ab, nicht nur seit der letzten gebauten Fassung — das ist
+   der Stand, von dem die Nutzer tatsächlich kommen.
