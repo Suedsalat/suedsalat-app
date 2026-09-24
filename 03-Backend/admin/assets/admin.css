@@ -336,7 +336,10 @@ table { width: 100%; min-width: 640px; border-collapse: collapse; margin-top: 20
 /* Auf Touch-Geraeten (auch auf dem Fold im Desktop-Modus mit Maus) blendet der
    Browser die Scrollleiste sonst nur als hauchduennes Overlay ein, das nach dem
    Scrollen wieder verschwindet - mit dem Mauszeiger ist sie dann praktisch nicht
-   zu treffen. Deshalb hier eine dauerhaft sichtbare, breite Leiste erzwingen. */
+   zu treffen. Diese Regeln machen sie breit und gut sichtbar, solange sie da ist.
+   Ob sie ueberhaupt erscheint, entscheidet weiterhin allein das "overflow-x: auto"
+   oben: passt die Tabelle ins Fenster (z.B. am breiten PC-Bildschirm), gibt es
+   keine Leiste - das soll ausdruecklich so bleiben. */
 .table-scroll,
 .table-scroll-top,
 .funnel-scroll {
