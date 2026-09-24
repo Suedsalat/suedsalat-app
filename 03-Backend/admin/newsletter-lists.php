@@ -297,7 +297,7 @@ $allLists = $pdo->query(
             <div class="button-row">
                 <button type="submit"><?= $editList ? 'Liste aktualisieren' : 'Liste anlegen' ?></button>
                 <?php if ($editList): ?>
-                    <a class="button" href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Abbrechen</a>
+                    <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/newsletter-lists.php">Abbrechen</a>
                 <?php endif; ?>
             </div>
         </form>

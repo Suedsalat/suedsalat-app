@@ -209,7 +209,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
         <label>Rezensionstext <textarea name="review_text" rows="3"><?= htmlspecialchars($editReview['review_text'] ?? '', ENT_QUOTES) ?></textarea></label>
         <div class="button-row">
             <button type="submit">Speichern</button>
-            <a class="button" href="<?= BASE_PATH ?>/admin/tip-reviews.php">Abbrechen</a>
+            <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/tip-reviews.php">Abbrechen</a>
         </div>
     </form>
     <?php endif; ?>

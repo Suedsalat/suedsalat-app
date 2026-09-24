@@ -1,0 +1,5 @@
+# Dieser Ordner enthaelt nur Code, der per require/include eingebunden wird.
+# Direkt per URL aufgerufen liefern die Dateien zwar nur eine leere Seite, aber
+# es gibt keinen Grund, dass sie von aussen erreichbar sind - Verteidigung in
+# der Tiefe, falls eine Datei hier je beim direkten Aufruf etwas ausgeben sollte.
+Require all denied

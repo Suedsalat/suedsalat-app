@@ -418,7 +418,7 @@ $showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !
         <?php endif; ?>
         <button type="submit"><?= $editEvent ? 'Veranstaltung aktualisieren' : 'Veranstaltungstermin anlegen' ?></button>
         <?php if ($editEvent): ?>
-            <a class="button" href="<?= BASE_PATH ?>/admin/events.php">Abbrechen</a>
+            <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/events.php">Abbrechen</a>
         <?php endif; ?>
     </form>
     </div>

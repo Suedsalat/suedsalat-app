@@ -531,7 +531,7 @@ $showCreateForm = $editTip !== null || $error !== null || $prefillFeedbackId !==
 
         <button type="submit"><?= $editTip ? 'Filmtipp aktualisieren' : 'Filmtipp anlegen' ?></button>
         <?php if ($editTip): ?>
-            <a class="button" href="<?= BASE_PATH ?>/admin/movie-tips.php">Abbrechen</a>
+            <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/movie-tips.php">Abbrechen</a>
         <?php endif; ?>
     </form>
     </div>

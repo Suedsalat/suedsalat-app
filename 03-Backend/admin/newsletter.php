@@ -602,7 +602,7 @@ if ($action === 'send') {
 
     echo '</ul>';
     echo "<h2>Versand abgeschlossen:</h2><p>Gesendet: <strong>$countSent</strong> | Fehlgeschlagen: <strong>$countFailed</strong></p>";
-    echo '<a class="button" href="' . BASE_PATH . '/admin/newsletter.php">Zurück zum Newsletter-Formular</a> ';
+    echo '<a class="button button-secondary" href="' . BASE_PATH . '/admin/newsletter.php">Zurück zum Newsletter-Formular</a> ';
     echo '<a class="button" href="' . BASE_PATH . '/admin/dashboard.php">Zum Dashboard</a>';
     echo '</main></body></html>';
     exit;
@@ -922,7 +922,7 @@ $pastSends = $pdo->query(
         <iframe srcdoc="<?= htmlspecialchars(render_email_html($templateFile, $viewingSend['headline'] ?? '', $viewingSend['episode_link'] ?? '', $viewingSend['body_text'], $viewingSendPhotos, $defaultHeadline), ENT_QUOTES) ?>" style="width:100%;height:500px;border:1px solid #ccc;border-radius:8px;background:#fff;"></iframe>
         <div class="button-row" style="margin-top:16px;">
             <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php?reuse_id=<?= (int) $viewingSend['id'] ?>">Für neuen Newsletter übernehmen</a>
-            <a class="button" href="<?= BASE_PATH ?>/admin/newsletter.php">Zurück</a>
+            <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/newsletter.php">Zurück</a>
         </div>
     <?php elseif ($previewHtml !== null): ?>
         <h2>Vorschau</h2>
