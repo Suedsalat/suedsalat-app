@@ -54,6 +54,36 @@ function upload_location_tip_photo(array $file, array $allowedImageTypes, int $m
     return UPLOAD_URL_BASE . '/location-tips/' . $filename;
 }
 
+/** Uebernimmt ein bereits hochgeladenes Feedback-Foto als Foto des Locationtipps.
+ *  Gegenstueck zu copy_feedback_photo_as_poster() in movie-tips.php/events.php,
+ *  nur mit der Bildaufbereitung dieser Seite. */
+function copy_feedback_photo_as_location_photo(string $feedbackImagePath): ?string
+{
+    $sourceLocal = UPLOAD_DIR . '/feedback/' . basename($feedbackImagePath);
+    if (!is_file($sourceLocal)) {
+        return null;
+    }
+    $locationTipsDir = UPLOAD_DIR . '/location-tips';
+    $originalsDir = $locationTipsDir . '/originals';
+    if (!is_dir($originalsDir)) {
+        mkdir($originalsDir, 0755, true);
+    }
+    $extension = pathinfo($sourceLocal, PATHINFO_EXTENSION);
+    $mime = mime_content_type($sourceLocal);
+    $filename = bin2hex(random_bytes(16)) . '.' . $extension;
+    $originalPath = $originalsDir . '/' . $filename;
+    $publishedPath = $locationTipsDir . '/' . $filename;
+
+    if (!resize_location_tip_image($sourceLocal, $originalPath, $mime, 1600)) {
+        copy($sourceLocal, $originalPath);
+    }
+    if (!apply_mic_watermark_copy($originalPath, $publishedPath)) {
+        copy($originalPath, $publishedPath);
+    }
+
+    return UPLOAD_URL_BASE . '/location-tips/' . $filename;
+}
+
 /** Skaliert ein Bild auf max. Kantenlaenge und speichert es komprimiert unter $targetPath (ohne Wasserzeichen - reines Original).
  *  Gibt false zurueck, wenn GD fehlt oder das Bild nicht gelesen werden konnte (dann Original unveraendert uebernehmen). */
 function resize_location_tip_image(string $sourcePath, string $targetPath, string $mime, int $maxDimension): bool
@@ -281,19 +311,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
         header('Location: ' . BASE_PATH . '/admin/location-tips.php');
         exit;
     } else {
+        $feedbackId = isset($_POST['feedback_id']) && $_POST['feedback_id'] !== '' ? (int) $_POST['feedback_id'] : null;
+
         $imagePath = null;
         if (!empty($_FILES['photo']['name'])) {
             $imagePath = upload_location_tip_photo($_FILES['photo'], $allowedImageTypes, $maxPhotoSizeBytes, $error);
             if ($imagePath === null) {
                 goto render_location_tips_page;
             }
+        } elseif (!empty($_POST['use_feedback_photo']) && $feedbackId) {
+            $stmt = $pdo->prepare('SELECT image_path, media_type FROM feedback_messages WHERE id = :id');
+            $stmt->execute([':id' => $feedbackId]);
+            $fbRow = $stmt->fetch();
+            if ($fbRow && !empty($fbRow['image_path']) && ($fbRow['media_type'] ?? 'image') === 'image') {
+                $imagePath = copy_feedback_photo_as_location_photo($fbRow['image_path']);
+            }
         }
 
         $nextSortOrder = (int) $pdo->query('SELECT COALESCE(MAX(sort_order), 0) + 1 FROM location_tips')->fetchColumn();
 
         $stmt = $pdo->prepare(
-            'INSERT INTO location_tips (name, location, description, link, episode_guid, episode_timestamp_seconds, image_path, created_by, sort_order)
-             VALUES (:name, :location, :description, :link, :episode_guid, :episode_timestamp_seconds, :image_path, :created_by, :sort_order)'
+            'INSERT INTO location_tips (name, location, description, link, episode_guid, episode_timestamp_seconds, image_path, created_by, created_via_feedback_id, sort_order)
+             VALUES (:name, :location, :description, :link, :episode_guid, :episode_timestamp_seconds, :image_path, :created_by, :feedback_id, :sort_order)'
         );
         $stmt->execute([
             ':name' => $name,
@@ -304,9 +343,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             ':episode_timestamp_seconds' => $episodeTimestampSeconds,
             ':image_path' => $imagePath,
             ':created_by' => $adminId,
+            ':feedback_id' => $feedbackId,
             ':sort_order' => $nextSortOrder,
         ]);
         $newTipId = (int) $pdo->lastInsertId();
+
+        if ($feedbackId) {
+            $markDone = $pdo->prepare(
+                'UPDATE feedback_messages SET locationtip_created_at = NOW(), status = "erledigt", handled_by = :admin_id, handled_at = NOW() WHERE id = :id'
+            );
+            $markDone->execute([':admin_id' => $adminId, ':id' => $feedbackId]);
+        }
 
         // Rezension gleich beim Anlegen mit eintragen, falls das Haekchen gesetzt war.
         if (!empty($_POST['add_review_now'])) {
@@ -354,6 +401,23 @@ if (isset($_GET['edit'])) {
     }
 }
 
+// Vorbelegung aus einem eingereichten Locationtipp (siehe feedback.php).
+// Der Ort bleibt bewusst leer: er steckt im Feedback nur im Fliesstext und
+// laesst sich nicht verlaesslich herausloesen - den traegt der Admin selbst ein.
+$prefillName = (string) ($_GET['prefill_name'] ?? '');
+$prefillDescription = (string) ($_GET['prefill_description'] ?? '');
+$prefillFeedbackId = (string) ($_GET['prefill_feedback_id'] ?? '');
+
+$prefillFeedbackImage = null;
+if ($prefillFeedbackId !== '') {
+    $stmt = $pdo->prepare('SELECT image_path, media_type FROM feedback_messages WHERE id = :id');
+    $stmt->execute([':id' => (int) $prefillFeedbackId]);
+    $fbRow = $stmt->fetch();
+    if ($fbRow && !empty($fbRow['image_path']) && ($fbRow['media_type'] ?? 'image') === 'image') {
+        $prefillFeedbackImage = $fbRow['image_path'];
+    }
+}
+
 // Kurzform fuer die Folgen-Auswahl (z.B. "Episode 21" statt "09.04.2026 – Episode 21: Gratulation")
 function location_episode_short_label(string $title): string
 {
@@ -373,7 +437,7 @@ $allTips = $pdo->query(
 $deleteError = isset($_GET['delete_error']);
 
 // Formular standardmaessig eingeklappt, ausser beim Bearbeiten oder nach einem Fehler.
-$showCreateForm = $editTip !== null || $error !== null;
+$showCreateForm = $editTip !== null || $error !== null || $prefillFeedbackId !== '';
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -404,10 +468,12 @@ $showCreateForm = $editTip !== null || $error !== null;
     <form method="post" enctype="multipart/form-data">
         <?php if ($editTip): ?>
             <input type="hidden" name="edit_id" value="<?= (int) $editTip['id'] ?>">
+        <?php elseif ($prefillFeedbackId !== ''): ?>
+            <input type="hidden" name="feedback_id" value="<?= htmlspecialchars($prefillFeedbackId, ENT_QUOTES) ?>">
         <?php endif; ?>
-        <label>Name der Location <input type="text" name="name" required value="<?= htmlspecialchars($editTip['name'] ?? '', ENT_QUOTES) ?>"></label>
+        <label>Name der Location <input type="text" name="name" required value="<?= htmlspecialchars($editTip['name'] ?? $prefillName, ENT_QUOTES) ?>"></label>
         <label>Ort <input type="text" name="location" required value="<?= htmlspecialchars($editTip['location'] ?? '', ENT_QUOTES) ?>"></label>
-        <label>Beschreibung (optional) <textarea name="description" rows="3"><?= htmlspecialchars($editTip['description'] ?? '', ENT_QUOTES) ?></textarea></label>
+        <label>Beschreibung (optional) <textarea name="description" rows="3"><?= htmlspecialchars($editTip['description'] ?? $prefillDescription, ENT_QUOTES) ?></textarea></label>
         <label>Link (optional, z. B. Homepage/Karte) <input type="text" name="link" placeholder="www.beispiel.de" value="<?= htmlspecialchars($editTip['link'] ?? '', ENT_QUOTES) ?>"></label>
         <div class="field-row">
             <label>Folge dazu (optional)
@@ -426,6 +492,12 @@ $showCreateForm = $editTip !== null || $error !== null;
                     value="<?= htmlspecialchars(format_location_seconds_to_timestamp(isset($editTip['episode_timestamp_seconds']) ? (int) $editTip['episode_timestamp_seconds'] : null), ENT_QUOTES) ?>">
             </label>
         </div>
+        <?php if (!$editTip && $prefillFeedbackImage): ?>
+            <p>
+                <img src="<?= htmlspecialchars($prefillFeedbackImage, ENT_QUOTES) ?>" alt="" style="max-width:160px;border-radius:8px;display:block;margin-bottom:8px;">
+                <label style="font-weight:normal; display:inline-flex; align-items:center; gap:8px; font-size:1.1rem;"><input type="checkbox" name="use_feedback_photo" value="1" checked style="width:20px;height:20px;"> Foto aus dem Feedback übernehmen</label>
+            </p>
+        <?php endif; ?>
         <label>Foto (optional)
             <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
         </label>

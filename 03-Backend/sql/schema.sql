@@ -199,6 +199,7 @@ CREATE TABLE IF NOT EXISTS feedback_messages (
   photo_imported_at DATETIME NULL,
   event_created_at DATETIME NULL,
   movietip_created_at DATETIME NULL,
+  locationtip_created_at DATETIME NULL,
   status ENUM('offen','erledigt') NOT NULL DEFAULT 'offen',
   handled_by INT NULL,
   handled_at DATETIME NULL,
