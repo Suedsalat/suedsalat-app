@@ -11,6 +11,15 @@ final class Mailer
     /** @throws PHPMailerException */
     public static function send(string $toEmail, string $toName, string $subject, string $htmlBody): void
     {
+        // Testumgebung: nichts verschicken, sondern die Mail als Datei ablegen, damit sich
+        // Inhalt und Aufmachung pruefen lassen. MAIL_CAPTURE_DIR ist live nie gesetzt.
+        if (MAIL_CAPTURE_DIR !== null) {
+            $datei = MAIL_CAPTURE_DIR . '/' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(3)), 0, 6) . '.html';
+            file_put_contents($datei, "<!-- An: {$toName} <{$toEmail}> | Betreff: {$subject} -->
+" . $htmlBody);
+            return;
+        }
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = SMTP_HOST;

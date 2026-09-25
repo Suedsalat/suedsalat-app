@@ -24,7 +24,10 @@ function suedsalat_load_env(string $path): void
     }
 }
 
-suedsalat_load_env(__DIR__ . '/../.env');
+// SUEDSALAT_ENV_FILE ist nur in der lokalen Testumgebung gesetzt und zeigt dort auf eine
+// eigene Test-.env (Testdatenbank, Mail-Fangordner). Live ist sie nie gesetzt - dann gilt
+// wie immer die .env neben config/.
+suedsalat_load_env(getenv('SUEDSALAT_ENV_FILE') ?: __DIR__ . '/../.env');
 
 function env(string $key, ?string $default = null): ?string
 {
@@ -82,6 +85,9 @@ define('SMTP_PASSWORD', env('SMTP_PASSWORD'));
 define('SMTP_ENCRYPTION', env('SMTP_ENCRYPTION', 'tls'));
 define('SMTP_FROM_ADDRESS', env('SMTP_FROM_ADDRESS'));
 define('SMTP_FROM_NAME', env('SMTP_FROM_NAME', 'Suedsalat'));
+// Nur Testumgebung: Mails werden als Dateien in diesen Ordner geschrieben statt verschickt.
+// Live nicht gesetzt.
+define('MAIL_CAPTURE_DIR', env('MAIL_CAPTURE_DIR'));
 
 define('APP_URL', env('APP_URL', 'https://www.suedsalat.eu'));
 define('CRON_SECRET', env('CRON_SECRET'));
