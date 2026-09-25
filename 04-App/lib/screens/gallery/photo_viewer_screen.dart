@@ -172,7 +172,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
               },
             ),
           ),
-          if (hasCaption || item.publishedAt != null || item.submittedByName != null)
+          if (hasCaption || item.publishedAt != null || item.submittedByName != null || item.contentId != null)
             Positioned(
               left: 0,
               right: 0,
@@ -203,6 +203,14 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                         Text(
                           DateFormat('dd.MM.yyyy').format(item.publishedAt!),
                           style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                      // Kommentare direkt unter dem Foto, wie man es von Instagram und Co. kennt
+                      if (item.contentId != null) ...[
+                        const SizedBox(height: 6),
+                        _KommentarZeile(
+                          anzahl: _kommentarAnzahl[_currentIndex],
+                          onTap: () => _kommentareOeffnen(_currentIndex),
                         ),
                       ],
                     ],
@@ -236,17 +244,6 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (item.contentId != null)
-                    IconButton(
-                      tooltip: 'Kommentare',
-                      onPressed: () => _kommentareOeffnen(_currentIndex),
-                      icon: Badge(
-                        isLabelVisible: _kommentarAnzahl[_currentIndex] > 0,
-                        label: Text('${_kommentarAnzahl[_currentIndex]}'),
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        child: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 28),
-                      ),
-                    ),
-                  if (item.contentId != null)
                     ContentMenuButton(
                       key: ValueKey('menu-${item.contentId}'),
                       contentType: 'photo',
@@ -266,6 +263,38 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// „3 Kommentare“ bzw. „Kommentieren“ unter dem Foto - oeffnet die Kommentare von unten.
+class _KommentarZeile extends StatelessWidget {
+  const _KommentarZeile({required this.anzahl, required this.onTap});
+
+  final int anzahl;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = switch (anzahl) {
+      0 => 'Kommentieren',
+      1 => '1 Kommentar',
+      _ => '$anzahl Kommentare',
+    };
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 22),
+            const SizedBox(width: 8),
+            Text(text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          ],
+        ),
       ),
     );
   }
