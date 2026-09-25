@@ -62,7 +62,11 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
   }
 
   Future<void> _submit() async {
-    setState(() => _ratingError = _newRating < 1 ? 'Bitte wähle eine Bewertung aus.' : null);
+    setState(
+      () => _ratingError = _newRating < 1
+          ? 'Bitte wähle eine Bewertung aus.'
+          : null,
+    );
     if (!_formKey.currentState!.validate() || _ratingError != null) return;
     // Rezensionen nur mit Konto (App 2.0) - der Name kommt dann aus dem Spitznamen.
     if (!await ensureCanContribute(context) || !mounted) return;
@@ -147,12 +151,20 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
                             // ohne Freigabe online, der Name ist deshalb ueberall Pflicht.
                             Row(
                               children: [
-                                if (review.reviewerName != null && review.reviewerName!.isNotEmpty)
-                                  Expanded(child: TipSubmitterLine(name: review.reviewerName!, prefix: ''))
+                                if (review.reviewerName != null &&
+                                    review.reviewerName!.isNotEmpty)
+                                  Expanded(
+                                    child: TipSubmitterLine(
+                                      name: review.reviewerName!,
+                                      prefix: '',
+                                    ),
+                                  )
                                 else
                                   const Spacer(),
                                 Text(
-                                  DateFormat('dd.MM.yyyy').format(review.createdAt),
+                                  DateFormat(
+                                    'dd.MM.yyyy',
+                                  ).format(review.createdAt),
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                                 ContentMenuButton(
@@ -171,7 +183,8 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
                               iconSize: 16,
                               showCountLabel: false,
                             ),
-                            if (review.reviewText != null && review.reviewText!.isNotEmpty) ...[
+                            if (review.reviewText != null &&
+                                review.reviewText!.isNotEmpty) ...[
                               const SizedBox(height: 4),
                               Text(review.reviewText!),
                             ],
@@ -180,65 +193,121 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
                       ),
                     ),
                 const Divider(height: 40),
-                Text('Deine Rezension', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Deine Rezension',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 12),
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: MikroRatingInput(
-                          initialRating: _newRating,
-                          onChanged: (value) => setState(() {
-                            _newRating = value;
-                            _ratingError = null;
-                          }),
-                        ),
-                      ),
-                      if (_ratingError != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            _ratingError!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+                // Gaeste (und gesperrte Konten) sehen statt des Formulars gleich den Hinweis -
+                // nicht erst nach dem Ausfuellen beim Abschicken.
+                if (!AccountService.instance.canContribute)
+                  _ReviewAccountHint(onChanged: () => setState(() {}))
+                else
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: MikroRatingInput(
+                            initialRating: _newRating,
+                            onChanged: (value) => setState(() {
+                              _newRating = value;
+                              _ratingError = null;
+                            }),
                           ),
                         ),
-                      const SizedBox(height: 12),
-                      Text(
-                        AccountService.instance.listener != null
-                            ? 'Du schreibst als ${AccountService.instance.listener!.nickname}.'
-                            : 'Rezensionen gibt es mit einem kostenlosen Hörerkonto.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _reviewTextController,
-                        decoration: const InputDecoration(labelText: 'Deine Meinung'),
-                        maxLines: 3,
-                        maxLength: 500,
-                        validator: (value) => (value == null || value.trim().isEmpty)
-                            ? 'Bitte schreibe eine kurze Rezension.'
-                            : null,
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: _submitting ? null : _submit,
-                        child: _submitting
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Text('Rezension abschicken'),
-                      ),
-                    ],
+                        if (_ratingError != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              _ratingError!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 12),
+                        Text(
+                          AccountService.instance.listener != null
+                              ? 'Du schreibst als ${AccountService.instance.listener!.nickname}.'
+                              : 'Rezensionen gibt es mit einem kostenlosen Hörerkonto.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _reviewTextController,
+                          decoration: const InputDecoration(
+                            labelText: 'Deine Meinung',
+                          ),
+                          maxLines: 3,
+                          maxLength: 500,
+                          validator: (value) =>
+                              (value == null || value.trim().isEmpty)
+                              ? 'Bitte schreibe eine kurze Rezension.'
+                              : null,
+                        ),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: _submitting ? null : _submit,
+                          child: _submitting
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Rezension abschicken'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// Statt des Rezensionsformulars fuer Gaeste: kurzer Hinweis mit Weg zur Registrierung.
+/// Gesperrte Konten bekommen den Sperrhinweis.
+class _ReviewAccountHint extends StatelessWidget {
+  const _ReviewAccountHint({required this.onChanged});
+
+  /// Nach Anmeldung/Registrierung: Formular anzeigen.
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final blocked = AccountService.instance.isLoggedIn;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              blocked
+                  ? 'Dein Konto ist für Beiträge gesperrt – Rezensionen sind deshalb nicht möglich.'
+                  : 'Du möchtest auch bewerten? Rezensionen gibt es mit einem kostenlosen Hörerkonto – '
+                        'sie erscheinen dann unter deinem Spitznamen.',
+            ),
+            if (!blocked) ...[
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () async {
+                  if (await ensureCanContribute(context)) onChanged();
+                },
+                child: const Text('Registrieren oder anmelden'),
+              ),
+            ],
+          ],
         ),
       ),
     );

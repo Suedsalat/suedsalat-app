@@ -135,4 +135,20 @@ $pdo->exec("UPDATE listeners SET deletion_final_at = DATE_SUB(NOW(), INTERVAL 1 
 check(str_contains(Listener::runMaintenance($pdo), '1 endgueltig'), 'nach Fristende endgueltig geloescht');
 check($pdo->query('SELECT COUNT(*) FROM listeners')->fetchColumn() == 0, 'Konto ist weg');
 
+echo "Umlaute in der Domain\n";
+$tU = deviceToken('geraet-umlaut');
+[$s, $r] = api('POST', '/api/listener/register.php', $tU, [
+    'first_name' => 'Jörg', 'last_name' => 'Müller', 'email' => 'Jörg@Südsalat.eu', 'nickname' => 'Umlautfreund', 'accept_terms' => true,
+]);
+check($s === 200, 'Registrierung mit ü nach dem @ angenommen');
+check($pdo->query("SELECT COUNT(*) FROM listener_login_codes WHERE email = 'jörg@xn--sdsalat-n2a.eu'")->fetchColumn() == 1, 'Domain als Punycode gespeichert');
+[, $html] = lastMail('jörg@xn--sdsalat-n2a.eu');
+[$s] = api('POST', '/api/listener/verify.php', $tU, ['email' => 'jörg@südsalat.eu', 'code' => codeFrom($html)]);
+check($s === 200, 'Code mit Umlaut-Schreibweise bestaetigt');
+$tU2 = deviceToken('geraet-umlaut-2');
+api('POST', '/api/listener/login.php', $tU2, ['email' => 'JÖRG@xn--sdsalat-n2a.eu']);
+[, $html] = lastMail('jörg@xn--sdsalat-n2a.eu');
+[$s, $r] = api('POST', '/api/listener/verify.php', $tU2, ['email' => 'jörg@xn--sdsalat-n2a.eu', 'code' => codeFrom($html)]);
+check($s === 200 && ($r['listener']['nickname'] ?? '') === 'Umlautfreund', 'Anmeldung mit Punycode-Schreibweise findet dasselbe Konto');
+
 finish();

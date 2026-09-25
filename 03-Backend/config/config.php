@@ -68,9 +68,80 @@ function normalize_email(string $email): string
         if ($asciiDomain !== false) {
             $domain = $asciiDomain;
         }
+    } else {
+        // Ohne PHP-Erweiterung "intl" (lokal fehlt sie, auf dem Server ist sie nicht garantiert)
+        // selbst umwandeln - sonst wuerde z. B. info@suedsalat.eu mit ue als ungueltig abgelehnt.
+        $domain = implode('.', array_map('punycode_label', explode('.', mb_strtolower($domain, 'UTF-8'))));
     }
 
     return $local . '@' . strtolower($domain);
+}
+
+// Punycode (RFC 3492) fuer einen Teil eines Domainnamens: "suedsalat" mit ue -> "xn--sdsalat-n2a".
+// Reine ASCII-Teile bleiben unveraendert. Ersatz fuer idn_to_ascii(), wenn "intl" fehlt.
+function punycode_label(string $label): string
+{
+    if (preg_match('/^[\x00-\x7F]*$/', $label)) {
+        return $label;
+    }
+    $base = 36;
+    $tMin = 1;
+    $tMax = 26;
+    $codePoints = array_map('mb_ord', mb_str_split($label, 1, 'UTF-8'));
+    $digit = static fn (int $d): string => chr($d < 26 ? 97 + $d : 22 + $d);
+    $adapt = static function (int $delta, int $numPoints, bool $first) use ($base, $tMin, $tMax): int {
+        $delta = $first ? intdiv($delta, 700) : intdiv($delta, 2);
+        $delta += intdiv($delta, $numPoints);
+        $k = 0;
+        while ($delta > intdiv(($base - $tMin) * $tMax, 2)) {
+            $delta = intdiv($delta, $base - $tMin);
+            $k += $base;
+        }
+        return $k + intdiv(($base - $tMin + 1) * $delta, $delta + 38);
+    };
+
+    $output = '';
+    foreach ($codePoints as $cp) {
+        if ($cp < 128) {
+            $output .= chr($cp);
+        }
+    }
+    $handled = $basicCount = strlen($output);
+    if ($basicCount > 0) {
+        $output .= '-';
+    }
+    $n = 128;
+    $delta = 0;
+    $bias = 72;
+    $total = count($codePoints);
+    while ($handled < $total) {
+        $m = min(array_filter($codePoints, static fn (int $cp): bool => $cp >= $n));
+        $delta += ($m - $n) * ($handled + 1);
+        $n = $m;
+        foreach ($codePoints as $cp) {
+            if ($cp < $n) {
+                $delta++;
+            }
+            if ($cp === $n) {
+                $q = $delta;
+                for ($k = $base; ; $k += $base) {
+                    $t = $k <= $bias ? $tMin : ($k >= $bias + $tMax ? $tMax : $k - $bias);
+                    if ($q < $t) {
+                        break;
+                    }
+                    $output .= $digit($t + ($q - $t) % ($base - $t));
+                    $q = intdiv($q - $t, $base - $t);
+                }
+                $output .= $digit($q);
+                $bias = $adapt($delta, $handled + 1, $handled === $basicCount);
+                $delta = 0;
+                $handled++;
+            }
+        }
+        $delta++;
+        $n++;
+    }
+    return 'xn--' . $output;
 }
 
 define('DB_HOST', env('DB_HOST'));
