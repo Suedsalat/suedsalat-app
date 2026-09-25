@@ -46,7 +46,8 @@ Das Hilfsskript liegt im Scratchpad der Sitzung (`deploy/testbereich.js`) und sc
 ausschließlich unter `APP-test/`:
 
 ```bash
-node testbereich.js code     # Backend-Code + vendor hochladen (ohne tests/, alte sql-Skripte)
+node testbereich.js code     # Backend-Code + vendor hochladen (ohne tests/ und sql/)
+node testbereich.js sql      # Einrichtungs- und Migrationsskripte - nach dem Aufruf wieder loeschen
 ```
 
 Neue Migrationen (z. B. spätere 2.0-Etappen) einzeln hochladen, im Testbereich aufrufen und
