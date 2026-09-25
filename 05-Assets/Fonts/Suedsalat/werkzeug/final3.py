@@ -18,7 +18,7 @@ FORM_FETT = {'dieresis': (round(0.184 * CAP), round(0.238 * CAP)), 'umlaut_absta
 MIN = 3.0
 
 def gaps(path):
-    img = rendern(path, 'SÜDSALAT', 141)
+    img = rendern(path, 'SÜDSALAT', 564)
     with contextlib.redirect_stdout(io.StringIO()):
         L, top, base, cap = vermesse(img, 0, img.size[1], '')
     return [round(100 * (L[i + 1][0] - L[i][1] - 1) / cap, 1) for i in range(len(L) - 1)], (L[-1][1] - L[0][0] + 1) / cap
@@ -32,23 +32,44 @@ def setze(links, rechts, delta):
         for b in als_liste(rechts):
             kern[(a, b)] = kern.get((a, b), 0) + delta
 
+LOGO_BREITEN = [80.1, 70.2, 82.3, 80.1, 88.7, 62.4, 151.8]   # S Ü D S A L AT, % Versalhoehe
+STAERKE, HOEHE = 668, 14                                      # Staemme / waagerechte Striche wie im Logo
+breiten = {'S': [0, 0, True], 'U': [0, 0, False], 'D': [0, 0, False], 'A': [0, 0, False],
+           'L': [0, 0, False], 'T': [0, 90, False]}
+
+def segmente(path):
+    img = rendern(path, 'SÜDSALAT', 564)
+    with contextlib.redirect_stdout(io.StringIO()):
+        L, top, base, cap = vermesse(img, 0, img.size[1], '')
+    return [100 * (b - a + 1) / cap for a, b in L]
+
+def form():
+    f = dict(FORM_FETT); f['fett_vertikal'] = HOEHE
+    f['breiten'] = {k: tuple(v) for k, v in breiten.items()}
+    return f
+
 setze('L', A_VARIANTEN, 26)
-form = dict(FORM_FETT)
-for runde in range(6):
-    baue('Bold', 645, 0.95, -30, 0, dict(kern), 700, 'Suedsalat-Bold.ttf', dict(form))
-    g, breite = gaps('Suedsalat-Bold.ttf')
+for runde in range(12):
+    baue('Bold', STAERKE, 0.95, -30, 0, dict(kern), 700, 'Suedsalat-Bold.ttf', form())
+    w = segmente('Suedsalat-Bold.ttf')
+    dw = [l - x for l, x in zip(LOGO_BREITEN, w)]
+    g, breite_gesamt = gaps('Suedsalat-Bold.ttf')
     diff = [l - x for l, x in zip(LOGO_GAPS, g)]
-    print(f'Runde {runde + 1}: Abstaende {g} | Breite {breite:.2f}')
-    if all(abs(d) <= 0.4 for d in diff):
+    print(f'Runde {runde + 1}: Breiten {[round(x, 1) for x in w]} | Abstaende {g} | Gesamt {breite_gesamt:.2f}')
+    if all(abs(d) <= 0.4 for d in dw) and all(abs(d) <= 0.4 for d in diff):
         break
+    u = lambda d: round(0.7 * d / 100 * CAP)   # gedaempft, damit es nicht pendelt
+    breiten['S'][0] += u((dw[0] + dw[3]) / 2); breiten['U'][0] += u(dw[1]); breiten['D'][0] += u(dw[2])
+    breiten['A'][0] += u(dw[4]); breiten['L'][0] += u(dw[5]); breiten['T'][0] += u(dw[6] - dw[4])
     for (links, rechts), d in zip(PAARE, diff):
         if abs(d) > 0.4:
-            setze(links, rechts, round(d / 100 * CAP))
+            setze(links, rechts, round(0.7 * d / 100 * CAP))
+form_fertig = form()
 
 # Kollisionen
 for runde in range(3):
-    f = dict(form)
-    baue('Bold', 645, 0.95, -30, 0, dict(kern), 700, 'Suedsalat-Bold.ttf', f)
+    f = dict(form_fertig)
+    baue('Bold', STAERKE, 0.95, -30, 0, dict(kern), 700, 'Suedsalat-Bold.ttf', f)
     eng = [(g, p) for g, p in pruefe('Suedsalat-Bold.ttf') if g < MIN]
     if not eng:
         break
@@ -59,7 +80,7 @@ for runde in range(3):
         dazu[(cmap[ord(a)], cmap[ord(b)])] = max(dazu.get((cmap[ord(a)], cmap[ord(b)]), 0), mehr)
     for k, v in dazu.items():
         kern[k] = kern.get(k, 0) + v
-    print('mehr Luft:', ', '.join(a + b for _, (a, b) in eng))
+    print('mehr Luft:', len(eng), 'Paare:', ', '.join(a + b for _, (a, b) in eng[:40]))
 print('Fett: Ecken geschaerft', f['ecken'], '| Punkte rund', f['punkte'])
 
 fr = {'breiten': {'S': (67, 0, True), 'T': (-30, 45, False), 'D': (22, 0, False)}}
@@ -81,3 +102,15 @@ for k, v in dazu.items():
 baue('Regular', 400, 1.0, -12, 75 + leer_mittel, dict(kern_normal), 400, 'Suedsalat-Regular.ttf', dict(fr))
 print('Leerzeichen einheitlich:', 75 + leer_mittel)
 print('Unterzeile Zusatz-Kerning:', dazu)
+
+# Normal: ebenfalls keine Paare unter MIN
+for runde in range(3):
+    eng = [(g, p) for g, p in pruefe('Suedsalat-Regular.ttf') if g < MIN]
+    if not eng:
+        break
+    font = TTFont('Suedsalat-Regular.ttf'); cmap = font.getBestCmap()
+    for g, (a, b) in eng:
+        k = (cmap[ord(a)], cmap[ord(b)])
+        kern_normal[k] = kern_normal.get(k, 0) + round((MIN - g + 0.2) / 100 * CAP)
+    print('Normal mehr Luft:', ', '.join(a + b for _, (a, b) in eng))
+    baue('Regular', 400, 1.0, -12, 75 + leer_mittel, dict(kern_normal), 400, 'Suedsalat-Regular.ttf', dict(fr))

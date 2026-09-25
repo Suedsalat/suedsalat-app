@@ -7,7 +7,7 @@ from fontTools.otlLib.builder import buildPairPosGlyphsSubtable, buildValue, bui
 from fontTools.varLib.instancer import instantiateVariableFont
 
 VF = 'LibreFranklin-VF.ttf'
-VERSION = 1.0   # bei jeder geaenderten Fassung erhoehen (1.001, 1.002 ...)
+VERSION = 1.001   # bei jeder geaenderten Fassung erhoehen (1.001, 1.002 ...)
 A_VARIANTEN = ['A', 'Agrave', 'Aacute', 'Acircumflex', 'Atilde', 'Adieresis', 'Aring']
 
 
@@ -118,8 +118,13 @@ def baue(stil, wght, faktor, track, space_extra, paare, gewicht, ziel, formen=No
     if formen is not None:
         from formen import ecken_schaerfen, punkte_rund, umlaute_hoehe, enthinten
         enthinten(font)
+        if formen.get('fett_vertikal'):
+            from formen import fett_vertikal
+            fett_vertikal(font, formen['fett_vertikal'])
         formen['punkte'] = punkte_rund(font, formen.get('punkt_faktor', 1.0), formen.get('dieresis'))
         formen['ecken'] = ecken_schaerfen(font)
+        from formen import kerben_fuellen
+        formen['kerben'] = kerben_fuellen(font)
         from formen import breite
         for name, (d, mitte, skal) in formen.get('breiten', {}).items():
             breite(font, name, d, mitte, skal)

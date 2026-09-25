@@ -41,13 +41,13 @@ def _schnitt(p0, p1, p2, p3):
     d1 = (p1[0] - p0[0], p1[1] - p0[1]); d2 = (p3[0] - p2[0], p3[1] - p2[1])
     nenner = d1[0] * d2[1] - d1[1] * d2[0]
     l1, l2 = math.hypot(*d1), math.hypot(*d2)
-    if l1 < 1e-6 or l2 < 1e-6 or abs(nenner) / (l1 * l2) < math.sin(math.radians(20)):
+    if l1 < 1e-6 or l2 < 1e-6 or abs(nenner) / (l1 * l2) < math.sin(math.radians(8)):
         return None
     t = ((p2[0] - p0[0]) * d2[1] - (p2[1] - p0[1]) * d2[0]) / nenner
     return (p0[0] + t * d1[0], p0[1] + t * d1[1])
 
 
-def ecken_schaerfen(font, max_sehne=45):
+def ecken_schaerfen(font, max_sehne=60):
     """Abgerundete Ecken (gerade Linie - kleiner Bogen aus 1-2 Hilfspunkten - gerade Linie)
     durch die spitze Ecke ersetzen: den Schnittpunkt der beiden Linien."""
     glyf = font['glyf']; anzahl = 0
@@ -57,9 +57,12 @@ def ecken_schaerfen(font, max_sehne=45):
             continue
         neu, geaendert = [], False
         for k in _konturen(g):
+            # doppelte, uebereinanderliegende Punkte entfernen (sonst ist die Linienrichtung unbestimmt)
+            k = [p for i, p in enumerate(k) if not (p[2] and k[i - 1][2] and p[:2] == k[i - 1][:2])] or k
             n = len(k)
             if n < 4:
                 neu.append(k); continue
+            richtung = _flaeche(k)
             weg, ersetze = set(), {}
             for i in range(n):
                 p1 = k[i]
@@ -78,7 +81,11 @@ def ecken_schaerfen(font, max_sehne=45):
                 if x is None:
                     continue
                 sehne = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
-                if max(math.hypot(x[0] - q[0], x[1] - q[1]) for q in (p1, p2)) > 1.5 * sehne + 2:
+                # Innenecken (Knick entgegen der Umlaufrichtung) laufen oft spitz zu (M, W, N) - dort
+                # liegt die echte Ecke weiter weg; Aussenecken streng begrenzen, damit nichts herausschiesst
+                innen = ((p1[0] - p0[0]) * (p3[1] - p2[1]) - (p1[1] - p0[1]) * (p3[0] - p2[0])) * richtung < 0
+                grenze = min(45, 5 * sehne + 10) if innen else 1.5 * sehne + 2
+                if max(math.hypot(x[0] - q[0], x[1] - q[1]) for q in (p1, p2)) > grenze:
                     continue
                 gruppe = {i, j, *offs}
                 if gruppe & (weg | set(ersetze)):
@@ -86,8 +93,9 @@ def ecken_schaerfen(font, max_sehne=45):
                 weg |= gruppe - {offs[0]}
                 ersetze[offs[0]] = (round(x[0]), round(x[1]), 1)
             if ersetze:
-                geaendert = True; anzahl += len(ersetze)
+                anzahl += len(ersetze)
                 k = [ersetze.get(i, p) for i, p in enumerate(k) if i not in weg]
+            geaendert = True
             neu.append(k)
         if geaendert:
             _setze(g, neu, glyf)
@@ -225,3 +233,106 @@ def breite(font, name, delta, mitte=0, skalieren=False):
                 comp.x += round(delta / 2)
             oadv, _ = hmtx[other]; hmtx[other] = (oadv + delta, hmtx[other][1])
             o.recalcBounds(glyf)
+
+
+def _embolden_y(pts, staerke, truetype):
+    """Wie FreeTypes FT_Outline_EmboldenXY mit x = 0: jeden Punkt entlang der Winkelhalbierenden
+    seiner Kanten verschieben, so dass waagerechte Kanten um staerke/2 nach aussen wandern."""
+    ys = staerke / 2
+    n = len(pts); first, last = 0, n - 1
+    l_in = 0.0; inx = iny = 0.0; anchor = (0.0, 0.0); l_anchor = 0.0
+    i, j, k = last, first, -1
+    weiter = lambda p: p + 1 if p < last else first
+    while j != i and i != k:
+        if j != k:
+            ox, oy = pts[j][0] - pts[i][0], pts[j][1] - pts[i][1]
+            l_out = math.hypot(ox, oy)
+            if l_out == 0:
+                j = weiter(j); continue
+            ox, oy = ox / l_out, oy / l_out
+        else:
+            (ox, oy), l_out = anchor, l_anchor
+        if l_in != 0:
+            if k < 0:
+                k = i; anchor = (inx, iny); l_anchor = l_in
+            d = inx * ox + iny * oy
+            if d > -0.9375:
+                d += 1
+                sy = inx + ox
+                if not truetype:
+                    sy = -sy
+                q = ox * iny - oy * inx
+                if truetype:
+                    q = -q
+                l = min(l_in, l_out)
+                sy = sy * ys / d if ys * q <= l * d else sy * l / q
+            else:
+                sy = 0.0
+            while i != j:
+                pts[i][1] += ys + sy
+                i = weiter(i)
+        else:
+            i = j
+        inx, iny, l_in = ox, oy, l_out
+        j = weiter(j)
+
+
+def fett_vertikal(font, dy, versal=742):
+    """Waagerechte Striche und Boegen um dy Einheiten kraeftiger, senkrechte Staemme bleiben -
+    wie PowerPoints kuenstliches Fett im Logo, nur gezielt in der Hoehe. Danach wieder auf die
+    alte Versalhoehe gestaucht (Grundlinie bleibt). Punktstruktur bleibt gleich, Ecken bleiben spitz."""
+    glyf = font['glyf']; f = versal / (versal + dy)
+    for name in font.getGlyphOrder():
+        g = glyf[name]
+        if g.isComposite() or g.numberOfContours <= 0:
+            continue
+        konturen = _konturen(g)
+        flaeche = sum(_flaeche(k) for k in konturen)
+        truetype = flaeche < 0          # im Uhrzeigersinn = TrueType-Orientierung
+        neu = []
+        for k in konturen:
+            pts = [[x, y] for x, y, _ in k]
+            if len(pts) > 2:
+                _embolden_y(pts, dy, truetype)
+            neu.append([(round(x), round(y * f), on) for (x, y), (_, _, on) in zip(pts, k)])
+        _setze(g, neu, glyf)
+
+
+def kerben_fuellen(font, max_kerbe=25):
+    """Kleine Abschraegungen in Innenecken (Tintenfallen von Libre Franklin, z. B. im M, W, N)
+    durch die spitze Innenecke ersetzen. Nur nach innen gerichtete Kerben - aussen abgeflachte
+    Spitzen (V unten, A oben) bleiben unberuehrt."""
+    glyf = font['glyf']; anzahl = 0
+    kreuz = lambda a, b, c: (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
+    for name in font.getGlyphOrder():
+        g = glyf[name]
+        if g.isComposite() or g.numberOfContours <= 0:
+            continue
+        neu, geaendert = [], False
+        for k in _konturen(g):
+            n = len(k); richtung = _flaeche(k)
+            weg, ersetze = set(), {}
+            for i in range(n):
+                p0, p1, p2, p3 = k[(i - 1) % n], k[i], k[(i + 1) % n], k[(i + 2) % n]
+                if not (p0[2] and p1[2] and p2[2] and p3[2]):
+                    continue
+                kurz = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+                if not (0 < kurz <= max_kerbe) or min(math.hypot(p1[0] - p0[0], p1[1] - p0[1]),
+                                                      math.hypot(p3[0] - p2[0], p3[1] - p2[1])) < 2 * kurz:
+                    continue
+                # beide Knicke nach innen (entgegen der Umlaufrichtung) = Kerbe in einer Innenecke
+                if kreuz(p0, p1, p2) * richtung >= 0 or kreuz(p1, p2, p3) * richtung >= 0:
+                    continue
+                x = _schnitt(p0, p1, p2, p3)
+                if x is None or max(math.hypot(x[0] - q[0], x[1] - q[1]) for q in (p1, p2)) > 3 * kurz:
+                    continue
+                if {i, (i + 1) % n} & (weg | set(ersetze)):
+                    continue
+                ersetze[i] = (round(x[0]), round(x[1]), 1); weg.add((i + 1) % n)
+            if ersetze:
+                geaendert = True; anzahl += len(ersetze)
+                k = [ersetze.get(i, p) for i, p in enumerate(k) if i not in weg]
+            neu.append(k)
+        if geaendert:
+            _setze(g, neu, glyf)
+    return anzahl

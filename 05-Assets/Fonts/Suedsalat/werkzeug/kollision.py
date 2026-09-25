@@ -22,7 +22,7 @@ def pruefe(path, cap_px=150):
     font = TTFont(path); upem = font['head'].unitsPerEm; cap = versal(font); s = cap_px / cap
     face = freetype.Face(path); face.set_char_size(int(upem * s * 64))
     hbf = hb.Font(hb.Face(hb.Blob.from_file_path(path)))
-    buchst = list('ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ')
+    buchst = list('ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜabcdefghijklmnopqrstuvwxyzäöüß0123456789')
     cmap = font.getBestCmap(); order = font.getGlyphOrder()
     prof = {c: profil(face, font.getGlyphID(cmap[ord(c)])) for c in buchst}
     erg = []

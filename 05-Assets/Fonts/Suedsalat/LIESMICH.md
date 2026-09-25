@@ -3,7 +3,7 @@
 Eigene Schrift des Podcasts Südsalat in zwei Schnitten: **Südsalat Bold** (Überschriften, wie
 „SÜDSALAT“ im Logo) und **Südsalat Regular** (Untertitel und Text, wie „THEMEN AUS DEM LEBEN“).
 Im Schriftmenü heißt sie „Südsalat“; nur der technische PostScript-Name ist „Suedsalat-Bold“ /
-„Suedsalat-Regular“ (dort sind keine Umlaute erlaubt), ebenso die Dateinamen. Version 1.000.
+„Suedsalat-Regular“ (dort sind keine Umlaute erlaubt), ebenso die Dateinamen. Version 1.001.
 
 ## Herkunft und Lizenz
 
@@ -20,11 +20,17 @@ aus dem Logo-Bild gemessen wurden.
 
 - Strichstärke, Breite der Buchstaben, Laufweite und jeder Buchstabenabstand in SÜDSALAT
 - **L–A-Abstand** wie Thorstens Leerzeichen im Logo (fest eingebaut, gilt auch für LÄ)
-- spitze Ecken (Libre Franklin rundet sie leicht ab), runde Punkte (Umlaute, i, j, Satzzeichen)
+- **Schwärze wie im Logo:** Das Logo ist PowerPoints künstliches Fett auf Franklin Gothic Medium,
+  das auch waagerechte Striche verdickt. Deshalb Stärke 668 plus gezielte Verdickung in der Höhe
+  (wie FreeTypes Fettrechnen) – Tintenmenge 48,7 % gegenüber 48,8 % im Logo
+- spitze Ecken (Libre Franklin rundet sie leicht ab), auch Innenecken von M, W, N ohne
+  „Tintenfallen“; runde Punkte (Umlaute, i, j, Satzzeichen)
 - Ü-Punkte in Größe, Abstand und Höhe wie im Logo
-- alle Großbuchstaben-Paare geprüft: mindestens 3 % der Versalhöhe Abstand, nichts berührt sich
+- alle Paare aus Groß-, Kleinbuchstaben und Ziffern geprüft: mindestens 3 % der Versalhöhe
+  Abstand, nichts berührt sich
 
-Vergleich: `Vergleich-mit-Logo.png` (auch auf U:\Suedsalat-Schrift-Vergleich.png), Probeblätter.
+Vergleiche: `Logo-Vergleich.png` (ganzes Logo, auch U:\Suedsalat-Logo-Vergleich.png),
+`Vergleich-mit-Logo.png` (übereinandergelegt, auch U:\Suedsalat-Schrift-Vergleich.png), `Probeblatt.png`.
 Verbleibender sichtbarer Unterschied: die Form der S-Enden.
 
 ## In Windows installiert
@@ -49,10 +55,10 @@ Seit 25.09.2026 für Thorstens Windows-Benutzer installiert (ohne Admin-Rechte):
 
 ## Neu bauen
 
-Werkzeuge in `werkzeug/` (Python 3 mit `fonttools uharfbuzz freetype-py pillow`):
+Werkzeuge in `werkzeug/` (Python 3 mit `fonttools uharfbuzz freetype-py pillow`; U:/Logo muss erreichbar sein):
 
 ```
-python final2.py          # baut Suedsalat-Bold.ttf und Suedsalat-Regular.ttf
+python final3.py          # baut Suedsalat-Bold.ttf und Suedsalat-Regular.ttf
 python kollision.py Suedsalat-Bold.ttf Suedsalat-Regular.ttf
 python vergleichsbild2.py
 ```
