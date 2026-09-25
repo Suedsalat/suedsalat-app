@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Farbpalette aus der Homepage (siehe 02-Design/Design-System.md).
 class AppColors {
@@ -17,27 +16,50 @@ class AppColors {
 class AppTheme {
   static const _borderRadiusContainer = 12.0;
   static const _borderRadiusInput = 6.0;
-  static const _headingFontFamily = 'FranklinGothicDemi';
+  /// Libre Franklin, freie Nachbildung der Logo-Schrift Franklin Gothic (siehe pubspec.yaml).
+  static const fontFamily = 'LibreFranklin';
 
-  // Ueberschriften (Titel/AppBar) in Franklin Gothic Demi, Fliesstext bleibt Open Sans.
-  static TextTheme _withHeadingFont(TextTheme base) {
+  // Ueberschriften (Titel/AppBar) halbfett wie "SUEDSALAT" im Logo (Franklin Gothic Demi),
+  // Fliesstext normal wie "THEMEN AUS DEM LEBEN" (Franklin Gothic Book). Libre Franklin laeuft
+  // etwas breiter als das Original, deshalb leicht engerer Buchstabenabstand (Vergleich vom
+  // 25.09.2026: Ueberschriften -2 %, Fliesstext -1 % der Schriftgroesse).
+  static TextStyle? _heading(TextStyle? s) => s?.copyWith(
+        fontFamily: fontFamily,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.02 * (s.fontSize ?? 16),
+      );
+
+  static TextStyle? _body(TextStyle? s) => s?.copyWith(
+        fontFamily: fontFamily,
+        letterSpacing: -0.01 * (s.fontSize ?? 14),
+      );
+
+  static TextTheme _textTheme(Brightness brightness) {
+    final base = ThemeData(brightness: brightness, useMaterial3: true).textTheme;
     return base.copyWith(
-      displayLarge: base.displayLarge?.copyWith(fontFamily: _headingFontFamily),
-      displayMedium: base.displayMedium?.copyWith(fontFamily: _headingFontFamily),
-      displaySmall: base.displaySmall?.copyWith(fontFamily: _headingFontFamily),
-      headlineLarge: base.headlineLarge?.copyWith(fontFamily: _headingFontFamily),
-      headlineMedium: base.headlineMedium?.copyWith(fontFamily: _headingFontFamily),
-      headlineSmall: base.headlineSmall?.copyWith(fontFamily: _headingFontFamily),
-      titleLarge: base.titleLarge?.copyWith(fontFamily: _headingFontFamily),
-      titleMedium: base.titleMedium?.copyWith(fontFamily: _headingFontFamily),
-      titleSmall: base.titleSmall?.copyWith(fontFamily: _headingFontFamily),
+      displayLarge: _heading(base.displayLarge),
+      displayMedium: _heading(base.displayMedium),
+      displaySmall: _heading(base.displaySmall),
+      headlineLarge: _heading(base.headlineLarge),
+      headlineMedium: _heading(base.headlineMedium),
+      headlineSmall: _heading(base.headlineSmall),
+      titleLarge: _heading(base.titleLarge),
+      titleMedium: _heading(base.titleMedium),
+      titleSmall: _heading(base.titleSmall),
+      bodyLarge: _body(base.bodyLarge),
+      bodyMedium: _body(base.bodyMedium),
+      bodySmall: _body(base.bodySmall),
+      labelLarge: _body(base.labelLarge),
+      labelMedium: _body(base.labelMedium),
+      labelSmall: _body(base.labelSmall),
     );
   }
 
   static ThemeData light() {
-    final textTheme = _withHeadingFont(GoogleFonts.openSansTextTheme());
+    final textTheme = _textTheme(Brightness.light);
     return ThemeData(
       brightness: Brightness.light,
+      fontFamily: fontFamily,
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
@@ -78,9 +100,10 @@ class AppTheme {
   }
 
   static ThemeData dark() {
-    final textTheme = _withHeadingFont(GoogleFonts.openSansTextTheme());
+    final textTheme = _textTheme(Brightness.dark);
     return ThemeData(
       brightness: Brightness.dark,
+      fontFamily: fontFamily,
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,

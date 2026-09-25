@@ -234,11 +234,11 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    kein Fehler. Wie viele zugestimmt haben, steht oben auf der Seite „Statistiken“.
 5. Release-Notes decken alles seit **1.3.2** ab, nicht nur seit der letzten gebauten Fassung — das ist
    der Stand, von dem die Nutzer tatsächlich kommen.
-6. ~~Vor dem Build: Schrift in die App einbetten.~~ **Erledigt im Code (2026-09-25):** Open Sans 400
-   liegt unter `assets/google_fonts/`, das Nachladen von Google ist in `main.dart` abgeschaltet. Der
-   Test `test/google_fonts_offline_test.dart` schlägt fehl, falls das Theme je eine Variante anfordert,
-   die dort nicht liegt. Beim Testen der App kurz auf die Schrift achten: Fließtext muss wie bisher
-   aussehen, nicht wie Roboto oder eine andere Systemschrift.
+6. **Schrift (Stand 25.09.2026):** Die App nutzt nur noch **Libre Franklin** (freie Lizenz, liegt in
+   `assets/fonts/`) – Überschriften halbfett, Fließtext normal, als Ersatz für die lizenzpflichtige
+   Franklin Gothic Demi/Book aus dem Logo. Open Sans und das Paket `google_fonts` sind raus, die App
+   lädt keine Schrift mehr nach. Der Test `test/schrift_test.dart` schlägt fehl, wenn das Theme eine
+   Stärke ohne Datei anfordert. Beim Testen auf das Schriftbild achten (Überschriften, lange Texte).
 6a. **Mit dem Release: Datenschutzerklärung Abschnitt 2 c anpassen** (`seiten/datenschutz.html`), weil der
    Name bei Tipps dann Pflicht ist und immer öffentlich erscheint. Zwei Stellen ersetzen:
    - „Optional kannst du deinen Namen angeben, die Nachricht …“ →

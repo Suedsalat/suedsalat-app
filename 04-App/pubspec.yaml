@@ -44,7 +44,6 @@ dependencies:
   firebase_messaging: ^15.1.5
   flutter_html: ^3.0.0
   flutter_secure_storage: ^10.3.1
-  google_fonts: ^6.2.1
   html: ^0.15.4
   http: ^1.2.2
   image_picker: ^1.1.2
@@ -116,9 +115,8 @@ flutter:
     - assets/images/newsletter.png
     - assets/images/feedback_rand.png
     - assets/audio/app-start.mp3
-    # Open Sans wird mitgeliefert statt zur Laufzeit von Google geladen
-    # (Datenschutz, siehe main.dart) - nur die Staerke, die das Textschema anfordert (400).
-    - assets/google_fonts/
+    # Lizenztext der Schrift (SIL OFL verlangt, dass er mitgeliefert wird, siehe main.dart)
+    - assets/fonts/LibreFranklin-OFL.txt
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -145,7 +143,17 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+  # Libre Franklin (freie Nachbildung von Franklin Gothic, SIL Open Font License) statt der
+  # lizenzpflichtigen Franklin Gothic Demi/Book aus dem Logo. Liegt in der App, nichts wird
+  # zur Laufzeit nachgeladen.
   fonts:
-    - family: FranklinGothicDemi
+    - family: LibreFranklin
       fonts:
-        - asset: assets/fonts/franklingothic_demi.ttf
+        - asset: assets/fonts/LibreFranklin-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/LibreFranklin-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/LibreFranklin-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/LibreFranklin-Bold.ttf
+          weight: 700

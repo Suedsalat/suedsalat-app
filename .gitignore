@@ -13,3 +13,7 @@
 
 # Composer-Abhaengigkeiten (per composer install reproduzierbar, siehe composer.lock)
 03-Backend/vendor/
+
+# Lizenzpflichtige Schriften (ITC/Monotype, nur fuer die Nutzung auf dem PC lizenziert) - nicht ins Repo
+05-Assets/Fonts/Franklin*
+05-Assets/Fonts/franklin*

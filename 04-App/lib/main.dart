@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/splash_screen.dart';
@@ -20,15 +19,10 @@ const double _kMaxAppWidth = 840;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Open Sans liegt unter assets/google_fonts/ in der App. Ohne diese Zeile wuerde
-  // google_fonts die Schrift beim ersten Start von Googles Servern nachladen und
-  // dabei die IP-Adresse des Nutzers an Google uebermitteln (Datenschutzerklaerung
-  // Abschnitt 2 h - der Absatz kann raus, sobald diese Version ueberall laeuft).
-  GoogleFonts.config.allowRuntimeFetching = false;
   // Die freie Schriftlizenz (SIL OFL) verlangt, dass sie mitgeliefert wird.
   LicenseRegistry.addLicense(() async* {
-    final license = await rootBundle.loadString('assets/google_fonts/OFL.txt');
-    yield LicenseEntryWithLineBreaks(['google_fonts'], license);
+    final license = await rootBundle.loadString('assets/fonts/LibreFranklin-OFL.txt');
+    yield LicenseEntryWithLineBreaks(['Libre Franklin'], license);
   });
 
   await Firebase.initializeApp();
