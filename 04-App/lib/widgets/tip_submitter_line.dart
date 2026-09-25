@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 
-/// "Tipp von Angela" unter einem Film- oder Locationtipp. Steht bei allen Tipps
-/// einheitlich - bei eingereichten mit dem Namen des Einsenders, bei eigenen mit
-/// Thorsten oder Jenny -, statt wie frueher nur bei eingereichten vorne in der
-/// Beschreibung.
+/// "Tipp von Angela" unter Film- und Locationtipps und Veranstaltungen, "Foto von ..."
+/// bei Galerie-Fotos. Steht ueberall einheitlich - bei Einsendungen mit dem Namen des
+/// Einsenders, bei eigenen Beitraegen mit "Suedsalat" -, statt wie frueher nur bei
+/// Einsendungen vorne in der Beschreibung.
 class TipSubmitterLine extends StatelessWidget {
   final String name;
 
-  const TipSubmitterLine({super.key, required this.name});
+  /// Wort vor dem Namen, z. B. "Tipp von" oder "Foto von".
+  final String prefix;
+
+  /// Farbe fuer dunklen Hintergrund (Foto-Vollbild); sonst aus dem Theme.
+  final Color? color;
+
+  const TipSubmitterLine({super.key, required this.name, this.prefix = 'Tipp von', this.color});
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    final color = this.color ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -19,7 +25,7 @@ class TipSubmitterLine extends StatelessWidget {
         const SizedBox(width: 4),
         Flexible(
           child: Text(
-            'Tipp von $name',
+            '$prefix $name',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
             overflow: TextOverflow.ellipsis,
           ),

@@ -5,6 +5,9 @@ class Event {
   final String? eventTime;
   final String? eventEndTime;
   final String? description;
+
+  /// Wer die Veranstaltung bzw. das Foto eingereicht hat ("Tipp von ..."), null = ohne Namen.
+  final String? submittedByName;
   final String? link;
   final String? episodeGuid;
   final int? episodeTimestampSeconds;
@@ -17,6 +20,7 @@ class Event {
     this.eventTime,
     this.eventEndTime,
     this.description,
+    this.submittedByName,
     this.link,
     this.episodeGuid,
     this.episodeTimestampSeconds,
@@ -31,10 +35,16 @@ class Event {
       eventTime: json['event_time'] as String?,
       eventEndTime: json['event_end_time'] as String?,
       description: json['description'] as String?,
+      submittedByName: _nameOrNull(json['submitted_by_name']),
       link: json['link'] as String?,
       episodeGuid: json['episode_guid'] as String?,
       episodeTimestampSeconds: json['episode_timestamp_seconds'] as int?,
       imagePath: json['image_path'] as String?,
     );
   }
+}
+
+String? _nameOrNull(dynamic value) {
+  final name = value is String ? value.trim() : '';
+  return name.isEmpty ? null : name;
 }

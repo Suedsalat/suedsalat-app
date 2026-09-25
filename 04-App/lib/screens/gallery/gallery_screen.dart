@@ -6,6 +6,7 @@ import '../../services/api_service.dart';
 import '../../services/seen_items_service.dart';
 import '../../widgets/async_state_views.dart';
 import '../../widgets/new_dot.dart';
+import '../../widgets/tip_submitter_line.dart';
 import 'photo_viewer_screen.dart';
 
 class GalleryScreen extends StatefulWidget {
@@ -63,6 +64,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 imageUrl: p.imagePath,
                 description: p.description,
                 publishedAt: p.publishedAt,
+                submittedByName: p.submittedByName,
                 isVideo: p.isVideo,
               ),
           ],
@@ -152,6 +154,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
+                          if (photo.submittedByName != null)
+                            TipSubmitterLine(name: photo.submittedByName!, prefix: 'Foto von'),
                           Text(
                             DateFormat('dd.MM.yyyy').format(photo.publishedAt),
                             style: Theme.of(context).textTheme.bodySmall,

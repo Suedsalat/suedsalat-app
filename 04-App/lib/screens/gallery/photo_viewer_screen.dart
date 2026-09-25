@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../widgets/tip_submitter_line.dart';
 import 'gallery_video_page.dart';
 
 /// Ein einzelnes Bild im Viewer. Bewusst ein eigener kleiner Typ statt des
@@ -11,6 +12,9 @@ class PhotoViewerItem {
   final String? description;
   final DateTime? publishedAt;
 
+  /// "Foto von ..." unter der Bildunterschrift, null = ohne Namen.
+  final String? submittedByName;
+
   /// Videos liegen in derselben Reihenfolge zwischen den Fotos und bekommen im
   /// Viewer eine eigene Seite mit Player statt eines zoombaren Bildes.
   final bool isVideo;
@@ -19,6 +23,7 @@ class PhotoViewerItem {
     required this.imageUrl,
     this.description,
     this.publishedAt,
+    this.submittedByName,
     this.isVideo = false,
   });
 }
@@ -136,7 +141,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
               },
             ),
           ),
-          if (hasCaption || item.publishedAt != null)
+          if (hasCaption || item.publishedAt != null || item.submittedByName != null)
             Positioned(
               left: 0,
               right: 0,
@@ -158,8 +163,12 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
                     children: [
                       if (hasCaption)
                         Text(item.description!, style: const TextStyle(color: Colors.white)),
-                      if (item.publishedAt != null) ...[
+                      if (item.submittedByName != null) ...[
                         if (hasCaption) const SizedBox(height: 4),
+                        TipSubmitterLine(name: item.submittedByName!, prefix: 'Foto von', color: Colors.white70),
+                      ],
+                      if (item.publishedAt != null) ...[
+                        if (hasCaption || item.submittedByName != null) const SizedBox(height: 4),
                         Text(
                           DateFormat('dd.MM.yyyy').format(item.publishedAt!),
                           style: const TextStyle(color: Colors.white70, fontSize: 12),

@@ -78,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_id'])) {
     $feedbackId = (int) $_POST['import_feedback_id'];
     $description = trim((string) ($_POST['description'] ?? '')) ?: null;
+    $submittedByName = mb_substr(trim((string) ($_POST['submitted_by_name'] ?? '')), 0, 100) ?: null;
 
     $stmt = $pdo->prepare('SELECT * FROM feedback_messages WHERE id = :id');
     $stmt->execute([':id' => $feedbackId]);
@@ -116,13 +117,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_id'])
             }
             $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $newFilename;
             $insert = $pdo->prepare(
-                'INSERT INTO photos (image_path, media_type, description, created_by, created_via_feedback_id)
-                 VALUES (:path, :media_type, :description, :created_by, :feedback_id)'
+                'INSERT INTO photos (image_path, media_type, description, submitted_by_name, created_by, created_via_feedback_id)
+                 VALUES (:path, :media_type, :description, :submitted_by_name, :created_by, :feedback_id)'
             );
             $insert->execute([
                 ':path' => $imageUrl,
                 ':media_type' => $mediaType,
                 ':description' => $description,
+                ':submitted_by_name' => $submittedByName,
                 ':created_by' => $adminId,
                 ':feedback_id' => $feedbackId,
             ]);
@@ -146,6 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_id'])
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_media_id'])) {
     $mediaId = (int) $_POST['import_feedback_media_id'];
     $description = trim((string) ($_POST['description'] ?? '')) ?: null;
+    $submittedByName = mb_substr(trim((string) ($_POST['submitted_by_name'] ?? '')), 0, 100) ?: null;
 
     $stmt = $pdo->prepare('SELECT * FROM feedback_media WHERE id = :id');
     $stmt->execute([':id' => $mediaId]);
@@ -176,12 +179,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_media
             }
             $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $newFilename;
             $insert = $pdo->prepare(
-                'INSERT INTO photos (image_path, media_type, description, created_by, created_via_feedback_id)
-                 VALUES (:path, "photo", :description, :created_by, :feedback_id)'
+                'INSERT INTO photos (image_path, media_type, description, submitted_by_name, created_by, created_via_feedback_id)
+                 VALUES (:path, "photo", :description, :submitted_by_name, :created_by, :feedback_id)'
             );
             $insert->execute([
                 ':path' => $imageUrl,
                 ':description' => $description,
+                ':submitted_by_name' => $submittedByName,
                 ':created_by' => $adminId,
                 ':feedback_id' => $mediaRow['feedback_message_id'],
             ]);
@@ -215,6 +219,7 @@ $editPhoto = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
     $id = (int) $_POST['edit_id'];
     $description = trim((string) ($_POST['description'] ?? '')) ?: null;
+    $submittedByName = mb_substr(trim((string) ($_POST['submitted_by_name'] ?? '')), 0, 100) ?: null;
 
     $stmt = $pdo->prepare('SELECT * FROM photos WHERE id = :id');
     $stmt->execute([':id' => $id]);
@@ -272,11 +277,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
         }
 
         if ($error === null) {
-            $update = $pdo->prepare('UPDATE photos SET image_path = :path, media_type = :media_type, description = :description WHERE id = :id');
+            $update = $pdo->prepare('UPDATE photos SET image_path = :path, media_type = :media_type, description = :description, submitted_by_name = :submitted_by_name WHERE id = :id');
             $update->execute([
                 ':path' => $imageUrl,
                 ':media_type' => $mediaType,
                 ':description' => $description,
+                ':submitted_by_name' => $submittedByName,
                 ':id' => $id,
             ]);
             header('Location: ' . BASE_PATH . '/admin/gallery.php#photo-' . $id);
@@ -290,6 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
 // Hochladen
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo']) && !isset($_POST['edit_id'])) {
     $description = trim((string) ($_POST['description'] ?? '')) ?: null;
+    $submittedByName = mb_substr(trim((string) ($_POST['submitted_by_name'] ?? '')), 0, 100) ?: null;
     $file = $_FILES['photo'];
 
     $result = validate_gallery_upload($file, $allowedTypes, $allowedVideoTypes, $maxSizeBytes, $maxVideoSizeBytes, $error);
@@ -314,12 +321,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo']) && !isset($
 
         $imageUrl = UPLOAD_URL_BASE . '/gallery/' . $filename;
         $stmt = $pdo->prepare(
-            'INSERT INTO photos (image_path, media_type, description, created_by) VALUES (:path, :media_type, :description, :created_by)'
+            'INSERT INTO photos (image_path, media_type, description, submitted_by_name, created_by) VALUES (:path, :media_type, :description, :submitted_by_name, :created_by)'
         );
         $stmt->execute([
             ':path' => $imageUrl,
             ':media_type' => $result['media_type'],
             ':description' => $description,
+            ':submitted_by_name' => $submittedByName,
             ':created_by' => $adminId,
         ]);
         $newPhotoId = (int) $pdo->lastInsertId();
@@ -338,6 +346,8 @@ if ($editPhoto === null && isset($_GET['edit'])) {
 // Aus Feedback vorausgefuellte Uebernahme (GET) - nur wenn nicht gerade ein anderes Foto bearbeitet wird
 $importFeedback = null;
 $suggestedDescription = '';
+// "Foto von": Name des Einsenders; bei eigenen Fotos "Suedsalat", egal ob Thorsten oder Jenny.
+$suggestedSubmitter = '';
 if ($editPhoto === null && isset($_GET['import_feedback_id'])) {
     $stmt = $pdo->prepare('SELECT * FROM feedback_messages WHERE id = :id');
     $stmt->execute([':id' => (int) $_GET['import_feedback_id']]);
@@ -346,8 +356,8 @@ if ($editPhoto === null && isset($_GET['import_feedback_id'])) {
         $importFeedback = null;
     }
     if ($importFeedback) {
-        $senderLabel = $importFeedback['sender_name'] ?: 'Anonym';
-        $suggestedDescription = "von {$senderLabel}: {$importFeedback['message']}";
+        $suggestedDescription = (string) $importFeedback['message'];
+        $suggestedSubmitter = (string) ($importFeedback['sender_name'] ?? '');
     }
 }
 
@@ -366,8 +376,8 @@ if ($editPhoto === null && $importFeedback === null && isset($_GET['import_feedb
         $importFeedbackMedia = null;
     }
     if ($importFeedbackMedia) {
-        $senderLabel = $importFeedbackMedia['sender_name'] ?: 'Anonym';
-        $suggestedDescription = "von {$senderLabel}: {$importFeedbackMedia['message']}";
+        $suggestedDescription = (string) $importFeedbackMedia['message'];
+        $suggestedSubmitter = (string) ($importFeedbackMedia['sender_name'] ?? '');
     }
 }
 
@@ -419,6 +429,7 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                 <?php endif; ?>
             </p>
             <label>Neues Foto/Video (optional, ersetzt das aktuelle) <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"></label>
+            <label>Foto von <small>(steht in der App beim Foto, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars((string) ($editPhoto['submitted_by_name'] ?? ''), ENT_QUOTES) ?>"></label>
             <label>Beschreibung (optional) <textarea name="description" rows="2"><?= htmlspecialchars($editPhoto['description'] ?? '', ENT_QUOTES) ?></textarea></label>
             <button type="submit">Speichern</button>
             <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/gallery.php">Abbrechen</a>
@@ -435,6 +446,7 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                     <?php endif; ?>
                 <?php endif; ?>
             </p>
+            <label>Foto von <small>(steht in der App beim Foto, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars($suggestedSubmitter, ENT_QUOTES) ?>"></label>
             <label>Beschreibung <textarea name="description" rows="3"><?= htmlspecialchars($suggestedDescription, ENT_QUOTES) ?></textarea></label>
             <button type="submit">In Galerie übernehmen</button>
             <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/feedback.php">Abbrechen</a>
@@ -447,11 +459,13 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                     <a class="button" style="margin-bottom:0;" href="<?= BASE_PATH ?>/admin/photo-editor.php?path=<?= urlencode($importFeedbackMediaRelPath) ?>&amp;return=<?= urlencode(BASE_PATH . '/admin/gallery.php?import_feedback_media_id=' . (int) $importFeedbackMedia['id']) ?>">Retuschieren</a>
                 <?php endif; ?>
             </p>
+            <label>Foto von <small>(steht in der App beim Foto, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars($suggestedSubmitter, ENT_QUOTES) ?>"></label>
             <label>Beschreibung <textarea name="description" rows="3"><?= htmlspecialchars($suggestedDescription, ENT_QUOTES) ?></textarea></label>
             <button type="submit">In Galerie übernehmen</button>
             <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/feedback.php">Abbrechen</a>
         <?php else: ?>
             <label>Foto/Video <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" required></label>
+            <label>Foto von <small>(steht in der App beim Foto, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars(OWN_CONTENT_NAME, ENT_QUOTES) ?>"></label>
             <label>Beschreibung (optional) <textarea name="description" rows="2"></textarea></label>
             <button type="submit">Hochladen</button>
         <?php endif; ?>

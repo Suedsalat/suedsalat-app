@@ -92,6 +92,10 @@ define('BASE_PATH', rtrim((string) parse_url(APP_URL, PHP_URL_PATH), '/'));
 define('UPLOAD_DIR', __DIR__ . '/../uploads');
 define('UPLOAD_URL_BASE', APP_URL . '/uploads');
 
+// So stehen eigene Beitraege von Thorsten und Jenny in der App ("Tipp von Suedsalat"),
+// egal wer von beiden sie anlegt - siehe submitted_by_name bei Tipps, Veranstaltungen, Fotos.
+define('OWN_CONTENT_NAME', 'Südsalat');
+
 // Feste Konstanten fuer Login-Sicherheit (siehe Konzept.md).
 define('LOGIN_MAX_ATTEMPTS', 5);
 define('LOGIN_LOCKOUT_MINUTES', 15);

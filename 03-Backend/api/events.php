@@ -12,7 +12,7 @@ ApiAuth::requireDeviceToken();
 
 $pdo = Database::connection();
 $stmt = $pdo->query("SELECT id, title, event_date, event_time, event_end_time, description, link,
-                      episode_guid, episode_timestamp_seconds, image_path
+                      episode_guid, episode_timestamp_seconds, image_path, submitted_by_name
                       FROM events
                       WHERE event_date >= CURDATE()
                       ORDER BY event_date ASC, event_time ASC");

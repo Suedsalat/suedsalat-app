@@ -180,6 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
     $eventTime = trim((string) ($_POST['event_time'] ?? '')) ?: null;
     $eventEndTime = trim((string) ($_POST['event_end_time'] ?? '')) ?: null;
     $description = trim((string) ($_POST['description'] ?? '')) ?: null;
+    $submittedByName = mb_substr(trim((string) ($_POST['submitted_by_name'] ?? '')), 0, 100) ?: null;
     $link = trim((string) ($_POST['link'] ?? '')) ?: null;
     if ($link !== null && !preg_match('#^https?://#i', $link)) {
         $link = 'https://' . $link;
@@ -219,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
 
         $stmt = $pdo->prepare(
             'UPDATE events SET title = :title, event_date = :event_date, event_time = :event_time,
-             event_end_time = :event_end_time, description = :description, link = :link, episode_guid = :episode_guid,
+             event_end_time = :event_end_time, description = :description, submitted_by_name = :submitted_by_name, link = :link, episode_guid = :episode_guid,
              episode_timestamp_seconds = :episode_timestamp_seconds, image_path = :image_path WHERE id = :id'
         );
         $stmt->execute([
@@ -228,6 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
             ':event_time' => $eventTime,
             ':event_end_time' => $eventEndTime,
             ':description' => $description,
+            ':submitted_by_name' => $submittedByName,
             ':link' => $link,
             ':episode_guid' => $episodeGuid,
             ':episode_timestamp_seconds' => $episodeTimestampSeconds,
@@ -256,9 +258,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
 
         $stmt = $pdo->prepare(
             'INSERT INTO events (title, event_date, event_time, event_end_time, description, link, episode_guid,
-             episode_timestamp_seconds, image_path, created_by, created_via_feedback_id)
+             episode_timestamp_seconds, image_path, created_by, created_via_feedback_id, submitted_by_name)
              VALUES (:title, :event_date, :event_time, :event_end_time, :description, :link, :episode_guid,
-             :episode_timestamp_seconds, :image_path, :created_by, :feedback_id)'
+             :episode_timestamp_seconds, :image_path, :created_by, :feedback_id, :submitted_by_name)'
         );
         $stmt->execute([
             ':title' => $title,
@@ -266,6 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
             ':event_time' => $eventTime,
             ':event_end_time' => $eventEndTime,
             ':description' => $description,
+            ':submitted_by_name' => $submittedByName,
             ':link' => $link,
             ':episode_guid' => $episodeGuid,
             ':episode_timestamp_seconds' => $episodeTimestampSeconds,
@@ -301,8 +304,13 @@ if (isset($_GET['edit'])) {
 // Vorbelegung aus einem Feedback-Veranstaltungstipp (siehe feedback.php)
 $prefillTitle = (string) ($_GET['prefill_title'] ?? '');
 $prefillDescription = (string) ($_GET['prefill_description'] ?? '');
+$prefillSubmitter = (string) ($_GET['prefill_submitter'] ?? '');
 $prefillDate = (string) ($_GET['prefill_date'] ?? '');
 $prefillFeedbackId = (string) ($_GET['prefill_feedback_id'] ?? '');
+
+// "Tipp von": uebernommene Einsendung -> Name des Einsenders; selbst angelegt ->
+// "Suedsalat", egal ob Thorsten oder Jenny sie anlegt.
+$defaultSubmitter = $prefillFeedbackId !== '' ? $prefillSubmitter : OWN_CONTENT_NAME;
 
 $prefillFeedbackImage = null;
 if ($prefillFeedbackId !== '') {
@@ -377,6 +385,7 @@ $showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !
             <input type="hidden" name="feedback_id" value="<?= htmlspecialchars($prefillFeedbackId, ENT_QUOTES) ?>">
         <?php endif; ?>
         <label>Titel <input type="text" name="title" required value="<?= htmlspecialchars($editEvent['title'] ?? $prefillTitle, ENT_QUOTES) ?>"></label>
+        <label>Tipp von <small>(steht in der App unter der Veranstaltung, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars($editEvent ? (string) ($editEvent['submitted_by_name'] ?? '') : $defaultSubmitter, ENT_QUOTES) ?>"></label>
         <div class="field-row">
             <label>Datum <input type="date" name="event_date" required value="<?= htmlspecialchars($editEvent['event_date'] ?? $prefillDate, ENT_QUOTES) ?>"></label>
             <label>Startzeit (optional) <input type="time" name="event_time" value="<?= htmlspecialchars($editEvent && $editEvent['event_time'] ? substr($editEvent['event_time'], 0, 5) : '', ENT_QUOTES) ?>"></label>

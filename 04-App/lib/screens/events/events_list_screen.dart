@@ -7,6 +7,7 @@ import '../../models/event.dart';
 import '../../services/api_service.dart';
 import '../../services/audio_player_service.dart';
 import '../../services/seen_items_service.dart';
+import '../../widgets/tip_submitter_line.dart';
 import '../../widgets/async_state_views.dart';
 import '../../widgets/new_dot.dart';
 import '../episodes/episode_player_screen.dart';
@@ -157,6 +158,10 @@ class _EventsListScreenState extends State<EventsListScreen> {
                 const SizedBox(height: 16),
               ],
               Text(dateText, style: Theme.of(context).textTheme.bodyMedium),
+              if (event.submittedByName != null) ...[
+                const SizedBox(height: 6),
+                TipSubmitterLine(name: event.submittedByName!),
+              ],
               if (event.description != null && event.description!.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Text(event.description!),
@@ -227,9 +232,19 @@ class _EventsListScreenState extends State<EventsListScreen> {
                         _DateBadge(date: event.eventDate),
                         const SizedBox(width: 14),
                         Expanded(
-                          child: Text(
-                            event.title,
-                            style: Theme.of(context).textTheme.titleMedium,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                event.title,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              if (event.submittedByName != null) ...[
+                                const SizedBox(height: 2),
+                                TipSubmitterLine(name: event.submittedByName!),
+                              ],
+                            ],
                           ),
                         ),
                         if (isNew) const Padding(

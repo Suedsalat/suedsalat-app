@@ -11,7 +11,7 @@ header('Content-Type: application/json; charset=utf-8');
 ApiAuth::requireDeviceToken();
 
 $pdo = Database::connection();
-$stmt = $pdo->query('SELECT id, image_path, media_type, description, published_at
+$stmt = $pdo->query('SELECT id, image_path, media_type, description, submitted_by_name, published_at
                       FROM photos
                       ORDER BY published_at DESC');
 

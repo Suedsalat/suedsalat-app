@@ -412,11 +412,9 @@ $prefillDescription = (string) ($_GET['prefill_description'] ?? '');
 $prefillSubmitter = (string) ($_GET['prefill_submitter'] ?? '');
 $prefillFeedbackId = (string) ($_GET['prefill_feedback_id'] ?? '');
 
-// "Tipp von": uebernommene Einsendung -> Name des Einsenders (leer, wenn er keinen
-// angegeben hat); selbst angelegt -> Name des angemeldeten Admins.
-$currentAdminNameStmt = $pdo->prepare('SELECT name FROM admins WHERE id = :id');
-$currentAdminNameStmt->execute([':id' => $adminId]);
-$defaultSubmitter = $prefillFeedbackId !== '' ? $prefillSubmitter : (string) $currentAdminNameStmt->fetchColumn();
+// "Tipp von": uebernommene Einsendung -> Name des Einsenders; selbst angelegt ->
+// "Suedsalat", egal ob Thorsten oder Jenny ihn anlegt.
+$defaultSubmitter = $prefillFeedbackId !== '' ? $prefillSubmitter : OWN_CONTENT_NAME;
 
 $prefillFeedbackImage = null;
 if ($prefillFeedbackId !== '') {

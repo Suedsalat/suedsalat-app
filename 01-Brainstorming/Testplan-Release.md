@@ -93,17 +93,22 @@ Videos liegen in derselben Reihenfolge zwischen den Fotos und lassen sich im Vie
   geblättert wird. Bitte hier besonders genau hinschauen — diese beiden Gesten liegen dicht
   beieinander.
 
-### 7. Bei jedem Film- und Locationtipp steht, von wem er ist
+### 7. Bei jedem Tipp und Foto steht, von wem er ist
 
-Vorher trugen nur eingereichte Tipps einen Namen, und zwar vorne im Beschreibungstext („von Angela: …“).
-Tipps von Thorsten und Jenny hatten keinen. Gemeldet von Angela.
+Vorher trugen nur eingereichte Beiträge einen Namen, und zwar vorne im Beschreibungstext („von Angela: …“).
+Eigene Beiträge von Thorsten und Jenny hatten keinen. Gemeldet von Angela.
 
-**So prüfst du es:** Öffne Filmtipps und Locationtipps und tippe auch einmal einen Tipp an.
+**So prüfst du es:** Öffne Veranstaltungen, Filmtipps, Locationtipps und die Galerie und tippe jeweils
+auch einmal einen Eintrag an.
 
-**Erwartet:** Unter dem Titel steht klein „Tipp von …“ mit einem Personensymbol, sowohl in der Liste
-als auch im geöffneten Tipp. Das gilt bei eingereichten Tipps mit dem Namen des Einsenders und bei
-eigenen mit Thorsten oder Jenny. Die Beschreibung beginnt nicht mehr mit „von …:“. Tipps, bei denen
-jemand keinen Namen angegeben hat, zeigen einfach keine solche Zeile.
+**Erwartet:** Klein und mit Personensymbol steht „Tipp von …“ bei Veranstaltungen, Film- und
+Locationtipps und „Foto von …“ in der Galerie, sowohl in der Übersicht als auch in der geöffneten
+Ansicht. Bei Einsendungen steht der Name des Einsenders, bei eigenen Beiträgen immer „Südsalat“. Keine
+Beschreibung beginnt mehr mit „von …:“. Ältere Einsendungen ohne Namen zeigen keine solche Zeile.
+
+**Außerdem neu im Feedback-Formular:** Bei Veranstaltungs-, Film-, Location- und Fototipps ist der Name
+jetzt Pflicht, mit dem Hinweis, dass er öffentlich beim Tipp steht. Absenden ohne Namen muss die
+Meldung „Bitte gib deinen Namen ein.“ zeigen. Bei allgemeinem Feedback und Fragen bleibt er freiwillig.
 
 ### 8. Kopieren und Einfügen im Newsletter-Feld
 
@@ -179,9 +184,10 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
 - **Rezensionsverwaltung ohne Freigabeschritt:** nur noch Bearbeiten und Löschen, eine gemeinsame
   Liste statt getrennt "Ausstehend"/"Freigegeben".
 - **Galerie:** Button-Farben von Retuschieren/Abbrechen korrigiert.
-- **Neues Feld „Tipp von“** bei Film- und Locationtipps. Beim Übernehmen einer Einsendung ist es mit
-  dem Namen des Einsenders vorbelegt, beim eigenen Anlegen mit dem Namen des angemeldeten Admins.
-  Leer lassen heißt: ohne Namen. Die Beschreibung bekommt kein „von …:“ mehr vorangestellt.
+- **Neues Feld „Tipp von“ bzw. „Foto von“** bei Veranstaltungen, Film- und Locationtipps und in der
+  Galerie (alle vier Galerie-Formulare). Beim Übernehmen einer Einsendung mit dem Namen des Einsenders
+  vorbelegt, beim eigenen Anlegen immer mit „Südsalat“ (egal ob Thorsten oder Jenny). Jederzeit
+  nachträglich änderbar, leer heißt: ohne Namen. Beschreibungen bekommen kein „von …:“ mehr vorangestellt.
 
 ### Bereits live, nicht Teil dieses Release-Tests
 
@@ -205,8 +211,9 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    wird dabei einmal komplett überschrieben.
 4a. **Migration „Tipp von“ ZUERST ausführen**, dann erst die PHP-Dateien hochladen:
    `sql/_add-tip-submitter-name-once.php?secret=suedsalat-tipvon-2026-temp`, danach vom Server löschen.
-   Die neuen `api/movie-tips.php` und `api/location-tips.php` fragen die Spalte `submitted_by_name` ab —
-   laufen sie vor der Migration, bleiben beide Tabs in der App leer. Die Migration entfernt außerdem das
+   Die neuen `api/movie-tips.php`, `api/location-tips.php`, `api/events.php` und `api/gallery.php`
+   fragen die Spalte `submitted_by_name` ab — laufen sie vor der Migration, bleiben diese vier Tabs in der
+   App leer. Auch `config/config.php` mit hochladen (Konstante `OWN_CONTENT_NAME`). Die Migration entfernt außerdem das
    „von …:“ aus bestehenden Beschreibungen, deshalb erst zusammen mit der neuen App-Version ausführen.
 5. Release-Notes decken alles seit **1.3.2** ab, nicht nur seit der letzten gebauten Fassung — das ist
    der Stand, von dem die Nutzer tatsächlich kommen.
@@ -215,6 +222,15 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    Test `test/google_fonts_offline_test.dart` schlägt fehl, falls das Theme je eine Variante anfordert,
    die dort nicht liegt. Beim Testen der App kurz auf die Schrift achten: Fließtext muss wie bisher
    aussehen, nicht wie Roboto oder eine andere Systemschrift.
+6a. **Mit dem Release: Datenschutzerklärung Abschnitt 2 c anpassen** (`seiten/datenschutz.html`), weil der
+   Name bei Tipps dann Pflicht ist und immer öffentlich erscheint. Zwei Stellen ersetzen:
+   - „Optional kannst du deinen Namen angeben, die Nachricht …“ →
+     „Optional kannst du deinen Namen angeben – bei Veranstaltungs-, Film-, Location- und Fototipps ist er
+     Pflicht –, die Nachricht …“
+   - „Hast du einen Namen angegeben, nennen wir dich dabei in der Regel als Einsender (z. B. „von Inga“).
+     Möchtest du das nicht, lass das Namensfeld einfach leer.“ →
+     „Dabei steht dein Name dabei („Tipp von Inga“ bzw. „Foto von Inga“) – du kannst dafür auch einen
+     Spitznamen verwenden. Unsere eigenen Beiträge erscheinen als „Südsalat“.“
 7. **Nach dem Release beider Stores:** in `seiten/datenschutz.html` den Übergangsabsatz
    „2 h) Schriftart“ entfernen, sobald keine App-Version mehr im Umlauf ist, die die Schrift von
    Google lädt.
