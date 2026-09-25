@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:suedsalat_app/screens/feedback/feedback_screen.dart';
 
-/// Tipps erscheinen nach der Uebernahme mit "Tipp von ..." in der App, deshalb ist
-/// der Name bei allen vier Tipp-Arten Pflicht. Bei allgemeinem Feedback nicht.
+/// Der Name ist bei allen Einsendungen Pflicht - einheitlich, weil vieles (Tipps,
+/// Rezensionen, spaeter Foto-Kommentare) mit dem Namen oeffentlich erscheint.
 void main() {
   Future<void> absendenOhneName(WidgetTester tester, String typ) async {
     // Das Standard-Testfenster (800x600) ist zu niedrig, der Absenden-Knopf laege ausserhalb.
@@ -18,15 +18,32 @@ void main() {
     await tester.pump();
   }
 
-  for (final typ in ['termin_tipp', 'kino_tipp', 'location_tipp', 'foto_vorschlag']) {
+  const alleArten = [
+    'allgemein',
+    'frage',
+    'sprachnachricht',
+    'termin_tipp',
+    'kino_tipp',
+    'location_tipp',
+    'foto_vorschlag',
+  ];
+
+  for (final typ in alleArten) {
     testWidgets('$typ: ohne Namen kommt die Pflichtfeld-Meldung', (tester) async {
       await absendenOhneName(tester, typ);
       expect(find.text('Bitte gib deinen Namen ein.'), findsOneWidget);
     });
   }
 
-  testWidgets('Allgemeines Feedback: Name bleibt freiwillig', (tester) async {
-    await absendenOhneName(tester, 'allgemein');
-    expect(find.text('Bitte gib deinen Namen ein.'), findsNothing);
+  testWidgets('Bei Tipps weist das Feld auf die oeffentliche Anzeige hin', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: FeedbackScreen(initialType: 'kino_tipp')));
+    await tester.pump();
+    expect(find.textContaining('Steht öffentlich beim Tipp'), findsOneWidget);
+  });
+
+  testWidgets('Bei allgemeinem Feedback verspricht das Feld keine Veroeffentlichung', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: FeedbackScreen(initialType: 'allgemein')));
+    await tester.pump();
+    expect(find.textContaining('Steht öffentlich'), findsNothing);
   });
 }

@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 class TipSubmitterLine extends StatelessWidget {
   final String name;
 
-  /// Wort vor dem Namen, z. B. "Tipp von" oder "Foto von".
+  /// Wort vor dem Namen, z. B. "Tipp von" oder "Foto von"; leer = nur der Name (Rezensionen).
   final String prefix;
 
   /// Farbe fuer dunklen Hintergrund (Foto-Vollbild); sonst aus dem Theme.
@@ -25,7 +25,7 @@ class TipSubmitterLine extends StatelessWidget {
         const SizedBox(width: 4),
         Flexible(
           child: Text(
-            '$prefix $name',
+            prefix.isEmpty ? name : '$prefix $name',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
             overflow: TextOverflow.ellipsis,
           ),

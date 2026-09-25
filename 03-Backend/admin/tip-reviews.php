@@ -35,7 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'manua
     $tipRef = (string) ($_POST['tip_ref'] ?? '');
     $rating = (int) ($_POST['rating'] ?? 0);
     $reviewText = trim((string) ($_POST['review_text'] ?? '')) ?: null;
-    $reviewerName = trim((string) ($_POST['reviewer_name'] ?? '')) ?: null;
+    // Name ist ueberall Pflicht; eigene Rezensionen von Thorsten/Jenny heissen "Suedsalat".
+    $reviewerName = mb_substr(trim((string) ($_POST['reviewer_name'] ?? '')), 0, 100) ?: OWN_CONTENT_NAME;
 
     [$tipType, $tipIdRaw] = array_pad(explode(':', $tipRef, 2), 2, null);
     $tipId = $tipIdRaw !== null ? (int) $tipIdRaw : 0;
@@ -192,7 +193,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
                 <input type="radio" name="rating" value="1" id="manual-rating-1"><label for="manual-rating-1"></label>
             </div>
         </label>
-        <label>Name (optional) <input type="text" name="reviewer_name"></label>
+        <label>Name <small>(steht in der App über der Rezension)</small> <input type="text" name="reviewer_name" required maxlength="100" value="<?= htmlspecialchars(OWN_CONTENT_NAME, ENT_QUOTES) ?>"></label>
         <label>Rezensionstext (optional) <textarea name="review_text" rows="3"></textarea></label>
         <button type="submit">Rezension eintragen</button>
     </form>
@@ -205,7 +206,7 @@ foreach ($tipTypeTables as $tipType => $meta) {
         <input type="hidden" name="action" value="update_review">
         <input type="hidden" name="review_id" value="<?= (int) $editReview['id'] ?>">
         <label>Mikros (nicht änderbar) <input type="text" value="<?= (int) $editReview['rating'] ?> / 5" disabled></label>
-        <label>Name <input type="text" name="reviewer_name" value="<?= htmlspecialchars($editReview['reviewer_name'] ?? '', ENT_QUOTES) ?>"></label>
+        <label>Name <input type="text" name="reviewer_name" required maxlength="100" value="<?= htmlspecialchars($editReview['reviewer_name'] ?? '', ENT_QUOTES) ?>"></label>
         <label>Rezensionstext <textarea name="review_text" rows="3"><?= htmlspecialchars($editReview['review_text'] ?? '', ENT_QUOTES) ?></textarea></label>
         <div class="button-row">
             <button type="submit">Speichern</button>

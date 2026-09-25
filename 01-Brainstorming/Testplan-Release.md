@@ -106,9 +106,12 @@ Locationtipps und „Foto von …“ in der Galerie, sowohl in der Übersicht al
 Ansicht. Bei Einsendungen steht der Name des Einsenders, bei eigenen Beiträgen immer „Südsalat“. Keine
 Beschreibung beginnt mehr mit „von …:“. Ältere Einsendungen ohne Namen zeigen keine solche Zeile.
 
-**Außerdem neu im Feedback-Formular:** Bei Veranstaltungs-, Film-, Location- und Fototipps ist der Name
-jetzt Pflicht, mit dem Hinweis, dass er öffentlich beim Tipp steht. Absenden ohne Namen muss die
-Meldung „Bitte gib deinen Namen ein.“ zeigen. Bei allgemeinem Feedback und Fragen bleibt er freiwillig.
+**Außerdem neu im Feedback-Formular:** Der Name ist jetzt bei **allen** Einsendungen Pflicht. Absenden
+ohne Namen muss die Meldung „Bitte gib deinen Namen ein.“ zeigen. Bei Tipps steht unter dem Feld, dass der
+Name öffentlich beim Tipp erscheint, bei allgemeinem Feedback und Fragen nur „Ein Spitzname geht auch.“
+
+**Und bei den Bewertungen:** Der Name steht jetzt oben klein mit Personensymbol, rechts daneben das Datum,
+darunter die Mikrofone und der Text.
 
 ### 8. Kopieren und Einfügen im Newsletter-Feld
 
@@ -188,6 +191,9 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
   Galerie (alle vier Galerie-Formulare). Beim Übernehmen einer Einsendung mit dem Namen des Einsenders
   vorbelegt, beim eigenen Anlegen immer mit „Südsalat“ (egal ob Thorsten oder Jenny). Jederzeit
   nachträglich änderbar, leer heißt: ohne Namen. Beschreibungen bekommen kein „von …:“ mehr vorangestellt.
+- **Rezensionen im Admin-Bereich:** Der Name ist in allen drei Formularen Pflicht und mit „Südsalat“
+  vorbelegt; auch die Rezension per Häkchen beim Anlegen eines Tipps heißt „Südsalat“. Beim Bearbeiten
+  einer Rezension lässt sich der Name nicht leeren.
 
 ### Bereits live, nicht Teil dieses Release-Tests
 
@@ -225,8 +231,7 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
 6a. **Mit dem Release: Datenschutzerklärung Abschnitt 2 c anpassen** (`seiten/datenschutz.html`), weil der
    Name bei Tipps dann Pflicht ist und immer öffentlich erscheint. Zwei Stellen ersetzen:
    - „Optional kannst du deinen Namen angeben, die Nachricht …“ →
-     „Optional kannst du deinen Namen angeben – bei Veranstaltungs-, Film-, Location- und Fototipps ist er
-     Pflicht –, die Nachricht …“
+     „Dazu gibst du einen Namen an – ein Spitzname genügt. Optional kannst du die Nachricht …“
    - „Hast du einen Namen angegeben, nennen wir dich dabei in der Regel als Einsender (z. B. „von Inga“).
      Möchtest du das nicht, lass das Namensfeld einfach leer.“ →
      „Dabei steht dein Name dabei („Tipp von Inga“ bzw. „Foto von Inga“) – du kannst dafür auch einen

@@ -11,6 +11,7 @@ declare(strict_types=1);
 //      ersatzweise aus feedback_messages.sender_name; "Anonym" ergibt keinen Namen,
 //    - selbst angelegt: OWN_CONTENT_NAME ("Suedsalat"), egal ob Thorsten oder Jenny.
 // 3. Das Praefix "von X: " aus der Beschreibung entfernen, sonst stuende der Name doppelt.
+// 4. Eigene Rezensionen ohne Namen (ohne App-Installation) bekommen ebenfalls "Suedsalat".
 //
 // Erst zusammen mit App-Version 1.3.7 ausfuehren (die App zeigt den Namen erst ab
 // dann an - vorher wuerde er fuer die Tester einfach verschwinden).
@@ -68,6 +69,16 @@ try {
                 $description !== $row['description'] ? '  [Praefix entfernt]' : '');
         }
     }
+
+    // Rezensionen, die Thorsten oder Jenny im Admin-Bereich ohne Namen eingetragen haben
+    // (erkennbar an fehlender App-Installation), heissen kuenftig ebenfalls "Suedsalat".
+    $reviews = $pdo->prepare(
+        "UPDATE tip_reviews SET reviewer_name = :name
+         WHERE device_id IS NULL AND (reviewer_name IS NULL OR reviewer_name = '')"
+    );
+    $reviews->execute([':name' => OWN_CONTENT_NAME]);
+    echo '  tip_reviews: ' . $reviews->rowCount() . ' eigene Rezension(en) ohne Namen -> ' . OWN_CONTENT_NAME . "\n";
+
     echo "Fertig.\n";
 } catch (\Throwable $e) {
     echo "FEHLER: " . $e->getMessage() . "\n";

@@ -178,7 +178,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_r
     $reviewTipId = (int) ($_POST['tip_id'] ?? 0);
     $reviewRating = (int) ($_POST['rating'] ?? 0);
     $reviewText = trim((string) ($_POST['review_text'] ?? '')) ?: null;
-    $reviewerName = trim((string) ($_POST['reviewer_name'] ?? '')) ?: null;
+    // Name ist ueberall Pflicht; eigene Rezensionen von Thorsten/Jenny heissen "Suedsalat".
+    $reviewerName = mb_substr(trim((string) ($_POST['reviewer_name'] ?? '')), 0, 100) ?: OWN_CONTENT_NAME;
     if ($reviewTipId > 0 && $reviewRating >= 1 && $reviewRating <= 5) {
         $stmt = $pdo->prepare(
             'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, reviewer_name, approved, approved_at, approved_by)
@@ -364,13 +365,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             $newReviewText = trim((string) ($_POST['new_review_text'] ?? '')) ?: null;
             if ($newRating >= 1 && $newRating <= 5) {
                 $stmt = $pdo->prepare(
-                    'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, approved, approved_at, approved_by)
-                     VALUES ("location_tip", :tip_id, :rating, :review_text, 1, NOW(), :admin_id)'
+                    'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, reviewer_name, approved, approved_at, approved_by)
+                     VALUES ("location_tip", :tip_id, :rating, :review_text, :reviewer_name, 1, NOW(), :admin_id)'
                 );
                 $stmt->execute([
                     ':tip_id' => $newTipId,
                     ':rating' => $newRating,
                     ':review_text' => $newReviewText,
+                    ':reviewer_name' => OWN_CONTENT_NAME,
                     ':admin_id' => $adminId,
                 ]);
             }
@@ -603,7 +605,7 @@ $showCreateForm = $editTip !== null || $error !== null || $prefillFeedbackId !==
                     <input type="radio" name="rating" value="1" id="add-rating-1"><label for="add-rating-1"></label>
                 </div>
             </label>
-            <label>Name (optional) <input type="text" name="reviewer_name"></label>
+            <label>Name <small>(steht in der App über der Rezension)</small> <input type="text" name="reviewer_name" required maxlength="100" value="<?= htmlspecialchars(OWN_CONTENT_NAME, ENT_QUOTES) ?>"></label>
             <label>Rezensionstext (optional) <textarea name="review_text" rows="2"></textarea></label>
             <button type="submit">Rezension eintragen</button>
         </form>

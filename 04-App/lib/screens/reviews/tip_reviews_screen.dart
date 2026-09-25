@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../services/api_service.dart';
+import '../../widgets/tip_submitter_line.dart';
 import '../../widgets/async_state_views.dart';
 import '../../widgets/rating/mikro_rating_display.dart';
 import '../../widgets/rating/mikro_rating_input.dart';
@@ -140,28 +141,27 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Oben klein, wer die Rezension geschrieben hat - Rezensionen gehen
+                            // ohne Freigabe online, der Name ist deshalb ueberall Pflicht.
                             Row(
                               children: [
-                                MikroRatingDisplay(
-                                  avgRating: review.rating.toDouble(),
-                                  reviewCount: 0,
-                                  iconSize: 16,
-                                  showCountLabel: false,
-                                ),
-                                const Spacer(),
+                                if (review.reviewerName != null && review.reviewerName!.isNotEmpty)
+                                  Expanded(child: TipSubmitterLine(name: review.reviewerName!, prefix: ''))
+                                else
+                                  const Spacer(),
                                 Text(
                                   DateFormat('dd.MM.yyyy').format(review.createdAt),
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
                             ),
-                            if (review.reviewerName != null && review.reviewerName!.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                review.reviewerName!,
-                                style: Theme.of(context).textTheme.labelLarge,
-                              ),
-                            ],
+                            const SizedBox(height: 6),
+                            MikroRatingDisplay(
+                              avgRating: review.rating.toDouble(),
+                              reviewCount: 0,
+                              iconSize: 16,
+                              showCountLabel: false,
+                            ),
                             if (review.reviewText != null && review.reviewText!.isNotEmpty) ...[
                               const SizedBox(height: 4),
                               Text(review.reviewText!),

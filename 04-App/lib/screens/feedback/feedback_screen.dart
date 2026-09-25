@@ -371,10 +371,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     final isTerminTipp = _type == 'termin_tipp';
     final isFotoVorschlag = _type == 'foto_vorschlag';
     final isSprachnachricht = _type == 'sprachnachricht';
-    // Tipps erscheinen nach der Uebernahme mit "Tipp von ..." bzw. "Foto von ..." in der
-    // App - deshalb ist der Name dort Pflicht. Bei Sprachnachrichten schon immer.
+    // Der Name ist bei allen Einsendungen Pflicht (Thorstens Vorgabe: einheitlich ueberall).
+    // Tipps erscheinen nach der Uebernahme mit "Tipp von ..." bzw. "Foto von ..." in der App,
+    // der Hinweis unter dem Feld sagt deshalb je nach Art, ob der Name oeffentlich wird.
     final isTipp = const {'termin_tipp', 'kino_tipp', 'location_tipp', 'foto_vorschlag'}.contains(_type);
-    final nameRequired = isSprachnachricht || isTipp;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Feedback')),
@@ -420,13 +420,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             TextFormField(
               controller: _nameController,
               decoration: InputDecoration(
-                labelText: nameRequired ? 'Dein Name' : 'Dein Name (optional)',
-                helperText: isTipp ? 'Steht öffentlich beim Tipp („Tipp von …“) – ein Spitzname geht auch.' : null,
+                labelText: 'Dein Name',
+                helperText: isTipp
+                    ? 'Steht öffentlich beim Tipp („Tipp von …“) – ein Spitzname geht auch.'
+                    : 'Ein Spitzname geht auch.',
                 helperMaxLines: 2,
               ),
-              validator: nameRequired
-                  ? (value) => (value == null || value.trim().isEmpty) ? 'Bitte gib deinen Namen ein.' : null
-                  : null,
+              validator: (value) => (value == null || value.trim().isEmpty) ? 'Bitte gib deinen Namen ein.' : null,
             ),
             if (isTerminTipp) ...[
               const SizedBox(height: 16),
