@@ -202,7 +202,30 @@ Alles von der bisherigen Liste, für beide Rollen, soweit nicht anders vermerkt:
 ## 9. Dokumente und Stores
 
 - **Nutzungsbedingungen – neu:** Regeln für Beiträge, was nicht erlaubt ist, Moderation, Melden,
-  Sperren, Mindestalter 16, Kündigung/Löschung. Entwurf schreibt Claude, rechtliche Prüfung empfohlen.
+  Sperren, Mindestalter 16, Kündigung/Löschung. Entwurf schreibt Claude, rechtliche Prüfung empfohlen –
+  besonders für die folgende Klausel (dauerhaftes Nutzungsrecht in Verbraucher-Bedingungen). Entwurf,
+  von Thorsten inhaltlich bestätigt:
+
+  > **Rechte an deinen Beiträgen**
+  >
+  > (1) An allem, was du in der App einreichst oder veröffentlichst, räumst du uns ein einfaches, zeitlich
+  > und räumlich unbeschränktes, unentgeltliches Recht ein, es in der App, auf unserer Website und im
+  > Podcast zu veröffentlichen und dafür zu bearbeiten (z. B. zu kürzen oder zuzuschneiden). Dieses Recht
+  > besteht auch nach der Löschung deines Kontos fort. Dein Name wird dann durch „Ehemaliges Mitglied“
+  > ersetzt.
+  >
+  > (2) Tipps, die wir aus deinen Vorschlägen übernehmen, gestalten wir redaktionell selbst. Sie bleiben
+  > nach der Löschung deines Kontos bestehen.
+  >
+  > (3) Ausgenommen sind deine Rezensionen und Kommentare sowie Fotos und Videos, die du selbst
+  > aufgenommen hast oder auf denen du zu sehen bist. Diese löschen wir, wenn du es bei der Löschung
+  > deines Kontos auswählst oder uns später per E-Mail darum bittest.
+  >
+  > (4) Reiche nur Inhalte ein, die du verwenden darfst, und achte darauf, dass abgebildete Personen
+  > einverstanden sind.
+
+  Hinweis: Plakate gehören dem Verleih bzw. Veranstalter – deren Nutzung ist Thorstens eigene Sache,
+  unabhängig von Kontolöschungen. Am sichersten Material aus offiziellen Pressebereichen verwenden.
 - **Datenschutzerklärung:** neuer Abschnitt „Hörerkonto“ (Vor-/Nachname, E-Mail, Spitzname, Codes,
   Meldungen, Sperren, Ausblenden, Löschung), Statistik-Einwilligung, Kommentare
 - **App Store Connect / Play Console:** Konto, E-Mail und Name mit Identität verknüpft; bei Google
@@ -236,17 +259,31 @@ Alles von der bisherigen Liste, für beide Rollen, soweit nicht anders vermerkt:
    - **Wahlweise „Sofort endgültig löschen“:** Konto, Name, E-Mail und die Verknüpfungen werden sofort und
      unwiderruflich gelöscht, auch aus dem Admin-Bereich.
    - **Zwei getrennte Häkchen im Lösch-Dialog**, beide standardmäßig aus:
-     - ☐ **Meine Texte löschen** – Kommentare, Rezensionen, Veranstaltungs-, Film- und Locationtipps
-     - ☐ **Meine Fotos löschen** – Fotos und Videos in der Galerie
+     - ☐ **Meine Texte löschen** – eigene Rezensionen und Kommentare
+     - ☐ **Meine Fotos löschen** – eigene Fotos und Videos (siehe Einstufung unten)
 
-     Überschneidung bei Tipps mit eingereichtem Bild: *nur Fotos* angehakt → der Tipp bleibt als
-     „Ehemaliges Mitglied“, sein Bild wird entfernt; *nur Texte* angehakt → der Tipp verschwindet samt
-     Bild. Was nicht angehakt ist, bleibt ohne Namen als „Ehemaliges Mitglied“ stehen.
+     Was nicht angehakt ist, bleibt ohne Namen als „Ehemaliges Mitglied“ stehen.
+   - **Tipps bleiben immer stehen** (Veranstaltungs-, Film-, Locationtipps). Aus einer Einsendung
+     übernommene Tipps gestalten Thorsten und Jenny redaktionell selbst; bei einer Kontolöschung wird nur
+     „Tipp von …“ zu „Tipp von Ehemaliges Mitglied“. So bleiben auch die Rezensionen anderer Hörer zu
+     diesem Tipp erhalten.
+   - **Einstufung der Bilder beim Übernehmen** (neues Feld im Admin-Bereich):
+     ○ *Eigenes Foto des Einsenders* – wird bei „Meine Fotos löschen“ entfernt ·
+     ○ *Plakat, Flyer, Pressebild* – bleibt immer.
+     Voreinstellung: Galerie → eigenes Foto; Film- und Veranstaltungstipps → Plakat; Locationtipps →
+     im Einzelfall entscheiden. Im Zweifel „eigenes Foto“ wählen. Ist jemand auf einem als Plakat
+     eingestuften Bild doch selbst zu sehen, wird es auf Anfrage per E-Mail entfernt.
+   - **Info an Thorsten, wenn ein Tipp dadurch sein Bild verliert:** sofort eine E-Mail mit Link zum
+     Bearbeiten; auf dem Dashboard ein Abschnitt **„Tipps ohne Bild“** mit Zähler (bleibt, bis ein neues
+     Bild hinterlegt oder der Hinweis weggeklickt ist); am Tipp der Vermerk *„Bild entfernt am TT.MM. –
+     Einsender hat sein Konto gelöscht“*. Der Tipp bleibt währenddessen mit Text und Rezensionen sichtbar.
+     Bei der Rückkehrfrist kommt die Info sofort; hat Thorsten schon ein neues Bild hinterlegt und die
+     Person kehrt zurück, **bleibt das neue Bild**.
    - Bei der Rückkehrfrist wird Angehaktes sofort ausgeblendet und erst nach 30 Tagen gelöscht (bei
      Rückkehr wieder sichtbar); bei „sofort endgültig“ sofort gelöscht.
-   - **Nicht öffentliche Nachrichten** (allgemeines Feedback, Fragen): bei der Rückkehrfrist bleiben sie
-     im Admin-Bereich, nach Ablauf ohne Namen („Ehemaliges Mitglied“); bei „sofort endgültig“ werden sie
-     mitgelöscht (Vorschlag, bis Thorsten etwas anderes sagt).
+   - **Nicht öffentliche Nachrichten** (allgemeines Feedback, Fragen) bleiben **immer** im
+     Admin-Bereich, auch bei „sofort endgültig“ – nur der Absender wird zu „Ehemaliges Mitglied“
+     (Thorstens Entscheidung).
    - **Rechtliche Voraussetzungen, dass Unangehaktes stehen bleiben darf:** keinerlei Verknüpfung mehr
      zum alten Konto oder Gerät; Nutzungsrecht über die Kontolöschung hinaus in den
      Nutzungsbedingungen; Hinweis im Lösch-Dialog und in der Datenschutzerklärung. Einzelne Beiträge, die
