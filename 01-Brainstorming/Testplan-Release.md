@@ -232,11 +232,11 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    kein Fehler. Wie viele zugestimmt haben, steht oben auf der Seite „Statistiken“.
 5. Release-Notes decken alles seit **1.3.2** ab, nicht nur seit der letzten gebauten Fassung — das ist
    der Stand, von dem die Nutzer tatsächlich kommen.
-6. **Schrift (Stand 25.09.2026):** Die App nutzt nur noch **Libre Franklin** (freie Lizenz, liegt in
-   `assets/fonts/`) – Überschriften halbfett, Fließtext normal, als Ersatz für die lizenzpflichtige
-   Franklin Gothic Demi/Book aus dem Logo. Open Sans und das Paket `google_fonts` sind raus, die App
-   lädt keine Schrift mehr nach. Der Test `test/schrift_test.dart` schlägt fehl, wenn das Theme eine
-   Stärke ohne Datei anfordert. Beim Testen auf das Schriftbild achten (Überschriften, lange Texte).
+6. **Schrift (Stand 25.09.2026):** Die App nutzt die eigene Hausschrift **„Südsalat“** (Version 1.002,
+   aus Libre Franklin abgeleitet, freie Lizenz SIL OFL, liegt in `assets/fonts/`) – Überschriften fett,
+   Fließtext normal, auf das Logo abgestimmt. Die lizenzpflichtige Franklin Gothic, Open Sans und das
+   Paket `google_fonts` sind raus, die App lädt keine Schrift nach. `test/schrift_test.dart` schlägt
+   fehl, wenn das Theme eine Stärke ohne Datei anfordert. Beim Testen auf das Schriftbild achten.
 6a. **Mit dem Release: Datenschutzerklärung Abschnitt 2 c anpassen** (`seiten/datenschutz.html`), weil der
    Name bei Tipps dann Pflicht ist und immer öffentlich erscheint. Zwei Stellen ersetzen:
    - „Optional kannst du deinen Namen angeben, die Nachricht …“ →
