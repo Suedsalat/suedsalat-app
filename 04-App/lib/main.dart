@@ -8,8 +8,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/splash_screen.dart';
+import 'services/account_service.dart';
 import 'services/audio_handler.dart';
 import 'services/push_notification_service.dart';
+import 'services/stats_consent_service.dart';
 import 'theme/app_theme.dart';
 
 const double _kMaxAppWidth = 840;
@@ -29,6 +31,13 @@ void main() async {
   });
 
   await Firebase.initializeApp();
+
+  // Konto und Statistik-Einwilligung (App 2.0) aus dem lokalen Speicher - der Abgleich mit dem
+  // Server laeuft im Hintergrund, damit der Start nicht auf das Netz wartet.
+  await AccountService.instance.load();
+  await StatsConsentService.instance.load();
+  AccountService.instance.refresh();
+  StatsConsentService.instance.sync();
 
   final prefs = await SharedPreferences.getInstance();
   if (prefs.getBool('push_enabled') ?? true) {

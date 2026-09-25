@@ -20,9 +20,10 @@ $viewer = Listener::forDevice($pdo, isset($claims['sub']) ? (int) $claims['sub']
 // Name live aus dem Konto (siehe ListenerContent); ausgeblendete Fotos (Kontoloeschung in der
 // Rueckkehrfrist, Meldungen) erscheinen nicht.
 $stmt = $pdo->query('SELECT ph.id, ph.image_path, ph.media_type, ph.description,
-                      ' . ListenerContent::displayNameSql('ph', 'submitted_by_name') . ' AS submitted_by_name, ph.published_at
+                      ' . ListenerContent::displayNameSql('ph', 'submitted_by_name') . ' AS submitted_by_name, ph.published_at, ph.listener_id
                       FROM photos ph ' . ListenerContent::joinSql('ph') . '
                       WHERE ph.hidden_at IS NULL' . Moderation::viewerFilterSql('ph', $viewer !== null ? (int) $viewer['id'] : null) . '
                       ORDER BY ph.published_at DESC');
 
-echo json_encode($stmt->fetchAll(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+echo json_encode(ListenerContent::markOwn($stmt->fetchAll(), $viewer !== null ? (int) $viewer['id'] : null),
+    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

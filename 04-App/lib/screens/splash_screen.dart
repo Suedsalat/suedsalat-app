@@ -1,6 +1,8 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
+import '../services/account_service.dart';
+import 'account/entry_screen.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -34,7 +36,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 500),
             pageBuilder: (context, animation, secondaryAnimation) =>
-                FadeTransition(opacity: animation, child: const HomeScreen()),
+                FadeTransition(
+                  opacity: animation,
+                  // Startauswahl (Gast/Anmelden/Registrieren), bis einmal gewaehlt wurde.
+                  child: AccountService.instance.entryChosen ? const HomeScreen() : const EntryScreen(),
+                ),
           ),
         );
       }

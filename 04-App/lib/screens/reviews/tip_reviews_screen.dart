@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../services/account_service.dart';
 import '../../services/api_service.dart';
+import '../../widgets/content_menu_button.dart';
+import '../account/account_gate.dart';
 import '../../widgets/tip_submitter_line.dart';
 import '../../widgets/async_state_views.dart';
 import '../../widgets/rating/mikro_rating_display.dart';
@@ -32,7 +35,6 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _api = ApiService();
   late Future<TipReviewSummary> _future;
-  final _nameController = TextEditingController();
   final _reviewTextController = TextEditingController();
   int _newRating = 0;
   bool _submitting = false;
@@ -46,7 +48,6 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
     _reviewTextController.dispose();
     super.dispose();
   }
@@ -63,6 +64,8 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
   Future<void> _submit() async {
     setState(() => _ratingError = _newRating < 1 ? 'Bitte wähle eine Bewertung aus.' : null);
     if (!_formKey.currentState!.validate() || _ratingError != null) return;
+    // Rezensionen nur mit Konto (App 2.0) - der Name kommt dann aus dem Spitznamen.
+    if (!await ensureCanContribute(context) || !mounted) return;
 
     setState(() => _submitting = true);
     try {
@@ -70,13 +73,12 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
         widget.tipType,
         widget.tipId,
         _newRating,
-        _nameController.text,
+        AccountService.instance.listener?.nickname ?? '',
         _reviewTextController.text,
       );
       if (!mounted) return;
       setState(() {
         _newRating = 0;
-        _nameController.clear();
         _reviewTextController.clear();
       });
       // Rezensionen erscheinen jetzt sofort oeffentlich - Liste neu laden,
@@ -153,6 +155,13 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
                                   DateFormat('dd.MM.yyyy').format(review.createdAt),
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
+                                ContentMenuButton(
+                                  contentType: 'review',
+                                  contentId: review.id,
+                                  isOwn: review.isOwn,
+                                  allowHideAuthor: true,
+                                  onHidden: _reload,
+                                ),
                               ],
                             ),
                             const SizedBox(height: 6),
@@ -197,11 +206,11 @@ class _TipReviewsScreenState extends State<TipReviewsScreen> {
                           ),
                         ),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(labelText: 'Dein Name'),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty) ? 'Bitte gib deinen Namen ein.' : null,
+                      Text(
+                        AccountService.instance.listener != null
+                            ? 'Du schreibst als ${AccountService.instance.listener!.nickname}.'
+                            : 'Rezensionen gibt es mit einem kostenlosen Hörerkonto.',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 12),
                       TextFormField(

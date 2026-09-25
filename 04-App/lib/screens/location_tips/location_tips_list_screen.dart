@@ -7,6 +7,7 @@ import '../../services/api_service.dart';
 import '../../services/audio_player_service.dart';
 import '../../services/seen_items_service.dart';
 import '../../widgets/tip_submitter_line.dart';
+import '../../widgets/content_menu_button.dart';
 import '../../widgets/async_state_views.dart';
 import '../../widgets/new_dot.dart';
 import '../../widgets/rating/mikro_rating_display.dart';
@@ -177,6 +178,12 @@ class _LocationTipsListScreenState extends State<LocationTipsListScreen> {
           ),
         ),
         actions: [
+          // Tipps werden nicht automatisch ausgeblendet, Meldungen landen aber bei Jenny und Thorsten.
+          IconButton(
+            icon: const Icon(Icons.flag_outlined),
+            tooltip: 'Melden',
+            onPressed: () => showReportSheet(context, 'location_tip', tip.id),
+          ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Schließen'),

@@ -8,7 +8,9 @@ import 'package:intl/intl.dart';
 import 'package:record/record.dart';
 
 import '../../models/episode.dart';
+import '../../services/account_service.dart';
 import '../../services/api_service.dart';
+import '../account/account_gate.dart';
 
 class FeedbackScreen extends StatefulWidget {
   /// Wenn ein Bildschirm ueber einen eigenen "XY-Tipp einreichen"-Button hierher
@@ -47,6 +49,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     'frage': 'Deine Frage',
   };
 
+  /// Arten, die ein Hoererkonto brauchen (App 2.0). Gaeste duerfen nur schriftliches
+  /// allgemeines Feedback und Fragen schicken, ohne Fotos oder Videos.
+  static const _contributionTypes = {'termin_tipp', 'kino_tipp', 'location_tipp', 'foto_vorschlag', 'sprachnachricht'};
+
   static const _maxPhotoBytes = 8 * 1024 * 1024;
   static const _maxVideoBytes = 20 * 1024 * 1024;
   static const _maxRecordDuration = Duration(minutes: 5);
@@ -78,6 +84,30 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     }
     _apiService.trackView('feedback');
     _loadEpisodes();
+    _prefillGuestName();
+    // Kam man ueber einen Knopf mit vorgewaehlter Art her, die ein Konto braucht (z. B. aus dem
+    // Player), gleich hier den Weg zur Registrierung anbieten.
+    if (_type != null && _contributionTypes.contains(_type) && !AccountService.instance.canContribute) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!await ensureCanContribute(context) && mounted) setState(() => _type = null);
+      });
+    }
+  }
+
+  Future<void> _prefillGuestName() async {
+    final name = await AccountService.instance.guestName();
+    if (name != null && mounted && _nameController.text.isEmpty) _nameController.text = name;
+  }
+
+  Future<void> _selectType(String? value) async {
+    final previous = _type;
+    setState(() {
+      _type = value;
+      _photoError = null;
+    });
+    if (value != null && _contributionTypes.contains(value) && !await ensureCanContribute(context) && mounted) {
+      setState(() => _type = previous);
+    }
   }
 
   /// Laedt die Folgenliste fuer die optionale Folgen-Zuordnung. Schlaegt der
@@ -221,6 +251,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   }
 
   Future<void> _pickMedia() async {
+    // Fotos und Videos nur mit Konto, auch beim allgemeinen Feedback.
+    if (!await ensureCanContribute(context) || !mounted) return;
     final choice = await showModalBottomSheet<({ImageSource source, bool isVideo})>(
       context: context,
       builder: (context) => SafeArea(
@@ -320,6 +352,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       return;
     }
 
+    // Absicherung: die Art kann ein Konto brauchen (z. B. inzwischen abgemeldet).
+    if (_contributionTypes.contains(_type) || _media != null || _photos.isNotEmpty) {
+      if (!await ensureCanContribute(context) || !mounted) return;
+    }
+
     var consentPublish = false;
     if (_type == 'sprachnachricht') {
       if (_audioFile == null) {
@@ -336,13 +373,18 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       await _apiService.submitFeedback(
         message: _messageController.text.trim(),
         type: _type ?? 'allgemein',
-        senderName: _nameController.text,
+        // Angemeldet: der Server nimmt ohnehin den Spitznamen aus dem Konto.
+        senderName: AccountService.instance.listener?.nickname ?? _nameController.text,
         media: _type == 'sprachnachricht' ? _audioFile : _media,
         photos: _type == 'sprachnachricht' ? null : _photos,
         suggestedDate: _type == 'termin_tipp' ? _suggestedDate : null,
         consentPublish: consentPublish,
         episodeGuid: _episodeGuid,
       );
+      if (!AccountService.instance.isLoggedIn) {
+        // Gast: Namen fuer das naechste Mal merken (nur auf dem Geraet, loeschbar in den Einstellungen).
+        await AccountService.instance.setGuestName(_nameController.text);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -375,6 +417,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     // Tipps erscheinen nach der Uebernahme mit "Tipp von ..." bzw. "Foto von ..." in der App,
     // der Hinweis unter dem Feld sagt deshalb je nach Art, ob der Name oeffentlich wird.
     final isTipp = const {'termin_tipp', 'kino_tipp', 'location_tipp', 'foto_vorschlag'}.contains(_type);
+    final listener = AccountService.instance.listener;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Feedback')),
@@ -396,10 +439,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   .map((entry) => DropdownMenuItem(value: entry.key, child: Text(entry.value)))
                   .toList(),
               validator: (value) => value == null ? 'Bitte eine Kategorie auswählen.' : null,
-              onChanged: (value) => setState(() {
-                _type = value;
-                _photoError = null;
-              }),
+              onChanged: _selectType,
             ),
             if (_episodes.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -417,6 +457,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               ),
             ],
             const SizedBox(height: 16),
+            if (listener != null)
+              Text(
+                isTipp
+                    ? 'Du schreibst als ${listener.nickname} – so steht es später beim Tipp („Tipp von ${listener.nickname}“).'
+                    : 'Du schreibst als ${listener.nickname}.',
+                style: Theme.of(context).textTheme.bodySmall,
+              )
+            else
             TextFormField(
               controller: _nameController,
               decoration: InputDecoration(

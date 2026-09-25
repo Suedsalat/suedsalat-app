@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../widgets/tip_submitter_line.dart';
+import '../../widgets/content_menu_button.dart';
 import 'gallery_video_page.dart';
 
 /// Ein einzelnes Bild im Viewer. Bewusst ein eigener kleiner Typ statt des
@@ -19,12 +20,19 @@ class PhotoViewerItem {
   /// Viewer eine eigene Seite mit Player statt eines zoombaren Bildes.
   final bool isVideo;
 
+  /// Galerie-Eintrag (photos.id) fuer „Melden"/„Nutzer ausblenden"; null = kein Menue
+  /// (z. B. Poster eines Tipps).
+  final int? contentId;
+  final bool isOwn;
+
   const PhotoViewerItem({
     required this.imageUrl,
     this.description,
     this.publishedAt,
     this.submittedByName,
     this.isVideo = false,
+    this.contentId,
+    this.isOwn = false,
   });
 }
 
@@ -201,9 +209,25 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
             top: 8,
             right: 8,
             child: SafeArea(
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 32),
-                onPressed: () => Navigator.of(context).pop(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (item.contentId != null)
+                    ContentMenuButton(
+                      key: ValueKey('menu-${item.contentId}'),
+                      contentType: 'photo',
+                      contentId: item.contentId!,
+                      isOwn: item.isOwn,
+                      allowHideAuthor: true,
+                      color: Colors.white,
+                      // Ausgeblendet: zurueck zur Galerie, die sich dann neu laedt.
+                      onHidden: () => Navigator.of(context).pop(true),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
             ),
           ),

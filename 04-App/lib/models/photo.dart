@@ -8,6 +8,9 @@ class Photo {
   final String? submittedByName;
   final DateTime publishedAt;
 
+  /// Gehoert dem angemeldeten Hoerer selbst - dann kein "Melden"/"Ausblenden" anbieten.
+  final bool isOwn;
+
   const Photo({
     required this.id,
     required this.imagePath,
@@ -15,6 +18,7 @@ class Photo {
     this.description,
     this.submittedByName,
     required this.publishedAt,
+    this.isOwn = false,
   });
 
   bool get isVideo => mediaType == 'video';
@@ -27,6 +31,7 @@ class Photo {
       description: json['description'] as String?,
       submittedByName: _nameOrNull(json['submitted_by_name']),
       publishedAt: DateTime.parse(json['published_at'] as String),
+      isOwn: json['is_own'] == true,
     );
   }
 }

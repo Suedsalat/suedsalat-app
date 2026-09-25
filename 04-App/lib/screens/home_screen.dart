@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/stats_consent_service.dart';
 import '../services/seen_items_service.dart';
 import '../widgets/app_bottom_nav_bar.dart';
 import '../widgets/mini_player_bar.dart';
+import 'account/account_gate.dart';
+import 'account/stats_consent_dialog.dart';
 import 'episodes/episodes_list_screen.dart';
 import 'events/events_list_screen.dart';
 import 'feedback/feedback_screen.dart';
@@ -44,7 +47,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadNewFlags();
-    _api.trackView(_screenKeys[_currentIndex]);
+    // Einmal nach der Startauswahl nach der Statistik fragen (bzw. erneut bei neuer Textfassung).
+    // Erst danach zaehlt ggf. auch der Aufruf der Startseite.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (StatsConsentService.instance.needsDecision && mounted) {
+        await showStatsConsentDialog(context);
+      }
+      _api.trackView(_screenKeys[_currentIndex]);
+    });
   }
 
   @override
@@ -103,7 +113,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _api.trackView(_screenKeys[index]);
   }
 
-  void _openFeedbackWithType(String type) {
+  Future<void> _openFeedbackWithType(String type) async {
+    // Tipps und Fotos nur mit Konto - Gaeste sehen den Knopf, bekommen aber den Weg zur Registrierung.
+    if (!await ensureCanContribute(context) || !mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => FeedbackScreen(initialType: type)),
     );

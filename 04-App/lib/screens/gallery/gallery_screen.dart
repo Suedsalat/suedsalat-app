@@ -46,7 +46,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     if (mounted) setState(() => _seenIds = {..._seenIds, id});
   }
 
-  void _openItem(Photo photo, List<Photo> allPhotos) {
+  Future<void> _openItem(Photo photo, List<Photo> allPhotos) async {
     _markSeen(photo);
 
     // Im Viewer laesst sich seitlich weiterwischen, ohne vorher zurueck in die
@@ -54,7 +54,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     // zwischen den Fotos und bekommen dort ihren eigenen Player.
     final startIndex = allPhotos.indexWhere((p) => p.id == photo.id);
 
-    Navigator.of(context).push(
+    final authorHidden = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => PhotoViewerScreen.gallery(
           initialIndex: startIndex < 0 ? 0 : startIndex,
@@ -66,6 +66,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 publishedAt: p.publishedAt,
                 submittedByName: p.submittedByName,
                 isVideo: p.isVideo,
+                contentId: p.id,
+                isOwn: p.isOwn,
               ),
           ],
           // Auch durchgewischte Eintraege gelten als gesehen, sonst bleibt der
@@ -74,6 +76,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         ),
       ),
     );
+    if (authorHidden == true) await _reload();
   }
 
   @override

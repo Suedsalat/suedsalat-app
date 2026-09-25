@@ -44,6 +44,23 @@ final class ListenerContent
         return "LEFT JOIN listeners {$listenerAlias} ON {$listenerAlias}.id = {$alias}.listener_id";
     }
 
+    /**
+     * Fuer die App: 'listener_id' der Zeilen durch 'is_own' (gehoert dem Betrachter) ersetzen -
+     * damit die App bei eigenen Beitraegen kein "Melden"/"Ausblenden" anbietet, ohne dass die
+     * Schnittstelle verraet, welches Konto hinter fremden Beitraegen steht.
+     *
+     * @param list<array<string,mixed>> $rows
+     * @return list<array<string,mixed>>
+     */
+    public static function markOwn(array $rows, ?int $viewerId): array
+    {
+        return array_map(static function (array $row) use ($viewerId): array {
+            $row['is_own'] = $viewerId !== null && $row['listener_id'] !== null && (int) $row['listener_id'] === $viewerId;
+            unset($row['listener_id']);
+            return $row;
+        }, $rows);
+    }
+
     /** Voreinstellung der Bildart beim Uebernehmen (Konzept: Film/Veranstaltung Plakat, sonst eigenes Foto). */
     public const DEFAULT_IMAGE_KIND = [
         'movie_tips' => 'poster',

@@ -42,7 +42,7 @@ $summaryStmt->execute([':tip_type' => $tipType, ':tip_id' => $tipId]);
 $summary = $summaryStmt->fetch();
 
 $reviewsStmt = $pdo->prepare(
-    'SELECT r.id, r.rating, r.review_text, ' . ListenerContent::displayNameSql('r', 'reviewer_name') . ' AS reviewer_name, r.created_at
+    'SELECT r.id, r.rating, r.review_text, ' . ListenerContent::displayNameSql('r', 'reviewer_name') . ' AS reviewer_name, r.created_at, r.listener_id
      FROM tip_reviews r ' . ListenerContent::joinSql('r') . '
      WHERE r.tip_type = :tip_type AND r.tip_id = :tip_id AND r.approved = 1 AND r.hidden_at IS NULL'
     . Moderation::viewerFilterSql('r', $viewerId) . '
@@ -53,5 +53,5 @@ $reviewsStmt->execute([':tip_type' => $tipType, ':tip_id' => $tipId]);
 echo json_encode([
     'avg_rating' => $summary['avg_rating'] !== null ? round((float) $summary['avg_rating'], 1) : null,
     'review_count' => (int) $summary['review_count'],
-    'reviews' => $reviewsStmt->fetchAll(),
+    'reviews' => ListenerContent::markOwn($reviewsStmt->fetchAll(), $viewerId),
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

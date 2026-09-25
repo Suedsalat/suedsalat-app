@@ -100,6 +100,14 @@ $autorId = (int) $r['hidden_users'][0]['id'];
 api('POST', '/api/listener/hidden-users.php', $tok['Bea'], ['listener_id' => $autorId]);
 check(in_array('Autor', $sichtbar($tok['Bea']), true), 'wieder eingeblendet');
 
+echo "Eigene Beitraege erkennen\n";
+[, $r] = api('GET', '/api/tip-reviews.php?tip_type=movie_tip&tip_id=1', $tok['Autor']);
+check(($r['reviews'][0]['is_own'] ?? null) === true, 'Autor: eigene Rezension ist is_own');
+[, $r] = api('GET', '/api/tip-reviews.php?tip_type=movie_tip&tip_id=1', $tok['Carl']);
+check(($r['reviews'][0]['is_own'] ?? null) === false && !array_key_exists('listener_id', $r['reviews'][0]), 'andere: is_own false, keine Kontonummer');
+[, $r] = api('GET', '/api/tip-reviews.php?tip_type=movie_tip&tip_id=1', $gast);
+check(($r['reviews'][0]['is_own'] ?? null) === false, 'Gast: is_own false');
+
 echo "Gesperrte Hoerer\n";
 $pdo->exec("UPDATE listeners SET blocked_at = NOW() WHERE nickname = 'Dora'");
 [$s] = $report($tok['Dora'], 'review', $rid);

@@ -11,10 +11,23 @@ import '../models/movie_tip.dart';
 import '../models/photo.dart';
 import '../models/tip_review.dart';
 import 'auth_service.dart';
+import 'stats_consent_service.dart';
 
 /// Zusammenfassung der Rezensionen zu einem Filmtipp oder Locationtipp:
 /// Durchschnittsbewertung (nur aus freigegebenen Rezensionen), Anzahl, Einzelrezensionen.
 typedef TipReviewSummary = ({double? avgRating, int reviewCount, List<TipReview> reviews});
+
+/// Fehler einer Server-Anfrage mit der Meldung des Servers - so, wie sie dem Nutzer angezeigt
+/// werden kann (z. B. "Dieser Spitzname ist schon vergeben.").
+class ApiException implements Exception {
+  ApiException(this.message, this.statusCode);
+
+  final String message;
+  final int statusCode;
+
+  @override
+  String toString() => message;
+}
 
 /// Zugriff auf die öffentliche Lese-API des Backends (siehe 03-Backend).
 ///
@@ -35,6 +48,34 @@ class ApiService {
     }
     final freshToken = await AuthService.instance.forceRefresh();
     return send({'Authorization': 'Bearer $freshToken'});
+  }
+
+  /// JSON-Anfrage an die Konto-, Melde- und Einwilligungs-Schnittstellen (App 2.0).
+  /// [path] relativ zu [baseUrl], z. B. 'listener/me.php'. Wirft [ApiException] mit der
+  /// Fehlermeldung des Servers.
+  Future<Map<String, dynamic>> sendJson(String method, String path, [Map<String, dynamic>? body]) async {
+    final uri = Uri.parse('$baseUrl/$path');
+    final response = await _authorizedRequest((headers) {
+      final allHeaders = {...headers, 'Content-Type': 'application/json'};
+      return method == 'GET'
+          ? http.get(uri, headers: allHeaders)
+          : http.post(uri, headers: allHeaders, body: jsonEncode(body ?? const {}));
+    });
+    var data = <String, dynamic>{};
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) data = decoded;
+    } catch (_) {
+      // Keine JSON-Antwort - unten mit Standardmeldung behandelt.
+    }
+    if (response.statusCode != 200) {
+      final error = data['error'];
+      throw ApiException(
+        error is String ? error : 'Das hat leider nicht geklappt (${response.statusCode}).',
+        response.statusCode,
+      );
+    }
+    return data;
   }
 
   Future<List<Episode>> fetchEpisodes() async {
@@ -211,10 +252,12 @@ class ApiService {
   }
 
   /// Zaehlt anonym (ohne Personenbezug), dass ein App-Bereich geoeffnet wurde -
-  /// fuer die Nutzungsstatistik im Admin-Dashboard. Fehler werden bewusst
+  /// fuer die Nutzungsstatistik im Admin-Dashboard. Nur mit Einwilligung (StatsConsentService). Fehler werden bewusst
   /// verschluckt, da das reine Zaehlen nie den eigentlichen Bildschirmwechsel
   /// blockieren soll.
   Future<void> trackView(String screen) async {
+    // Seit 2.0 nur mit Einwilligung - ohne wird gar nichts gesendet (§ 25 TDDDG).
+    if (!StatsConsentService.instance.granted) return;
     try {
       await _authorizedRequest(
         (headers) => http.post(
@@ -232,6 +275,7 @@ class ApiService {
   /// fuer die Nutzungsstatistik im Admin-Dashboard. Fehler werden bewusst
   /// verschluckt, analog zu trackView().
   Future<void> trackEpisodePlay(String episodeGuid, {String? carContext}) async {
+    if (!StatsConsentService.instance.granted) return;
     try {
       await _authorizedRequest(
         (headers) => http.post(
@@ -252,6 +296,7 @@ class ApiService {
   /// (5/15/25/35/45 Minuten oder "bis zum Ende") - fuer die Trichter-
   /// Auswertung im Admin-Bereich. Fehler werden bewusst verschluckt.
   Future<void> trackEpisodeMilestone(String episodeGuid, String tier) async {
+    if (!StatsConsentService.instance.granted) return;
     try {
       await _authorizedRequest(
         (headers) => http.post(
