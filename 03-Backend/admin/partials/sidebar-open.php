@@ -24,6 +24,17 @@ if (isset($adminId, $pdo)) {
     $sidebarAdminName = $sidebarAdminNameStmt->fetchColumn() ?: null;
 }
 
+// Offene Meldungen (App 2.0) als Zahl am Menuepunkt. try/catch, damit die Seitenleiste auch
+// ohne 2.0-Tabellen funktioniert (z. B. wenn diese Datei vor der Migration live geht).
+$sidebarOpenReports = 0;
+if (isset($pdo)) {
+    try {
+        $sidebarOpenReports = (int) $pdo->query("SELECT COUNT(DISTINCT content_type, content_id) FROM content_reports WHERE status = 'open'")->fetchColumn();
+    } catch (\PDOException $e) {
+        $sidebarOpenReports = 0;
+    }
+}
+
 function admin_nav_active(string $page, string $current): string
 {
     return $page === $current ? 'is-active' : '';
@@ -54,6 +65,10 @@ function admin_nav_active(string $page, string $current): string
         <a class="<?= admin_nav_active('movie-tips.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
         <a class="<?= admin_nav_active('location-tips.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
         <a class="<?= admin_nav_active('tip-reviews.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
+
+        <div class="sidebar-group-label">Hörer</div>
+        <a class="<?= admin_nav_active('listeners.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/listeners.php">Hörerkonten</a>
+        <a class="<?= admin_nav_active('reports.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/reports.php">Meldungen<?= $sidebarOpenReports > 0 ? ' (' . $sidebarOpenReports . ')' : '' ?></a>
 
         <div class="sidebar-group-label">Auswertung</div>
         <a class="<?= admin_nav_active('statistics.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/statistics.php">Statistiken</a>

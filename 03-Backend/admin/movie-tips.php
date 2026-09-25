@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/bootstrap.php';
+require_once __DIR__ . '/partials/listener-fields.php';
 
 use Suedsalat\Auth;
 use Suedsalat\Database;
@@ -305,6 +306,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
             ':image_path' => $imagePath,
             ':id' => $editId,
         ]);
+        admin_save_image_kind($pdo, 'movie_tips', $editId, !empty($_FILES['poster']['name']));
         header('Location: ' . BASE_PATH . '/admin/movie-tips.php');
         exit;
     } else {
@@ -351,7 +353,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
             );
             $markDone->execute([':admin_id' => $adminId, ':id' => $feedbackId]);
             // Der Tipp gehoert dem Konto des Einsenders (Live-Name, Kontoloeschung).
-            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'movie_tips', $newTipId, $feedbackId);
+            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'movie_tips', $newTipId, $feedbackId,
+                !empty($_FILES['poster']['name']) ? 'poster' : admin_image_kind_from_post());
         }
 
         // Rezension gleich beim Anlegen mit eintragen, falls das Haekchen gesetzt war.
@@ -477,7 +480,7 @@ $showCreateForm = $editTip !== null || $error !== null || $prefillFeedbackId !==
             <input type="hidden" name="feedback_id" value="<?= htmlspecialchars($prefillFeedbackId, ENT_QUOTES) ?>">
         <?php endif; ?>
         <label>Titel des Films <input type="text" name="title" required value="<?= htmlspecialchars($editTip['title'] ?? $prefillTitle, ENT_QUOTES) ?>"></label>
-        <label>Tipp von <small>(steht in der App unter dem Tipp, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars($editTip ? (string) ($editTip['submitted_by_name'] ?? '') : $defaultSubmitter, ENT_QUOTES) ?>"></label>
+        <?= admin_submitter_field($pdo, 'Tipp von', 'steht in der App unter dem Tipp, leer = ohne Namen', $editTip, $defaultSubmitter) ?>
         <label>Beschreibung (optional) <textarea name="description" rows="3"><?= htmlspecialchars($editTip['description'] ?? $prefillDescription, ENT_QUOTES) ?></textarea></label>
         <label>Link (optional, z. B. Trailer/Webseite) <input type="text" name="link" placeholder="www.beispiel.de" value="<?= htmlspecialchars($editTip['link'] ?? '', ENT_QUOTES) ?>"></label>
         <div class="field-row">
@@ -512,6 +515,7 @@ $showCreateForm = $editTip !== null || $error !== null || $prefillFeedbackId !==
                 <label style="font-weight:normal;"><input type="checkbox" name="remove_poster" value="1"> Poster entfernen</label>
             </p>
         <?php endif; ?>
+        <?= admin_image_kind_field($pdo, 'movie_tips', $editTip, !$editTip && $prefillFeedbackId !== '') ?>
 
         <?php if (!$editTip): ?>
         <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">

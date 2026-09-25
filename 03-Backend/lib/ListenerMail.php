@@ -108,6 +108,37 @@ final class ListenerMail
         self::send((string) $l['email'], (string) $l['first_name'], 'Dein Konto wird bald gelöscht – Südsalat', 'Erinnerung', $body);
     }
 
+    /**
+     * Sperre mit Begruendung - das EU-Gesetz ueber digitale Dienste (Art. 17) verlangt, dass
+     * Betroffene erfahren, warum sie eingeschraenkt werden. @param array<string,mixed> $l
+     */
+    public static function blocked(array $l, string $reason): void
+    {
+        $body = self::p('Hallo ' . self::e((string) $l['first_name']) . ',')
+            . self::p('dein Konto bei der Südsalat-App ist <strong>für Beiträge gesperrt</strong>. Du kannst weiter Folgen hören, '
+                . 'alles lesen und uns schreiben – Tipps, Fotos, Rezensionen und Kommentare sind aber nicht mehr möglich.')
+            . self::p('<strong>Grund:</strong> ' . nl2br(self::e($reason)))
+            . '<p style="margin:0;font-size:16px;line-height:1.5;">Wenn du das für ein Missverständnis hältst, antworte uns an info@südsalat.eu.</p>';
+        self::send((string) $l['email'], (string) $l['first_name'], 'Dein Konto ist für Beiträge gesperrt – Südsalat', 'Konto gesperrt', $body);
+    }
+
+    public static function unblocked(array $l): void
+    {
+        $body = self::p('Hallo ' . self::e((string) $l['first_name']) . ',')
+            . '<p style="margin:0;font-size:16px;line-height:1.5;">die Sperre deines Kontos ist aufgehoben – du kannst wieder Tipps, Fotos, Rezensionen und Kommentare einreichen.</p>';
+        self::send((string) $l['email'], (string) $l['first_name'], 'Sperre aufgehoben – Südsalat', 'Willkommen zurück', $body);
+    }
+
+    /** Ein gemeldeter Beitrag wurde entfernt - mit Grund (EU-Gesetz ueber digitale Dienste, Art. 17). */
+    public static function contentRemoved(array $l, string $what, string $reason): void
+    {
+        $body = self::p('Hallo ' . self::e((string) $l['first_name']) . ',')
+            . self::p('wir haben einen deiner Beiträge aus der Südsalat-App entfernt: <strong>' . self::e($what) . '</strong>.')
+            . self::p('<strong>Grund:</strong> ' . self::e($reason))
+            . '<p style="margin:0;font-size:16px;line-height:1.5;">Wenn du das für ein Missverständnis hältst, antworte uns an info@südsalat.eu.</p>';
+        self::send((string) $l['email'], (string) $l['first_name'], 'Ein Beitrag wurde entfernt – Südsalat', 'Beitrag entfernt', $body);
+    }
+
     /** Anmeldung innerhalb der Rueckkehrfrist. @param array<string,mixed> $l */
     public static function welcomeBack(array $l): void
     {

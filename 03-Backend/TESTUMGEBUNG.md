@@ -41,3 +41,16 @@ $M -h127.0.0.1 -P3307 -usuedsalat -psuedsalat suedsalat_test < D:/Suedsalat-Test
 
 `test-schema.sql` ist `live-schema.sql` mit `utf8mb4_0900_ai_ci` → `utf8mb4_unicode_ci` (MariaDB kennt
 die MySQL-8-Sortierregel nicht) und abgeschalteter Fremdschlüssel-Prüfung beim Einspielen.
+
+## Tests
+
+Bei laufender Datenbank und laufendem PHP-Server (beide oben):
+
+```bash
+cd D:/Suedsalat-App/03-Backend
+export SUEDSALAT_ENV_FILE="D:/Suedsalat-Testumgebung/.env.test"
+for t in ListenerFlowTest PermissionsTest ModerationTest AdminPagesTest; do php tests/$t.php; done
+```
+
+Die Tests leeren die betroffenen Tabellen selbst. `AdminPagesTest` meldet sich über eine Sitzungsdatei
+im `session.save_path` von PHP als Admin an und prüft am Ende `php-server.log` auf PHP-Warnungen.

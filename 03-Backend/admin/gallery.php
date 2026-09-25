@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/bootstrap.php';
+require_once __DIR__ . '/partials/listener-fields.php';
 
 use Suedsalat\Auth;
 use Suedsalat\Database;
@@ -130,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_id'])
             ]);
             $newPhotoId = (int) $pdo->lastInsertId();
             // Das Foto gehoert dem Konto des Einsenders (Live-Name, Kontoloeschung).
-            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'photos', $newPhotoId, $feedbackId);
+            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'photos', $newPhotoId, $feedbackId, admin_image_kind_from_post());
 
             $update = $pdo->prepare(
                 'UPDATE feedback_messages SET photo_imported_at = NOW(), status = "erledigt", handled_by = :admin_id, handled_at = NOW() WHERE id = :id'
@@ -193,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_media
             ]);
             $newPhotoId = (int) $pdo->lastInsertId();
             // Das Foto gehoert dem Konto des Einsenders (Live-Name, Kontoloeschung).
-            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'photos', $newPhotoId, (int) $mediaRow['feedback_message_id']);
+            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'photos', $newPhotoId, (int) $mediaRow['feedback_message_id'], admin_image_kind_from_post());
 
             $update = $pdo->prepare('UPDATE feedback_media SET imported_at = NOW() WHERE id = :id');
             $update->execute([':id' => $mediaId]);
@@ -289,6 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_id'])) {
                 ':submitted_by_name' => $submittedByName,
                 ':id' => $id,
             ]);
+            admin_save_image_kind($pdo, 'photos', $id, !empty($_FILES['photo']['name']));
             header('Location: ' . BASE_PATH . '/admin/gallery.php#photo-' . $id);
             exit;
         }
@@ -433,7 +435,8 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                 <?php endif; ?>
             </p>
             <label>Neues Foto/Video (optional, ersetzt das aktuelle) <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"></label>
-            <label>Foto von <small>(steht in der App beim Foto, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars((string) ($editPhoto['submitted_by_name'] ?? ''), ENT_QUOTES) ?>"></label>
+            <?= admin_submitter_field($pdo, 'Foto von', 'steht in der App beim Foto, leer = ohne Namen', $editPhoto, '') ?>
+            <?= admin_image_kind_field($pdo, 'photos', $editPhoto, false) ?>
             <label>Beschreibung (optional) <textarea name="description" rows="2"><?= htmlspecialchars($editPhoto['description'] ?? '', ENT_QUOTES) ?></textarea></label>
             <button type="submit">Speichern</button>
             <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/gallery.php">Abbrechen</a>
@@ -451,6 +454,7 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                 <?php endif; ?>
             </p>
             <label>Foto von <small>(steht in der App beim Foto, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars($suggestedSubmitter, ENT_QUOTES) ?>"></label>
+            <?= admin_image_kind_field($pdo, 'photos', null, true) ?>
             <label>Beschreibung <textarea name="description" rows="3"><?= htmlspecialchars($suggestedDescription, ENT_QUOTES) ?></textarea></label>
             <button type="submit">In Galerie übernehmen</button>
             <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/feedback.php">Abbrechen</a>
@@ -464,6 +468,7 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                 <?php endif; ?>
             </p>
             <label>Foto von <small>(steht in der App beim Foto, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars($suggestedSubmitter, ENT_QUOTES) ?>"></label>
+            <?= admin_image_kind_field($pdo, 'photos', null, true) ?>
             <label>Beschreibung <textarea name="description" rows="3"><?= htmlspecialchars($suggestedDescription, ENT_QUOTES) ?></textarea></label>
             <button type="submit">In Galerie übernehmen</button>
             <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/feedback.php">Abbrechen</a>

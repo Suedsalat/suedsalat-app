@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/bootstrap.php';
+require_once __DIR__ . '/partials/listener-fields.php';
 
 use Suedsalat\Auth;
 use Suedsalat\Database;
@@ -236,6 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
             ':image_path' => $imagePath,
             ':id' => $editId,
         ]);
+        admin_save_image_kind($pdo, 'events', $editId, !empty($_FILES['poster']['name']));
         header('Location: ' . BASE_PATH . '/admin/events.php#event-' . $editId);
         exit;
     } else {
@@ -287,7 +289,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
         $newEventId = (int) $pdo->lastInsertId();
         if ($feedbackId) {
             // Die Veranstaltung gehoert dem Konto des Einsenders (Live-Name, Kontoloeschung).
-            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'events', $newEventId, $feedbackId);
+            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'events', $newEventId, $feedbackId,
+                !empty($_FILES['poster']['name']) ? 'poster' : admin_image_kind_from_post());
         }
         FcmSender::sendToAllDevices("Neue Veranstaltung: $title", date('d.m.Y', strtotime($eventDate)));
         header('Location: ' . BASE_PATH . '/admin/events.php#event-' . $newEventId);
@@ -389,7 +392,7 @@ $showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !
             <input type="hidden" name="feedback_id" value="<?= htmlspecialchars($prefillFeedbackId, ENT_QUOTES) ?>">
         <?php endif; ?>
         <label>Titel <input type="text" name="title" required value="<?= htmlspecialchars($editEvent['title'] ?? $prefillTitle, ENT_QUOTES) ?>"></label>
-        <label>Tipp von <small>(steht in der App unter der Veranstaltung, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars($editEvent ? (string) ($editEvent['submitted_by_name'] ?? '') : $defaultSubmitter, ENT_QUOTES) ?>"></label>
+        <?= admin_submitter_field($pdo, 'Tipp von', 'steht in der App unter der Veranstaltung, leer = ohne Namen', $editEvent, $defaultSubmitter) ?>
         <div class="field-row">
             <label>Datum <input type="date" name="event_date" required value="<?= htmlspecialchars($editEvent['event_date'] ?? $prefillDate, ENT_QUOTES) ?>"></label>
             <label>Startzeit (optional) <input type="time" name="event_time" value="<?= htmlspecialchars($editEvent && $editEvent['event_time'] ? substr($editEvent['event_time'], 0, 5) : '', ENT_QUOTES) ?>"></label>
@@ -429,6 +432,7 @@ $showCreateForm = $editEvent !== null || $error !== null || $prefillFeedbackId !
                 <label style="font-weight:normal;"><input type="checkbox" name="remove_poster" value="1"> Poster entfernen</label>
             </p>
         <?php endif; ?>
+        <?= admin_image_kind_field($pdo, 'events', $editEvent, !$editEvent && $prefillFeedbackId !== '') ?>
         <button type="submit"><?= $editEvent ? 'Veranstaltung aktualisieren' : 'Veranstaltungstermin anlegen' ?></button>
         <?php if ($editEvent): ?>
             <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/events.php">Abbrechen</a>

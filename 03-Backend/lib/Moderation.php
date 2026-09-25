@@ -113,9 +113,19 @@ final class Moderation
         }
     }
 
-    /** Beitrag nach Meldung entfernen (Rezension, Galeriefoto). Tipps werden auf ihrer Seite bearbeitet. */
-    public static function removeContent(PDO $pdo, string $type, int $id, int $adminId): void
+    /**
+     * Beitrag nach Meldung entfernen (Rezension, Galeriefoto). Tipps werden auf ihrer Seite bearbeitet.
+     * Der Verfasser erfaehrt per Mail, dass und warum (EU-Gesetz ueber digitale Dienste, Art. 17).
+     */
+    public static function removeContent(PDO $pdo, string $type, int $id, int $adminId, string $reason = ''): void
     {
+        $authorId = self::authorOf($pdo, $type, $id);
+        if ($authorId !== null && $reason !== '') {
+            $author = Listener::findById($pdo, $authorId);
+            if ($author !== null && $author['deletion_requested_at'] === null) {
+                ListenerMail::contentRemoved($author, 'eine ' . self::TYPES[$type]['label'], $reason);
+            }
+        }
         if ($type === 'photo') {
             $stmt = $pdo->prepare('SELECT image_path FROM photos WHERE id = :id');
             $stmt->execute([':id' => $id]);

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/bootstrap.php';
+require_once __DIR__ . '/partials/listener-fields.php';
 
 use Suedsalat\Auth;
 use Suedsalat\Database;
@@ -311,6 +312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             ':image_path' => $imagePath,
             ':id' => $editId,
         ]);
+        admin_save_image_kind($pdo, 'location_tips', $editId, !empty($_FILES['photo']['name']));
         header('Location: ' . BASE_PATH . '/admin/location-tips.php');
         exit;
     } else {
@@ -358,7 +360,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             );
             $markDone->execute([':admin_id' => $adminId, ':id' => $feedbackId]);
             // Der Tipp gehoert dem Konto des Einsenders (Live-Name, Kontoloeschung).
-            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'location_tips', $newTipId, $feedbackId);
+            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'location_tips', $newTipId, $feedbackId,
+                !empty($_FILES['photo']['name']) ? 'poster' : admin_image_kind_from_post());
         }
 
         // Rezension gleich beim Anlegen mit eintragen, falls das Haekchen gesetzt war.
@@ -484,7 +487,7 @@ $showCreateForm = $editTip !== null || $error !== null || $prefillFeedbackId !==
             <input type="hidden" name="feedback_id" value="<?= htmlspecialchars($prefillFeedbackId, ENT_QUOTES) ?>">
         <?php endif; ?>
         <label>Name der Location <input type="text" name="name" required value="<?= htmlspecialchars($editTip['name'] ?? $prefillName, ENT_QUOTES) ?>"></label>
-        <label>Tipp von <small>(steht in der App unter dem Tipp, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars($editTip ? (string) ($editTip['submitted_by_name'] ?? '') : $defaultSubmitter, ENT_QUOTES) ?>"></label>
+        <?= admin_submitter_field($pdo, 'Tipp von', 'steht in der App unter dem Tipp, leer = ohne Namen', $editTip, $defaultSubmitter) ?>
         <label>Ort <input type="text" name="location" required value="<?= htmlspecialchars($editTip['location'] ?? '', ENT_QUOTES) ?>"></label>
         <label>Beschreibung (optional) <textarea name="description" rows="3"><?= htmlspecialchars($editTip['description'] ?? $prefillDescription, ENT_QUOTES) ?></textarea></label>
         <label>Link (optional, z. B. Homepage/Karte) <input type="text" name="link" placeholder="www.beispiel.de" value="<?= htmlspecialchars($editTip['link'] ?? '', ENT_QUOTES) ?>"></label>
@@ -520,6 +523,7 @@ $showCreateForm = $editTip !== null || $error !== null || $prefillFeedbackId !==
                 <label style="font-weight:normal;"><input type="checkbox" name="remove_photo" value="1"> Foto entfernen</label>
             </p>
         <?php endif; ?>
+        <?= admin_image_kind_field($pdo, 'location_tips', $editTip, !$editTip && $prefillFeedbackId !== '') ?>
 
         <?php if (!$editTip): ?>
         <label style="display:flex;align-items:center;gap:8px;font-weight:normal;">

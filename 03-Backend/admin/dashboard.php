@@ -6,6 +6,7 @@ require_once __DIR__ . '/../config/bootstrap.php';
 use Suedsalat\ActivityLog;
 use Suedsalat\Auth;
 use Suedsalat\Database;
+use Suedsalat\ListenerContent;
 
 $adminId = Auth::requireLogin();
 $pdo = Database::connection();
@@ -14,6 +15,38 @@ $admin = $pdo->prepare('SELECT name, totp_enabled, role FROM admins WHERE id = :
 $admin->execute([':id' => $adminId]);
 $admin = $admin->fetch();
 $isOwner = $admin['role'] === 'owner';
+
+// Hinweis "Tipp ohne Bild" wegklicken (App 2.0, Konto geloescht mit "Meine Fotos loeschen")
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'dismiss_image_notice') {
+    $table = (string) ($_POST['table'] ?? '');
+    if (array_key_exists($table, ListenerContent::TIP_TABLES)) {
+        $pdo->prepare("UPDATE {$table} SET image_notice_dismissed_at = NOW() WHERE id = :id")
+            ->execute([':id' => (int) ($_POST['id'] ?? 0)]);
+    }
+    header('Location: ' . BASE_PATH . '/admin/dashboard.php#tips-without-image');
+    exit;
+}
+
+// App 2.0: offene Meldungen und Tipps, deren Bild mit einem Konto geloescht wurde.
+// try/catch, damit das Dashboard auch ohne die 2.0-Tabellen laeuft.
+$openReportCount = 0;
+$hiddenByReports = 0;
+$tipsWithoutImage = [];
+try {
+    $openReportCount = (int) $pdo->query("SELECT COUNT(DISTINCT content_type, content_id) FROM content_reports WHERE status = 'open'")->fetchColumn();
+    $hiddenByReports = (int) $pdo->query("SELECT (SELECT COUNT(*) FROM tip_reviews WHERE hidden_reason = 'reports')
+                                               + (SELECT COUNT(*) FROM photos WHERE hidden_reason = 'reports')")->fetchColumn();
+    foreach (ListenerContent::TIP_TABLES as $table => [$titleColumn, $page, $label]) {
+        $rows = $pdo->query("SELECT id, {$titleColumn} AS title, image_removed_at FROM {$table}
+                             WHERE image_removed_at IS NOT NULL AND image_path IS NULL AND image_notice_dismissed_at IS NULL")->fetchAll();
+        foreach ($rows as $row) {
+            $tipsWithoutImage[] = ['table' => $table, 'id' => (int) $row['id'], 'title' => (string) $row['title'],
+                'label' => $label, 'page' => $page, 'since' => (string) $row['image_removed_at']];
+        }
+    }
+} catch (\PDOException $e) {
+    // Datenbank noch ohne 2.0-Migration
+}
 
 $eventCount = (int) $pdo->query('SELECT COUNT(*) FROM events WHERE event_date >= CURDATE()')->fetchColumn();
 $photoCount = (int) $pdo->query('SELECT COUNT(*) FROM photos')->fetchColumn();
@@ -151,6 +184,42 @@ $episodePlayCounts = $pdo->query(
     <?php endif; ?>
     </div>
 </section>
+
+<?php if ($openReportCount > 0): ?>
+<section class="content-box">
+    <h2>Meldungen<span class="badge"><?= $openReportCount ?> offen</span></h2>
+    <p>
+        <?= $openReportCount ?> Beitr<?= $openReportCount === 1 ? 'ag wurde' : 'äge wurden' ?> in der App gemeldet.
+        <?php if ($hiddenByReports > 0): ?><strong><?= $hiddenByReports ?> davon <?= $hiddenByReports === 1 ? 'ist' : 'sind' ?> automatisch ausgeblendet</strong> und warte<?= $hiddenByReports === 1 ? 't' : 'n' ?> auf deine Entscheidung.<?php endif; ?>
+    </p>
+    <a class="button" href="<?= BASE_PATH ?>/admin/reports.php">Zu den Meldungen</a>
+</section>
+<?php endif; ?>
+
+<?php if ($tipsWithoutImage !== []): ?>
+<section class="content-box" id="tips-without-image">
+    <h2>Tipps ohne Bild<span class="badge"><?= count($tipsWithoutImage) ?></span></h2>
+    <p style="font-size:0.9rem;color:#666;">Ein Hörer hat sein Konto gelöscht und seine Fotos mitgenommen. Der Tipp bleibt in der App – mit einem neuen Bild sieht er wieder vollständig aus.</p>
+    <ul class="feedback-list">
+    <?php foreach ($tipsWithoutImage as $tip): ?>
+        <li style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <a class="activity-link" href="<?= BASE_PATH ?>/admin/<?= $tip['page'] ?>?edit=<?= $tip['id'] ?>">
+                <span>
+                    <strong><?= htmlspecialchars($tip['label'], ENT_QUOTES) ?></strong> „<?= htmlspecialchars($tip['title'], ENT_QUOTES) ?>“ – neues Bild hinterlegen
+                    <span class="meta">Bild fehlt seit <?= date('d.m.Y', strtotime($tip['since'])) ?></span>
+                </span>
+            </a>
+            <form method="post" style="margin:0;">
+                <input type="hidden" name="action" value="dismiss_image_notice">
+                <input type="hidden" name="table" value="<?= $tip['table'] ?>">
+                <input type="hidden" name="id" value="<?= $tip['id'] ?>">
+                <button type="submit" class="button-secondary" title="Hinweis ausblenden, der Tipp bleibt ohne Bild">Ohne Bild lassen</button>
+            </form>
+        </li>
+    <?php endforeach; ?>
+    </ul>
+</section>
+<?php endif; ?>
 
 <section class="content-box">
     <h2>Offene Nutzeranfragen<?php if (!empty($openFeedback)): ?><span class="badge"><?= count($openFeedback) ?> offen</span><?php endif; ?></h2>
