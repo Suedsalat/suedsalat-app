@@ -7,6 +7,7 @@ from fontTools.otlLib.builder import buildPairPosGlyphsSubtable, buildValue, bui
 from fontTools.varLib.instancer import instantiateVariableFont
 
 VF = 'LibreFranklin-VF.ttf'
+VERSION = 1.0   # bei jeder geaenderten Fassung erhoehen (1.001, 1.002 ...)
 A_VARIANTEN = ['A', 'Agrave', 'Aacute', 'Acircumflex', 'Atilde', 'Adieresis', 'Aring']
 
 
@@ -80,19 +81,22 @@ def kerning_dazu(font, paare):
 
 def benenne(font, stil, gewicht):
     name = font['name']
-    fam = 'Suedsalat'
-    voll = f'{fam} {stil}' if stil != 'Regular' else f'{fam} Regular'
-    ps = f'{fam}-{stil}'
+    fam = 'Südsalat'                 # Anzeige in Schriftmenues (Windows/Office koennen Umlaute)
+    ps = f'Suedsalat-{stil}'         # technischer PostScript-Name: nur einfache Zeichen erlaubt
+    voll = f'{fam} {stil}'
+    version = VERSION
     lizenz_cr = name.getDebugName(0)
     for rec in list(name.names):
-        if rec.nameID in (1, 2, 3, 4, 6, 16, 17, 21, 22, 25) or rec.nameID >= 256:
+        if rec.nameID in (1, 2, 3, 4, 5, 6, 16, 17, 21, 22, 25) or rec.nameID >= 256:
             name.removeNames(nameID=rec.nameID)
-    name.setName(f'{lizenz_cr} Modified Version "Suedsalat" 2026 for the Suedsalat podcast app.', 0, 3, 1, 0x409)
+    name.setName(f'{lizenz_cr} Modified Version "Suedsalat" 2026 for the Suedsalat podcast.', 0, 3, 1, 0x409)
     name.setName(fam, 1, 3, 1, 0x409)
     name.setName(stil, 2, 3, 1, 0x409)
-    name.setName(f'2026;SUEDSALAT;{ps}', 3, 3, 1, 0x409)
+    name.setName(f'{version:.3f};SUEDSALAT;{ps}', 3, 3, 1, 0x409)
     name.setName(voll, 4, 3, 1, 0x409)
+    name.setName(f'Version {version:.3f}', 5, 3, 1, 0x409)
     name.setName(ps, 6, 3, 1, 0x409)
+    font['head'].fontRevision = version
     name.setName('Hausschrift des Podcasts Südsalat, abgeleitet von Libre Franklin '
                  '(The Libre Franklin Project Authors). Lizenz: SIL Open Font License 1.1.', 10, 3, 1, 0x409)
     name.setName('This Font Software is licensed under the SIL Open Font License, Version 1.1.', 13, 3, 1, 0x409)
