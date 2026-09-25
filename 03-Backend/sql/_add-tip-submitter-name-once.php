@@ -79,6 +79,20 @@ try {
     $reviews->execute([':name' => OWN_CONTENT_NAME]);
     echo '  tip_reviews: ' . $reviews->rowCount() . ' eigene Rezension(en) ohne Namen -> ' . OWN_CONTENT_NAME . "\n";
 
+    // 5. Was Thorsten oder Jenny selbst ueber die App eingeschickt haben, steht unter ihrem Namen
+    //    ("Foto von Thorsten", "Foto von dat Dschenni") - kuenftig ebenfalls "Suedsalat".
+    //    Vergleich ueber die vereinfachte Form (klein, ohne Leerzeichen/Punkte), wiederholbar.
+    $eigene = ['thorsten', 'jenny', 'datdschenni', 'thorstenkoch', 'jennyfourate', 'thorstenk', 'jennyf'];
+    $platzhalter = implode(', ', array_fill(0, count($eigene), '?'));
+    $vereinfacht = static fn (string $spalte): string =>
+        "LOWER(REPLACE(REPLACE(REPLACE(TRIM({$spalte}), ' ', ''), '.', ''), '-', ''))";
+    foreach (['movie_tips' => 'submitted_by_name', 'location_tips' => 'submitted_by_name', 'events' => 'submitted_by_name',
+              'photos' => 'submitted_by_name', 'tip_reviews' => 'reviewer_name'] as $table => $spalte) {
+        $stmt = $pdo->prepare("UPDATE {$table} SET {$spalte} = ? WHERE {$vereinfacht($spalte)} IN ({$platzhalter})");
+        $stmt->execute(array_merge([OWN_CONTENT_NAME], $eigene));
+        echo "  {$table}: " . $stmt->rowCount() . ' Beitrag/Beitraege von Thorsten/Jenny -> ' . OWN_CONTENT_NAME . "\n";
+    }
+
     echo "Fertig.\n";
 } catch (\Throwable $e) {
     echo "FEHLER: " . $e->getMessage() . "\n";

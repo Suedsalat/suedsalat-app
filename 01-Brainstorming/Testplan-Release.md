@@ -221,11 +221,9 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    fragen die Spalte `submitted_by_name` ab — laufen sie vor der Migration, bleiben diese vier Tabs in der
    App leer. Auch `config/config.php` mit hochladen (Konstante `OWN_CONTENT_NAME`). Die Migration entfernt außerdem das
    „von …:“ aus bestehenden Beschreibungen, deshalb erst zusammen mit der neuen App-Version ausführen.
-   **Offene Entscheidung aus der Generalprobe im Testbereich (25.09.2026):** Sechs Galeriefotos
-   stammen aus Einsendungen, die Thorsten und Jenny selbst über die App geschickt haben. Die Migration
-   macht daraus „Foto von Thorsten“ (#7, #8, #10), „Foto von Jenny“ (#6, #13) und „Foto von dat
-   Dschenni“ (#11) statt „Südsalat“. Entweder nach dem Release im Admin auf „Südsalat“ ändern oder die
-   Migration um eine Namensliste erweitern.
+   **Aus der Generalprobe (25.09.2026), erledigt:** Was Thorsten oder Jenny selbst über die App eingeschickt
+   haben („Foto von Thorsten“, „dat Dschenni“, „Jenny F.“ …), setzt die Migration jetzt ebenfalls auf
+   „Südsalat“ – bei Tipps, Veranstaltungen, Fotos und Rezensionen. Im Testbereich: 6 Fotos, 6 Rezensionen.
 4b. **Danach die 2.0-Migration** `sql/_migrate-2-0-once.php?secret=suedsalat-migrate20-2026-temp`,
    erst dann die PHP-Dateien hochladen; danach die Migration vom Server löschen.
    **Achtung Statistik:** Ab diesem Moment zählt der Server nur noch Geräte, die im neuen
