@@ -149,6 +149,38 @@ try {
         add_column($pdo, $table, 'image_notice_dismissed_at', 'DATETIME NULL');
     }
 
+    // ---------------------------------------------------------------------------------------
+    // Etappe 4: Moderation
+    // ---------------------------------------------------------------------------------------
+
+    // Meldungen zu oeffentlichen Beitraegen. Melden duerfen auch Gaeste (reporter_device_id),
+    // fuer das automatische Ausblenden zaehlen nur verschiedene registrierte Hoerer.
+    create_table($pdo, 'content_reports', "CREATE TABLE content_reports (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        content_type VARCHAR(20) NOT NULL,
+        content_id INT NOT NULL,
+        reporter_listener_id INT NULL,
+        reporter_device_id INT NULL,
+        category VARCHAR(20) NOT NULL,
+        report_text VARCHAR(1000) NULL,
+        status ENUM('open','dismissed','removed') NOT NULL DEFAULT 'open',
+        handled_by INT NULL,
+        handled_at DATETIME NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        KEY content_reports_content_idx (content_type, content_id, status),
+        KEY content_reports_status_idx (status, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // "Nutzer ausblenden": listener_id sieht die Beitraege von hidden_listener_id nicht mehr.
+    create_table($pdo, 'listener_hidden', "CREATE TABLE listener_hidden (
+        listener_id INT NOT NULL,
+        hidden_listener_id INT NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (listener_id, hidden_listener_id),
+        CONSTRAINT fk_listener_hidden_owner FOREIGN KEY (listener_id) REFERENCES listeners(id) ON DELETE CASCADE,
+        CONSTRAINT fk_listener_hidden_target FOREIGN KEY (hidden_listener_id) REFERENCES listeners(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     echo "Fertig.\n";
 } catch (\Throwable $e) {
     echo 'FEHLER: ' . $e->getMessage() . "\n";

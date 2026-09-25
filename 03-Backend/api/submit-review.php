@@ -7,6 +7,7 @@ use Suedsalat\ApiAuth;
 use Suedsalat\Database;
 use Suedsalat\Listener;
 use Suedsalat\RateLimiter;
+use Suedsalat\WordFilter;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -72,6 +73,12 @@ if ($reviewText === '') {
 if (mb_strlen($reviewText) > 1000) {
     http_response_code(422);
     echo json_encode(['error' => 'Rezensionstext ist zu lang (max. 1000 Zeichen).']);
+    exit;
+}
+// Rezensionen gehen ohne Freigabe online - offensichtliche Beleidigungen gar nicht erst annehmen.
+if (WordFilter::containsInsult($reviewText)) {
+    http_response_code(422);
+    echo json_encode(['error' => 'Bitte formuliere deine Rezension ohne Beleidigungen.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 if ($reviewerName === '') {

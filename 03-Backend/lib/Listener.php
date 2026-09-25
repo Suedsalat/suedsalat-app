@@ -77,7 +77,7 @@ final class Listener
         if (strlen($key) < self::NICKNAME_MIN) {
             return 'Der Spitzname braucht mindestens ' . self::NICKNAME_MIN . ' Buchstaben oder Ziffern.';
         }
-        if (self::isReservedNickname($nickname)) {
+        if (self::isReservedNickname($nickname) || WordFilter::containsInsult($nickname)) {
             return 'Dieser Spitzname ist leider nicht möglich.';
         }
         $stmt = $pdo->prepare('SELECT id FROM listeners WHERE nickname_key = :k');

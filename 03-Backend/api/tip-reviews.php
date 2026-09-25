@@ -5,11 +5,13 @@ require_once __DIR__ . '/../config/bootstrap.php';
 
 use Suedsalat\ApiAuth;
 use Suedsalat\Database;
+use Suedsalat\Listener;
 use Suedsalat\ListenerContent;
+use Suedsalat\Moderation;
 
 header('Content-Type: application/json; charset=utf-8');
 
-ApiAuth::requireDeviceToken();
+$claims = ApiAuth::requireDeviceToken();
 
 // Rezensionen gibt es bewusst nur fuer Filmtipps und Locationtipps, nicht fuer
 // Veranstaltungen - dort ergibt eine Bewertung inhaltlich keinen Sinn.
@@ -25,6 +27,11 @@ if (!in_array($tipType, $allowedTipTypes, true) || $tipId <= 0) {
 
 $pdo = Database::connection();
 
+// Wer schaut? Von Nutzern, die der Betrachter ausgeblendet hat, zeigt die Liste nichts.
+// Der Durchschnitt bleibt fuer alle gleich.
+$viewer = Listener::forDevice($pdo, isset($claims['sub']) ? (int) $claims['sub'] : null);
+$viewerId = $viewer !== null ? (int) $viewer['id'] : null;
+
 // Ausgeblendete Rezensionen (Kontoloeschung in der Rueckkehrfrist, spaeter Meldungen) zaehlen
 // weder im Durchschnitt noch in der Liste. Der Name kommt live aus dem Konto.
 $summaryStmt = $pdo->prepare(
@@ -37,7 +44,8 @@ $summary = $summaryStmt->fetch();
 $reviewsStmt = $pdo->prepare(
     'SELECT r.id, r.rating, r.review_text, ' . ListenerContent::displayNameSql('r', 'reviewer_name') . ' AS reviewer_name, r.created_at
      FROM tip_reviews r ' . ListenerContent::joinSql('r') . '
-     WHERE r.tip_type = :tip_type AND r.tip_id = :tip_id AND r.approved = 1 AND r.hidden_at IS NULL
+     WHERE r.tip_type = :tip_type AND r.tip_id = :tip_id AND r.approved = 1 AND r.hidden_at IS NULL'
+    . Moderation::viewerFilterSql('r', $viewerId) . '
      ORDER BY r.created_at DESC'
 );
 $reviewsStmt->execute([':tip_type' => $tipType, ':tip_id' => $tipId]);
