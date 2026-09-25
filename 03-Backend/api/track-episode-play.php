@@ -77,11 +77,10 @@ if ($deviceId !== null) {
         $stmt->execute([':guid' => $episodeGuid, ':platform' => $platformValue]);
     }
 
-    $deviceHash = hash('sha256', $deviceId . '|' . $episodeGuid . '|' . date('Y-m-d') . '|' . APP_SECRET);
-    $stmt = $pdo->prepare(
-        'INSERT IGNORE INTO episode_unique_devices (episode_guid, day, device_hash) VALUES (:guid, CURDATE(), :hash)'
-    );
-    $stmt->execute([':guid' => $episodeGuid, ':hash' => $deviceHash]);
+    // Keine Zaehlung "eindeutiger Hoerer" mehr (Stand 2026-09-25): Sie erkennt ein Geraet
+    // ueber die gespeicherte Installations-Kennung wieder und braucht dafuer nach
+    // § 25 TDDDG eine Einwilligung. Kommt mit App-Version 1.3.7 zurueck - dann nur fuer
+    // Geraete, deren Nutzer der Statistik ausdruecklich zugestimmt haben.
 }
 
 // Android Auto/CarPlay-Kontext (siehe CarContextService in der App) - rein
