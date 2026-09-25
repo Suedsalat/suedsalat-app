@@ -81,7 +81,7 @@ Verpasse keine neue Folge, keinen neuen Termin und keinen neuen Tipp – die App
 • Newsletter
 Wer's klassisch mag: bleib zusätzlich per E-Mail auf dem Laufenden.
 
-Die App ist komplett kostenlos und enthält keine Werbung. Wir sammeln keine Nutzungsdaten für Werbezwecke und verwenden keine Analyse- oder Tracking-Tools.
+Die App ist komplett kostenlos und enthält keine Werbung. Wir sammeln keine Daten für Werbezwecke und setzen keine Analyse- oder Tracking-Dienste von Drittanbietern ein. Welche Bereiche und Folgen genutzt werden, zählen wir nur als Summen auf unserem eigenen Server.
 
 Hör direkt rein und werde Teil der Südsalat-Community!
 ```

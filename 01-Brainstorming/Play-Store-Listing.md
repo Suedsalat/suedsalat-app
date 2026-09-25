@@ -44,7 +44,7 @@ Verpasse keine neue Folge, keinen neuen Termin und keinen neuen Tipp – die App
 • Newsletter
 Wer's klassisch mag: bleib zusätzlich per E-Mail auf dem Laufenden.
 
-Die App ist komplett kostenlos und enthält keine Werbung. Wir sammeln keine Nutzungsdaten für Werbezwecke und verwenden keine Analyse- oder Tracking-Tools.
+Die App ist komplett kostenlos und enthält keine Werbung. Wir sammeln keine Daten für Werbezwecke und setzen keine Analyse- oder Tracking-Dienste von Drittanbietern ein. Welche Bereiche und Folgen genutzt werden, zählen wir nur als Summen auf unserem eigenen Server.
 
 Hör direkt rein und werde Teil der Südsalat-Community!
 ```
@@ -64,7 +64,7 @@ Neu: Locationtipps (Restaurants, Museen, Ausflüge) mit Mikro-Bewertungen. Feedb
 ## Weitere Fragebogen-Antworten
 
 - **Werbung enthalten?** Nein — ein Termin-/Filmtipp-Poster zählt nicht als Werbung im Play-Store-Sinn (das meint nur monetarisierte Drittanbieter-Ads).
-- **Inhaltseinstufung (IARC):** App-Funktionen selbst enthalten keine Gewalt/sexuelle Inhalte/Glücksspiel/Nutzer-Chat. Nutzergenerierte Inhalte (Feedback → Galerie/Termine/Filme/Locations, sowie Mikro-Bewertungen/Rezensionen zu Film- und Locationtipps) werden manuell von Jenny/Thorsten moderiert, bevor sie öffentlich sichtbar werden — das bei der entsprechenden Frage angeben. Fragen zu Alkohol-/Kraftausdrücken hängen vom tatsächlichen Podcast-Inhalt ab, das muss Thorsten selbst anhand der Episoden einschätzen.
+- **Inhaltseinstufung (IARC):** App-Funktionen selbst enthalten keine Gewalt/sexuelle Inhalte/Glücksspiel/Nutzer-Chat. Nutzergenerierte Inhalte (Feedback → Galerie/Termine/Filme/Locations, sowie Mikro-Bewertungen/Rezensionen zu Film- und Locationtipps) werden von Jenny/Thorsten moderiert. **Ab Version 1.3.7 ändert sich das für Bewertungen:** Die erscheinen dann sofort und werden nur noch nachträglich geprüft und bei Bedarf gelöscht — Einsendungen (Feedback → Galerie/Veranstaltungen/Filme/Locations) werden weiterhin vorher geprüft. Die Einstufung beim Release 1.3.7 entsprechend aktualisieren, siehe `Datenschutz-Angaben-Stores.md`. Fragen zu Alkohol-/Kraftausdrücken hängen vom tatsächlichen Podcast-Inhalt ab, das muss Thorsten selbst anhand der Episoden einschätzen.
 - **Feature-Grafik ("Vorstellungsgrafik"):** 1024×500 px Banner oben auf der Store-Seite, kein Screenshot, kein Fake-UI/Bewertungssterne. Noch nicht erstellt (Stand 2026-07-14).
 
 ## Closed Testing Pflicht (neue Entwicklerkonten)
