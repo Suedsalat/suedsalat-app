@@ -190,3 +190,9 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    wird dabei einmal komplett überschrieben.
 5. Release-Notes decken alles seit **1.3.2** ab, nicht nur seit der letzten gebauten Fassung — das ist
    der Stand, von dem die Nutzer tatsächlich kommen.
+6. **Vor dem Build: Schrift in die App einbetten.** Die App lädt Open Sans bisher zur Laufzeit von
+   Google (`GoogleFonts.openSansTextTheme()` in `lib/theme/app_theme.dart`). Schriftdateien als Asset
+   mitliefern und das Nachladen abschalten (`GoogleFonts.config.allowRuntimeFetching = false`).
+7. **Nach dem Release beider Stores:** in `seiten/datenschutz.html` den Übergangsabsatz
+   „2 h) Schriftart“ entfernen, sobald keine App-Version mehr im Umlauf ist, die die Schrift von
+   Google lädt.
