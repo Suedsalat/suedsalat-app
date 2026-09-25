@@ -13,7 +13,7 @@ declare(strict_types=1);
 // 3. Das Praefix "von X: " aus der Beschreibung entfernen, sonst stuende der Name doppelt.
 // 4. Eigene Rezensionen ohne Namen (ohne App-Installation) bekommen ebenfalls "Suedsalat".
 //
-// Erst zusammen mit App-Version 1.3.7 ausfuehren (die App zeigt den Namen erst ab
+// Erst zusammen mit App-Version 2.0.0 ausfuehren (die App zeigt den Namen erst ab
 // dann an - vorher wuerde er fuer die Tester einfach verschwinden).
 // Laeuft beliebig oft gefahrlos: Spalte nur einmal, Fuellen nur wo noch leer.
 // Nach Gebrauch UNBEDINGT loeschen (Sicherheitsrisiko sonst).

@@ -1,6 +1,10 @@
 # Konzept Version 2.0.0 – Gast und registrierter Hörer
 
-Stand: 2026-09-25 · Status: **Brainstorming abgeschlossen, noch nicht gebaut**
+Stand: 2026-09-25 · Status: **Brainstorming abgeschlossen, alle Entscheidungen getroffen, noch nicht gebaut**
+
+**Veröffentlichung:** Es gibt kein eigenes 1.3.7. Alles, was für das gesammelte Release gebaut ist,
+geht zusammen mit dem Hörerkonto als **2.0.0 (Android-Code 18)** raus, am Ende der Testphase. Bis dahin
+wird 2.0.0 vorbereitet.
 
 Mit 2.0.0 bekommt die App zwei Wege: als **Gast** wie bisher anonym, oder als **registrierter Hörer**
 mit Konto. Öffentliche Beiträge (Tipps, Fotos, Rezensionen, Kommentare) gibt es dann nur noch mit
@@ -91,9 +95,12 @@ automatisch zum Newsletter an.
 
 - **Abmelden**
 - **Spitzname ändern** (mit denselben Regeln wie bei der Registrierung)
-- **Konto löschen** – direkt in der App, Pflicht bei Apple und Google. Löscht Konto, Name und
-  E-Mail-Adresse; öffentliche Beiträge werden entweder mitgelöscht oder bleiben als „gelöschter
-  Nutzer“ stehen (**noch zu entscheiden**, siehe Abschnitt 10).
+- **Konto löschen** – direkt in der App, Pflicht bei Apple und Google. Gelöscht werden immer Konto,
+  Vor-/Nachname und E-Mail-Adresse. Im Löschvorgang wird **angeboten**, die eigenen öffentlichen
+  Beiträge (Tipps, Fotos, Rezensionen, Kommentare) **mitzulöschen** – Standard ist: nur das Konto.
+  Bleiben Beiträge stehen, erscheinen sie ohne Spitznamen als **„Ehemaliges Mitglied“** (Vorschlag):
+  Der Spitzname wird dadurch wieder frei, und niemand kann später unter demselben Namen
+  scheinbar die alten Beiträge fortsetzen.
 - **Anonyme Statistik** ein/aus
 - Gäste: **gemerkter Name** für Feedback ändern/löschen; **Anmelden / Registrieren**
 
@@ -117,8 +124,14 @@ Person per Neuinstallation mehrfach melden.
 ein bis zwei Tagen ansehen. **Offensichtlich rechtswidrige** Beiträge unverzüglich entfernen, sobald man
 davon weiß – sonst haftet man selbst.
 
-**Sperren** (nur Thorsten): Ein gesperrter Hörer kann nichts mehr veröffentlichen und nicht melden.
-Hören und Lesen bleibt möglich (**Vorschlag**, noch zu bestätigen).
+**Sperren** (nur Thorsten): Ein gesperrter Hörer wird praktisch zum Gast – er kann weiter hören,
+alles lesen und schriftliches allgemeines Feedback oder Fragen senden, aber nichts mehr einreichen
+(keine Tipps, Fotos, Rezensionen, Kommentare) und nicht mehr melden.
+
+Wann sperren: nur als letzter Schritt, wenn jemand wiederholt beleidigt, Werbung oder Spam postet,
+unangemessene oder fremde Fotos hochlädt, andere Hörer belästigt oder sich als jemand anderes ausgibt.
+Empfohlene Reihenfolge: Beitrag löschen → Hinweis per Mail an den Hörer → erst dann sperren.
+Apple und Google verlangen die Möglichkeit; sie soll aber die Ausnahme bleiben.
 
 **Nutzer ausblenden:** Jeder registrierte Hörer kann einen anderen für sich ausblenden, dessen Beiträge
 sieht er dann nicht mehr. Apple erwartet das für Apps mit Nutzerbeiträgen.
@@ -134,8 +147,11 @@ genutzt werden (Apple-Richtlinie 1.2, Google-Richtlinie zu nutzergenerierten Inh
 
 Alles von der bisherigen Liste, für beide Rollen, soweit nicht anders vermerkt:
 
-- **Alles aus dem gesammelten Release 1.3.7** (Zurück-Geste, Galerie wischen, Videos, „Tipp von …“,
-  eingebettete Schrift, Namenspflicht, Rezensionen sofort sichtbar – siehe `Testplan-Release.md`)
+- **Alles aus dem gesammelten Release** (Zurück-Geste, Galerie wischen, Videos, „Tipp von …“,
+  eingebettete Schrift, Namenspflicht, Rezensionen sofort sichtbar – siehe `Testplan-Release.md`).
+  Das bleibt das Fundament; bestehende Rezensionen und Tipps bleiben unverändert stehen.
+- **CarPlay-Menü** mit Folgenliste und Kapiteln, gleichwertig zu Android Auto (Apple-Freigabe liegt
+  seit 2026-09-15 vor) – Apple und Android sollen gleich sein.
 - **Wiedergabeposition merken** (lokal)
 - **Kapitel pro Folge** aus der `podcast.rss`, Anzeige im Player und in Android Auto (siehe Notizen zum
   Kapitel-Plan; Thorsten bekommt beim Bauen eine Anleitung, wie er die RSS-Datei erweitert)
@@ -159,7 +175,7 @@ Alles von der bisherigen Liste, für beide Rollen, soweit nicht anders vermerkt:
 | Anmeldung am Server, Schlüssel, Erneuerung | Geräte-Anmeldung; `refresh.php` ist ausdrücklich für einen späteren Nutzertyp vorbereitet | Nutzertyp „Hörer“, Verknüpfung Konto ↔ Geräte |
 | Code per Mail, Code-Prüfung | Admin-Bereich: Freischaltungs- und Reset-Codes, Mails im Südsalat-Briefkopf | Übertragen auf Hörer |
 | Schutz vor Missbrauch | Mengenbegrenzung, Sperre nach Fehlversuchen | Übertragen |
-| Name automatisch bei Beiträgen | `submitted_by_name`, „Tipp von …“, Namenspflicht (für 1.3.7 fertig) | Name aus dem Konto statt aus dem Formular |
+| Name automatisch bei Beiträgen | `submitted_by_name`, „Tipp von …“, Namenspflicht (fertig gebaut) | Name aus dem Konto statt aus dem Formular |
 | Anzeige-Element für Namen | `TipSubmitterLine` | – |
 | Löschen durch Admins, Passwort-/2FA-Bestätigung | vorhanden | Meldungsliste, Sperren, Hörerliste |
 | Mails an Admins bei Einsendungen | vorhanden | Mail bei Meldungen |
@@ -196,15 +212,19 @@ Alles von der bisherigen Liste, für beide Rollen, soweit nicht anders vermerkt:
 
 ---
 
-## 10. Noch offen
+## 10. Entscheidungen (2026-09-25)
 
-1. **Veröffentlichungsplan:** 1.3.7 wie geplant nach der Freigabe von 1.3.6 veröffentlichen und 2.0.0
-   danach bauen – oder alles zusammen als 2.0.0? Empfehlung: erst 1.3.7, damit die fertigen Fixes nicht
-   wochenlang warten.
-2. **Konto löschen:** öffentliche Beiträge mitlöschen oder als „gelöschter Nutzer“ stehen lassen?
-3. **Gesperrte Hörer:** weiter hören und lesen dürfen (Vorschlag) oder ganz ausgesperrt?
-4. **Bestehende Rezensionen und Tipps von Gästen** bleiben unverändert stehen (Vorschlag).
-5. **CarPlay-Menü** (Apple-Freigabe liegt vor) in 2.0.0 aufnehmen oder später?
+1. **Veröffentlichung:** kein eigenes 1.3.7 – alles zusammen als 2.0.0 am Ende der Testphase, bis dahin
+   wird vorbereitet.
+2. **Konto löschen:** standardmäßig nur das Konto; im Löschvorgang wird angeboten, die eigenen Beiträge
+   mitzulöschen. Verbleibende Beiträge als „Ehemaliges Mitglied“ (Vorschlag, siehe Abschnitt 4).
+3. **Gesperrte Hörer:** hören und lesen weiter, dürfen wie Gäste nur schriftliches allgemeines Feedback
+   oder Fragen senden.
+4. **Bestehendes bleibt das Fundament**, vorhandene Rezensionen und Tipps bleiben unverändert.
+5. **CarPlay-Menü kommt mit in 2.0.0**, gleichwertig zu Android Auto.
+
+Einziger noch zu bestätigender Vorschlag: die Anzeige „Ehemaliges Mitglied“ bei stehengebliebenen
+Beiträgen gelöschter Konten.
 
 **Grobe Schätzung:** Server 2–3 Tage, App 3–4 Tage, dazu Nutzungsbedingungen, Datenschutz, Store-Angaben
 und Testen.

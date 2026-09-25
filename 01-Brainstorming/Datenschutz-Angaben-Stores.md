@@ -5,7 +5,7 @@ iOS-Datei `04-App/ios/Runner/PrivacyInfo.xcprivacy`. Alle drei müssen dasselbe 
 ändert, prüft die anderen beiden mit.
 
 Die Angaben beschreiben, was die App **heute** erhebt. Sie sind daher **jetzt** einzutragen, nicht erst
-mit 1.3.7. Geändert werden können sie in beiden Konsolen jederzeit, ohne neue App-Version.
+mit 2.0.0. Geändert werden können sie in beiden Konsolen jederzeit, ohne neue App-Version.
 
 ---
 
@@ -83,13 +83,13 @@ Der Satz über Tracking ist in `App-Store-Listing.md` und `Play-Store-Listing.md
 
 - **Play Store:** jetzt ändern, die Beschreibung ist jederzeit bearbeitbar.
 - **App Store:** Apple lässt die Beschreibung nur zusammen mit einer neuen Version ändern — also beim
-  Einreichen von 1.3.7 mit eintragen.
+  Einreichen von 2.0.0 mit eintragen.
 
 ---
 
-## 4. Erst beim Release 1.3.7
+## 4. Erst beim Release 2.0.0
 
-- **Altersfreigabe / Inhaltseinstufung** in beiden Stores neu beantworten: Ab 1.3.7 erscheinen
+- **Altersfreigabe / Inhaltseinstufung** in beiden Stores neu beantworten: Ab 2.0.0 erscheinen
   Bewertungen sofort für alle sichtbar und werden nur noch nachträglich geprüft. Bei den Fragen zu
   nutzergenerierten Inhalten bzw. dazu, ob Nutzer Inhalte für andere sichtbar veröffentlichen können,
   also mit **Ja** antworten. Einsendungen (Fotos, Tipps) werden weiterhin vorher geprüft.

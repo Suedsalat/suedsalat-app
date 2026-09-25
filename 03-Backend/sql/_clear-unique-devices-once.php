@@ -4,7 +4,7 @@ declare(strict_types=1);
 // Einmaliges Skript: loescht alle bisher gespeicherten Pruefwerte fuer "eindeutige Hoerer"
 // (episode_unique_devices). Sie wurden ohne Einwilligung erhoben, die nach § 25 TDDDG
 // noetig ist, weil die Zaehlung ein Geraet ueber die gespeicherte Installations-Kennung
-// wiedererkennt. Die Tabelle selbst bleibt - ab App-Version 1.3.7 wird sie wieder
+// wiedererkennt. Die Tabelle selbst bleibt - ab App-Version 2.0.0 wird sie wieder
 // befuellt, dann nur fuer Geraete mit Einwilligung.
 // Nach Gebrauch UNBEDINGT loeschen (Sicherheitsrisiko sonst).
 

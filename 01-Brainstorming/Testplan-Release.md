@@ -1,10 +1,10 @@
 # Testplan für das gesammelte Release
 
-Stand: 2026-09-24 · Bei den Testern läuft: **1.3.2 (Code 13)**, seit 12.09.2026 · In Prüfung: **1.3.6 (Code 17)** · Nächste Fassung: **1.3.7 (Code 18)**
+Stand: 2026-09-24 · Bei den Testern läuft: **1.3.2 (Code 13)**, seit 12.09.2026 · In Prüfung: **1.3.6 (Code 17)** · Nächste Fassung: **2.0.0 (Code 18)**
 
 **Wichtig zur Ausgangslage:** Die Tester sitzen noch auf 1.3.2. Die Fassungen 1.3.3, 1.3.4 und 1.3.5
 sind nie bei ihnen angekommen — jede wurde durch den nächsten Upload ersetzt, während sie noch in
-der Prüfung war. Wenn 1.3.6 freigegeben wird (oder später 1.3.7), springen die Tester deshalb über
+der Prüfung war. Wenn 1.3.6 freigegeben wird (oder später 2.0.0), springen die Tester deshalb über
 vier Versionen auf einmal. Sie bekommen dann auch alles zu sehen, was sie bisher nie hatten.
 
 Der Testplan ist danach geteilt: **Teil A** ist neu gebaut und von niemandem geprüft. **Teil B** ist
@@ -16,7 +16,7 @@ Adminbereich.
 
 ---
 
-## Teil A — Neu in 1.3.7, noch von niemandem geprüft
+## Teil A — Neu in 2.0.0, noch von niemandem geprüft
 
 ### 1. Zurückwischen schließt die App nicht mehr
 

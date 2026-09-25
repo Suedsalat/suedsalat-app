@@ -79,7 +79,7 @@ if ($deviceId !== null) {
 
     // Keine Zaehlung "eindeutiger Hoerer" mehr (Stand 2026-09-25): Sie erkennt ein Geraet
     // ueber die gespeicherte Installations-Kennung wieder und braucht dafuer nach
-    // § 25 TDDDG eine Einwilligung. Kommt mit App-Version 1.3.7 zurueck - dann nur fuer
+    // § 25 TDDDG eine Einwilligung. Kommt mit App-Version 2.0.0 zurueck - dann nur fuer
     // Geraete, deren Nutzer der Statistik ausdruecklich zugestimmt haben.
 }
 
