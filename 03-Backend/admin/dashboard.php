@@ -35,7 +35,8 @@ $tipsWithoutImage = [];
 try {
     $openReportCount = (int) $pdo->query("SELECT COUNT(DISTINCT content_type, content_id) FROM content_reports WHERE status = 'open'")->fetchColumn();
     $hiddenByReports = (int) $pdo->query("SELECT (SELECT COUNT(*) FROM tip_reviews WHERE hidden_reason = 'reports')
-                                               + (SELECT COUNT(*) FROM photos WHERE hidden_reason = 'reports')")->fetchColumn();
+                                               + (SELECT COUNT(*) FROM photos WHERE hidden_reason = 'reports')
+                                               + (SELECT COUNT(*) FROM gallery_comments WHERE hidden_reason = 'reports')")->fetchColumn();
     foreach (ListenerContent::TIP_TABLES as $table => [$titleColumn, $page, $label]) {
         $rows = $pdo->query("SELECT id, {$titleColumn} AS title, image_removed_at FROM {$table}
                              WHERE image_removed_at IS NOT NULL AND image_path IS NULL AND image_notice_dismissed_at IS NULL")->fetchAll();

@@ -92,8 +92,10 @@ final class ListenerContent
     public static function hideForDeletion(PDO $pdo, int $listenerId, bool $deleteTexts, bool $deletePhotos): void
     {
         if ($deleteTexts) {
-            $pdo->prepare("UPDATE tip_reviews SET hidden_at = NOW(), hidden_reason = 'deletion'
-                           WHERE listener_id = :id AND hidden_at IS NULL")->execute([':id' => $listenerId]);
+            foreach (['tip_reviews', 'gallery_comments'] as $table) {
+                $pdo->prepare("UPDATE {$table} SET hidden_at = NOW(), hidden_reason = 'deletion'
+                               WHERE listener_id = :id AND hidden_at IS NULL")->execute([':id' => $listenerId]);
+            }
         }
         if (!$deletePhotos) {
             return;
@@ -122,7 +124,7 @@ final class ListenerContent
     /** Anmeldung innerhalb der Rueckkehrfrist: Ausgeblendetes wieder zeigen, Bilder zurueckhaengen. */
     public static function restoreAfterReturn(PDO $pdo, int $listenerId): void
     {
-        foreach (['tip_reviews', 'photos'] as $table) {
+        foreach (['tip_reviews', 'photos', 'gallery_comments'] as $table) {
             $pdo->prepare("UPDATE {$table} SET hidden_at = NULL, hidden_reason = NULL
                            WHERE listener_id = :id AND hidden_reason = 'deletion'")->execute([':id' => $listenerId]);
         }
@@ -163,11 +165,14 @@ final class ListenerContent
         $former = self::FORMER_MEMBER;
         $id = [':id' => $listenerId];
 
-        // Rezensionen
+        // Rezensionen und Foto-Kommentare
         if ($deleteTexts) {
             $pdo->prepare('DELETE FROM tip_reviews WHERE listener_id = :id')->execute($id);
+            $pdo->prepare('DELETE FROM gallery_comments WHERE listener_id = :id')->execute($id);
         } else {
             $pdo->prepare('UPDATE tip_reviews SET reviewer_name = :n, listener_id = NULL, device_id = NULL WHERE listener_id = :id')
+                ->execute([':n' => $former, ':id' => $listenerId]);
+            $pdo->prepare('UPDATE gallery_comments SET author_name = :n, listener_id = NULL WHERE listener_id = :id')
                 ->execute([':n' => $former, ':id' => $listenerId]);
         }
 

@@ -5,6 +5,7 @@ require_once __DIR__ . '/../config/bootstrap.php';
 
 use Suedsalat\ApiAuth;
 use Suedsalat\Database;
+use Suedsalat\GalleryComments;
 use Suedsalat\Listener;
 use Suedsalat\ListenerContent;
 use Suedsalat\Moderation;
@@ -25,5 +26,13 @@ $stmt = $pdo->query('SELECT ph.id, ph.image_path, ph.media_type, ph.description,
                       WHERE ph.hidden_at IS NULL' . Moderation::viewerFilterSql('ph', $viewer !== null ? (int) $viewer['id'] : null) . '
                       ORDER BY ph.published_at DESC');
 
-echo json_encode(ListenerContent::markOwn($stmt->fetchAll(), $viewer !== null ? (int) $viewer['id'] : null),
-    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+$viewerId = $viewer !== null ? (int) $viewer['id'] : null;
+$fotos = ListenerContent::markOwn($stmt->fetchAll(), $viewerId);
+// Anzahl der Kommentare je Foto (App 2.0) - fuer die Zahl an der Sprechblase
+$anzahl = GalleryComments::anzahlJeFoto($pdo, $viewerId);
+foreach ($fotos as &$foto) {
+    $foto['comment_count'] = $anzahl[(int) $foto['id']] ?? 0;
+}
+unset($foto);
+
+echo json_encode($fotos, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

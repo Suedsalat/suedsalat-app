@@ -54,6 +54,21 @@ function validate_gallery_upload(
     return null;
 }
 
+// Kommentar loeschen (App 2.0) - Bestaetigung wie beim Loeschen; ein Grund geht per Mail an den
+// Verfasser (EU-Gesetz ueber digitale Dienste, Art. 17), offene Meldungen dazu gelten als erledigt.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_comment_id'])) {
+    $fotoId = (int) ($_POST['photo_id'] ?? 0);
+    $ziel = BASE_PATH . '/admin/gallery.php?edit=' . $fotoId;
+    if (!verify_admin_delete_confirmation($pdo, $adminId, (string) ($_POST['confirm_password'] ?? ''))) {
+        header('Location: ' . $ziel . '&delete_error=1#kommentare');
+        exit;
+    }
+    $grund = trim(normalize_input((string) ($_POST['reason'] ?? '')));
+    \Suedsalat\Moderation::removeContent($pdo, 'comment', (int) $_POST['delete_comment_id'], $adminId, $grund);
+    header('Location: ' . $ziel . '&kommentar_geloescht=1#kommentare');
+    exit;
+}
+
 // Loeschen - Passwort-Bestaetigung erforderlich.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     if (!verify_admin_password($pdo, $adminId, (string) ($_POST['confirm_password'] ?? ''))) {
@@ -387,7 +402,8 @@ if ($editPhoto === null && $importFeedback === null && isset($_GET['import_feedb
     }
 }
 
-$photos = $pdo->query('SELECT * FROM photos ORDER BY published_at DESC')->fetchAll();
+$photos = $pdo->query('SELECT p.*, (SELECT COUNT(*) FROM gallery_comments c WHERE c.photo_id = p.id) AS comment_count
+                       FROM photos p ORDER BY p.published_at DESC')->fetchAll();
 $deleteError = isset($_GET['delete_error']);
 
 // Formular standardmaessig eingeklappt, ausser beim Bearbeiten/Uebernehmen
@@ -479,12 +495,55 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
             <button type="submit">Hochladen</button>
         <?php endif; ?>
     </form>
+    <?php if ($editPhoto): ?>
+        <?php
+        $kommentarStmt = $pdo->prepare('SELECT c.id, c.comment_text, c.created_at, c.hidden_at, c.hidden_reason, c.listener_id, '
+            . \Suedsalat\ListenerContent::displayNameSql('c', 'author_name') . ' AS author_name
+            FROM gallery_comments c ' . \Suedsalat\ListenerContent::joinSql('c') . ' WHERE c.photo_id = :p ORDER BY c.created_at');
+        $kommentarStmt->execute([':p' => (int) $editPhoto['id']]);
+        $kommentare = $kommentarStmt->fetchAll();
+        ?>
+        <h2 id="kommentare">Kommentare in der App (<?= count($kommentare) ?>)</h2>
+        <?php if (isset($_GET['kommentar_geloescht'])): ?><p class="info">Kommentar gelöscht. Mit Grund bekommt der Verfasser eine E-Mail.</p><?php endif; ?>
+        <?php if ($kommentare === []): ?>
+            <p>Noch keine Kommentare zu diesem Foto.</p>
+        <?php else: ?>
+            <div class="table-scroll">
+            <table>
+                <thead><tr><th>Von</th><th>Kommentar</th><th>Datum</th><th></th></tr></thead>
+                <tbody>
+                <?php foreach ($kommentare as $k): ?>
+                    <tr id="comment-<?= (int) $k['id'] ?>" class="<?= $k['hidden_at'] ? 'is-done' : '' ?>">
+                        <td>
+                            <?= htmlspecialchars((string) $k['author_name'], ENT_QUOTES) ?>
+                            <?php if ($k['listener_id']): ?><br><a href="<?= BASE_PATH ?>/admin/listeners.php#listener-<?= (int) $k['listener_id'] ?>">Hörerkonto</a><?php endif; ?>
+                        </td>
+                        <td>
+                            <?= nl2br(htmlspecialchars((string) $k['comment_text'], ENT_QUOTES)) ?>
+                            <?php if ($k['hidden_at']): ?><br><small class="error"><?= $k['hidden_reason'] === 'reports' ? 'Nach Meldungen automatisch ausgeblendet – siehe Meldungen' : 'Ausgeblendet (Konto wird gelöscht)' ?></small><?php endif; ?>
+                        </td>
+                        <td><?= date('d.m.Y H:i', strtotime((string) $k['created_at'])) ?></td>
+                        <td>
+                            <form method="post" onsubmit="return false;">
+                                <input type="hidden" name="delete_comment_id" value="<?= (int) $k['id'] ?>">
+                                <input type="hidden" name="photo_id" value="<?= (int) $editPhoto['id'] ?>">
+                                <input type="text" name="reason" maxlength="255" placeholder="Grund (optional, geht per Mail an den Verfasser)" aria-label="Grund">
+                                <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Der Kommentar wird gelöscht.')">Löschen</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+        <?php endif; ?>
+    <?php endif; ?>
     </div>
 
     <div class="table-scroll">
     <table>
         <thead>
-            <tr><th>Vorschau</th><th>Beschreibung</th><th>Datum</th><th></th></tr>
+            <tr><th>Vorschau</th><th>Beschreibung</th><th>Kommentare</th><th>Datum</th><th></th></tr>
         </thead>
         <tbody>
         <?php foreach ($photos as $photo): ?>
@@ -497,6 +556,7 @@ $showCreateForm = $editPhoto !== null || $importFeedback !== null || $importFeed
                     <?php endif; ?>
                 </td>
                 <td><?= htmlspecialchars($photo['description'] ?? '', ENT_QUOTES) ?></td>
+                <td><?php if ((int) $photo['comment_count'] > 0): ?><a href="<?= BASE_PATH ?>/admin/gallery.php?edit=<?= (int) $photo['id'] ?>#kommentare"><?= (int) $photo['comment_count'] ?></a><?php else: ?>–<?php endif; ?></td>
                 <td><?= htmlspecialchars(date('d.m.Y', strtotime($photo['published_at'])), ENT_QUOTES) ?></td>
                 <td>
                     <div class="actions">

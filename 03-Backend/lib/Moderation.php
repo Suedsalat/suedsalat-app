@@ -10,7 +10,7 @@ use PDO;
  * siehe Konzept-2.0-Hoererkonto.md, Abschnitt 5.
  *
  * Automatisch ausgeblendet werden nur Beitraege, die ohne Pruefung durch Thorsten/Jenny online
- * gehen (Rezensionen, Galeriefotos, spaeter Kommentare). Tipps und Veranstaltungen sind beim
+ * gehen (Rezensionen, Galeriefotos, Kommentare). Tipps und Veranstaltungen sind beim
  * Uebernehmen schon geprueft - Meldungen dazu landen in der Liste, blenden aber nichts aus.
  */
 final class Moderation
@@ -27,11 +27,12 @@ final class Moderation
 
     /** Meldbare Beitragsarten: Tabelle, automatisch ausblendbar, Bezeichnung fuer Admin und Mails. */
     public const TYPES = [
-        'review' => ['table' => 'tip_reviews', 'hideable' => true, 'label' => 'Rezension'],
-        'photo' => ['table' => 'photos', 'hideable' => true, 'label' => 'Galeriefoto'],
-        'movie_tip' => ['table' => 'movie_tips', 'hideable' => false, 'label' => 'Filmtipp'],
-        'location_tip' => ['table' => 'location_tips', 'hideable' => false, 'label' => 'Locationtipp'],
-        'event' => ['table' => 'events', 'hideable' => false, 'label' => 'Veranstaltung'],
+        'review' => ['table' => 'tip_reviews', 'hideable' => true, 'label' => 'Rezension', 'akkusativ' => 'eine Rezension'],
+        'photo' => ['table' => 'photos', 'hideable' => true, 'label' => 'Galeriefoto', 'akkusativ' => 'ein Galeriefoto'],
+        'comment' => ['table' => 'gallery_comments', 'hideable' => true, 'label' => 'Kommentar', 'akkusativ' => 'einen Kommentar'],
+        'movie_tip' => ['table' => 'movie_tips', 'hideable' => false, 'label' => 'Filmtipp', 'akkusativ' => 'einen Filmtipp'],
+        'location_tip' => ['table' => 'location_tips', 'hideable' => false, 'label' => 'Locationtipp', 'akkusativ' => 'einen Locationtipp'],
+        'event' => ['table' => 'events', 'hideable' => false, 'label' => 'Veranstaltung', 'akkusativ' => 'eine Veranstaltung'],
     ];
 
     public static function isKnownType(string $type): bool
@@ -114,7 +115,7 @@ final class Moderation
     }
 
     /**
-     * Beitrag nach Meldung entfernen (Rezension, Galeriefoto). Tipps werden auf ihrer Seite bearbeitet.
+     * Beitrag nach Meldung entfernen (Rezension, Galeriefoto, Kommentar). Tipps werden auf ihrer Seite bearbeitet.
      * Der Verfasser erfaehrt per Mail, dass und warum (EU-Gesetz ueber digitale Dienste, Art. 17).
      */
     public static function removeContent(PDO $pdo, string $type, int $id, int $adminId, string $reason = ''): void
@@ -123,7 +124,7 @@ final class Moderation
         if ($authorId !== null && $reason !== '') {
             $author = Listener::findById($pdo, $authorId);
             if ($author !== null && $author['deletion_requested_at'] === null) {
-                ListenerMail::contentRemoved($author, 'eine ' . self::TYPES[$type]['label'], $reason);
+                ListenerMail::contentRemoved($author, self::TYPES[$type]['akkusativ'], $reason);
             }
         }
         if ($type === 'photo') {
@@ -134,7 +135,7 @@ final class Moderation
                 delete_published_photo_and_original($relative);
             }
         }
-        if (in_array($type, ['review', 'photo'], true)) {
+        if (in_array($type, ['review', 'photo', 'comment'], true)) {
             $pdo->prepare('DELETE FROM ' . self::TYPES[$type]['table'] . ' WHERE id = :id')->execute([':id' => $id]);
         }
         $pdo->prepare("UPDATE content_reports SET status = 'removed', handled_by = :a, handled_at = NOW()

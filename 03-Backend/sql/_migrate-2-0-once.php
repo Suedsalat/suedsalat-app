@@ -206,6 +206,28 @@ try {
         CONSTRAINT fk_statistics_consents_listener FOREIGN KEY (listener_id) REFERENCES listeners(id) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    // ---------------------------------------------------------------------------------------
+    // Etappe 7: Kommentare unter Galerie-Fotos
+    // ---------------------------------------------------------------------------------------
+
+    // Nur registrierte Hoerer, sofort sichtbar. author_name ist der Rueckfall-Name (Spitzname beim
+    // Schreiben, nach endgueltiger Kontoloeschung "Ehemaliges Mitglied"); angezeigt wird live der
+    // Spitzname aus dem Konto. hidden_at: automatisch ausgeblendet (Meldungen) oder in der
+    // Rueckkehrfrist einer Kontoloeschung. Faellt das Foto weg, fallen die Kommentare mit.
+    create_table($pdo, 'gallery_comments', "CREATE TABLE gallery_comments (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        photo_id INT NOT NULL,
+        listener_id INT NULL,
+        author_name VARCHAR(100) NOT NULL,
+        comment_text VARCHAR(1000) NOT NULL,
+        hidden_at DATETIME NULL,
+        hidden_reason VARCHAR(20) NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        KEY gallery_comments_photo_idx (photo_id, created_at),
+        CONSTRAINT fk_gallery_comments_photo FOREIGN KEY (photo_id) REFERENCES photos(id) ON DELETE CASCADE,
+        CONSTRAINT fk_gallery_comments_listener FOREIGN KEY (listener_id) REFERENCES listeners(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     echo "Fertig.\n";
 } catch (\Throwable $e) {
     echo 'FEHLER: ' . $e->getMessage() . "\n";

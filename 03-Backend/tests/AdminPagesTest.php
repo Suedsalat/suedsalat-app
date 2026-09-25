@@ -15,7 +15,7 @@ use Suedsalat\Moderation;
 
 const ADMIN_PASSWORD = 'geheim-test-123';
 
-resetTables($pdo, ['listener_login_codes', 'listener_hidden', 'content_reports', 'listeners', 'devices', 'refresh_tokens',
+resetTables($pdo, ['listener_login_codes', 'listener_hidden', 'content_reports', 'gallery_comments', 'listeners', 'devices', 'refresh_tokens',
     'rate_limits', 'tip_reviews', 'movie_tips', 'location_tips', 'photos', 'feedback_messages']);
 $pdo->exec("INSERT INTO admins (id, name, email, password_hash, role) VALUES (2, 'Jenny', 'jenny@test.local', 'x', 'member')
             ON DUPLICATE KEY UPDATE role = 'member'");
@@ -130,6 +130,27 @@ check($s === 403, 'gesperrt: keine Rezension mehr');
 page($owner, '/admin/listeners.php', ['action' => 'unblock', 'listener_id' => (string) $autorId]);
 check($pdo->query("SELECT blocked_at FROM listeners WHERE id = {$autorId}")->fetchColumn() === null
     && str_contains(lastMail('autor@example.org')[0], 'aufgehoben'), 'Entsperren mit Mail');
+
+echo "Foto-Kommentare\n";
+$pdo->exec("INSERT INTO photos (id, image_path, description, created_by, submitted_by_name) VALUES (7, 'https://x.invalid/7.jpg', 'Sommerfest', 1, 'Südsalat')");
+api('POST', '/api/gallery-comments.php', $tok['Bea'], ['photo_id' => 7, 'text' => 'Schöner Abend!']);
+[, $r2] = api('POST', '/api/gallery-comments.php', $tok['Carl'], ['photo_id' => 7, 'text' => 'Kauft bei mir ein!']);
+$kom = (int) ($r2['id'] ?? 0);
+api('POST', '/api/report.php', $tok['Dora'], ['content_type' => 'comment', 'content_id' => $kom, 'category' => 'spam', 'text' => 'Werbung']);
+[$s, $html] = page($owner, '/admin/gallery.php');
+check($s === 200 && clean($html) && str_contains($html, 'gallery.php?edit=7#kommentare">2</a>'), 'Galerie-Liste zeigt die Anzahl der Kommentare');
+[$s, $html] = page($owner, '/admin/gallery.php?edit=7');
+check($s === 200 && clean($html) && str_contains($html, 'Kommentare in der App (2)') && str_contains($html, 'Schöner Abend!')
+    && str_contains($html, 'id="comment-' . $kom . '"'), 'Bearbeiten zeigt die Kommentare mit Anker');
+[$s, $html] = page($owner, '/admin/reports.php');
+check(str_contains($html, 'Kommentar zum Foto: Kauft bei mir ein!') && str_contains($html, 'gallery.php?edit=7#kommentare'), 'Meldungen zeigen den Kommentar mit Link zum Foto');
+[, , $loc] = page($owner, '/admin/gallery.php', ['delete_comment_id' => (string) $kom, 'photo_id' => '7', 'reason' => 'Werbung', 'confirm_password' => 'falsch']);
+check(str_contains($loc, 'delete_error') && (int) $pdo->query("SELECT COUNT(*) FROM gallery_comments WHERE id = {$kom}")->fetchColumn() === 1, 'Loeschen mit falschem Passwort: nichts passiert');
+page($owner, '/admin/gallery.php', ['delete_comment_id' => (string) $kom, 'photo_id' => '7', 'reason' => 'Werbung', 'confirm_password' => ADMIN_PASSWORD]);
+check((int) $pdo->query("SELECT COUNT(*) FROM gallery_comments WHERE id = {$kom}")->fetchColumn() === 0, 'Kommentar geloescht');
+[$betreff, $mail] = lastMail('carl@example.org');
+check(str_contains($betreff, 'entfernt') && str_contains($mail, 'einen Kommentar') && str_contains($mail, 'Werbung'), 'Verfasser bekommt Mail mit Grund');
+check($pdo->query("SELECT status FROM content_reports WHERE content_type = 'comment' AND content_id = {$kom}")->fetchColumn() === 'removed', 'Meldung dazu gilt als erledigt');
 
 echo "Protokoll des Testservers\n";
 $log = is_file($logFile) ? (string) file_get_contents($logFile, false, null, $logStart) : '';

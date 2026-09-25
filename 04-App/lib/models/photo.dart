@@ -11,6 +11,9 @@ class Photo {
   /// Gehoert dem angemeldeten Hoerer selbst - dann kein "Melden"/"Ausblenden" anbieten.
   final bool isOwn;
 
+  /// Anzahl sichtbarer Kommentare (App 2.0).
+  final int commentCount;
+
   const Photo({
     required this.id,
     required this.imagePath,
@@ -19,6 +22,7 @@ class Photo {
     this.submittedByName,
     required this.publishedAt,
     this.isOwn = false,
+    this.commentCount = 0,
   });
 
   bool get isVideo => mediaType == 'video';
@@ -32,6 +36,7 @@ class Photo {
       submittedByName: _nameOrNull(json['submitted_by_name']),
       publishedAt: DateTime.parse(json['published_at'] as String),
       isOwn: json['is_own'] == true,
+      commentCount: (json['comment_count'] as num?)?.toInt() ?? 0,
     );
   }
 }

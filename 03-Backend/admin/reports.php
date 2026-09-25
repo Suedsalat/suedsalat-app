@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Moderation::dismiss($pdo, $type, $id, $adminId);
         header('Location: ' . BASE_PATH . '/admin/reports.php?ok=dismiss');
         exit;
-    } elseif ($action === 'remove' && in_array($type, ['review', 'photo'], true)) {
+    } elseif ($action === 'remove' && in_array($type, ['review', 'photo', 'comment'], true)) {
         if (!verify_admin_delete_confirmation($pdo, $adminId, (string) ($_POST['confirm_password'] ?? ''))) {
             header('Location: ' . BASE_PATH . '/admin/reports.php?delete_error=1');
             exit;
@@ -70,7 +70,7 @@ $detailStmt = $pdo->prepare(
 function report_preview(PDO $pdo, string $type, int $id): array
 {
     $none = ['text' => '(Beitrag existiert nicht mehr)', 'image' => null, 'author' => null, 'author_id' => null, 'hidden' => false, 'edit' => null, 'exists' => false];
-    $name = ListenerContent::displayNameSql('x', $type === 'review' ? 'reviewer_name' : 'submitted_by_name');
+    $name = ListenerContent::displayNameSql('x', match ($type) { 'review' => 'reviewer_name', 'comment' => 'author_name', default => 'submitted_by_name' });
     $join = ListenerContent::joinSql('x');
     switch ($type) {
         case 'review':
@@ -94,6 +94,14 @@ function report_preview(PDO $pdo, string $type, int $id): array
             return $r ? ['text' => (string) ($r['text'] ?? ''), 'image' => $r['media_type'] === 'video' ? null : $r['image_path'],
                 'author' => $r['author'], 'author_id' => $r['listener_id'] !== null ? (int) $r['listener_id'] : null,
                 'hidden' => $r['hidden_at'] !== null, 'edit' => BASE_PATH . '/admin/gallery.php?edit=' . $id, 'exists' => true] : $none;
+        case 'comment':
+            $stmt = $pdo->prepare("SELECT x.comment_text AS text, x.photo_id, x.listener_id, x.hidden_at, {$name} AS author, ph.image_path
+                FROM gallery_comments x {$join} LEFT JOIN photos ph ON ph.id = x.photo_id WHERE x.id = :id");
+            $stmt->execute([':id' => $id]);
+            $r = $stmt->fetch();
+            return $r ? ['text' => 'Kommentar zum Foto: ' . $r['text'], 'image' => $r['image_path'],
+                'author' => $r['author'], 'author_id' => $r['listener_id'] !== null ? (int) $r['listener_id'] : null,
+                'hidden' => $r['hidden_at'] !== null, 'edit' => BASE_PATH . '/admin/gallery.php?edit=' . $r['photo_id'] . '#kommentare', 'exists' => true] : $none;
         default:
             [$titleCol, $page] = [
                 'movie_tip' => ['title', 'movie-tips.php'],
@@ -131,7 +139,7 @@ $handled = $pdo->query(
 <?php require __DIR__ . '/partials/sidebar-open.php'; ?>
 <main class="content-box">
     <h1>Meldungen</h1>
-    <p style="font-size:0.9rem;color:#666;">Von Hörern gemeldete Beiträge. Rezensionen und Galeriefotos werden automatisch ausgeblendet, sobald <?= Moderation::AUTO_HIDE_THRESHOLD ?> verschiedene registrierte Hörer sie gemeldet haben – bis du entscheidest. Offensichtlich rechtswidrige Beiträge bitte sofort entfernen.</p>
+    <p style="font-size:0.9rem;color:#666;">Von Hörern gemeldete Beiträge. Rezensionen, Galeriefotos und Kommentare werden automatisch ausgeblendet, sobald <?= Moderation::AUTO_HIDE_THRESHOLD ?> verschiedene registrierte Hörer sie gemeldet haben – bis du entscheidest. Offensichtlich rechtswidrige Beiträge bitte sofort entfernen.</p>
 
     <?php if ($notice): ?><p class="info"><?= htmlspecialchars($notice, ENT_QUOTES) ?></p><?php endif; ?>
     <?php if ($error): ?><p class="error"><?= htmlspecialchars($error, ENT_QUOTES) ?></p><?php endif; ?>
@@ -182,7 +190,7 @@ $handled = $pdo->query(
                             <input type="hidden" name="content_id" value="<?= $cid ?>">
                             <button type="submit"><?= $p['hidden'] ? 'In Ordnung – wieder einblenden' : 'In Ordnung' ?></button>
                         </form>
-                        <?php if (in_array($type, ['review', 'photo'], true) && $p['exists']): ?>
+                        <?php if (in_array($type, ['review', 'photo', 'comment'], true) && $p['exists']): ?>
                             <form method="post" onsubmit="return false;">
                                 <input type="hidden" name="action" value="remove">
                                 <input type="hidden" name="content_type" value="<?= htmlspecialchars($type, ENT_QUOTES) ?>">
@@ -190,8 +198,9 @@ $handled = $pdo->query(
                                 <input type="text" name="reason" maxlength="255" placeholder="Grund (geht per Mail an den Verfasser)" aria-label="Grund">
                                 <button type="button" class="button-danger" onclick="requestDelete(this.form, 'Der Beitrag wird endgültig gelöscht. Der Verfasser bekommt den Grund per E-Mail.')">Entfernen</button>
                             </form>
-                        <?php elseif ($p['edit'] !== null): ?>
-                            <a class="button" href="<?= htmlspecialchars($p['edit'], ENT_QUOTES) ?>">Bearbeiten</a>
+                        <?php endif; ?>
+                        <?php if ($p['edit'] !== null): ?>
+                            <a class="button" href="<?= htmlspecialchars($p['edit'], ENT_QUOTES) ?>"><?= $type === 'comment' ? 'Zum Foto' : 'Bearbeiten' ?></a>
                         <?php endif; ?>
                     </div>
                 </td>

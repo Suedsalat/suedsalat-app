@@ -9,6 +9,7 @@ import '../models/json_helpers.dart';
 import '../models/location_tip.dart';
 import '../models/movie_tip.dart';
 import '../models/photo.dart';
+import '../models/photo_comment.dart';
 import '../models/tip_review.dart';
 import 'auth_service.dart';
 import 'stats_consent_service.dart';
@@ -186,6 +187,25 @@ class ApiService {
       throw Exception(errorMessage);
     }
   }
+
+  /// Kommentare zu einem Galerie-Foto (App 2.0), aelteste zuerst.
+  Future<List<PhotoComment>> fetchPhotoComments(int photoId) async {
+    final data = await sendJson('GET', 'gallery-comments.php?photo_id=$photoId');
+    return _kommentare(data);
+  }
+
+  /// Kommentieren (nur angemeldet). Liefert die aktualisierte Liste.
+  Future<List<PhotoComment>> postPhotoComment(int photoId, String text) async {
+    final data = await sendJson('POST', 'gallery-comments.php', {'photo_id': photoId, 'text': text.trim()});
+    return _kommentare(data);
+  }
+
+  Future<void> deletePhotoComment(int commentId) =>
+      sendJson('POST', 'gallery-comments.php', {'action': 'delete', 'comment_id': commentId});
+
+  List<PhotoComment> _kommentare(Map<String, dynamic> data) => (data['comments'] as List<dynamic>? ?? [])
+      .map((e) => PhotoComment.fromJson(e as Map<String, dynamic>))
+      .toList();
 
   Future<List<Photo>> fetchGallery() async {
     final response = await _authorizedRequest(

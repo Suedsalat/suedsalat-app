@@ -82,14 +82,16 @@ if ($search !== '') {
 }
 $stmt = $pdo->prepare(
     "SELECT l.*,
-        (SELECT COUNT(*) FROM tip_reviews r WHERE r.listener_id = l.id) AS review_count,
+        (SELECT COUNT(*) FROM tip_reviews r WHERE r.listener_id = l.id)
+          + (SELECT COUNT(*) FROM gallery_comments gc WHERE gc.listener_id = l.id) AS review_count,
         (SELECT COUNT(*) FROM photos p WHERE p.listener_id = l.id)
           + (SELECT COUNT(*) FROM movie_tips m WHERE m.listener_id = l.id)
           + (SELECT COUNT(*) FROM location_tips lt WHERE lt.listener_id = l.id)
           + (SELECT COUNT(*) FROM events e WHERE e.listener_id = l.id) AS adopted_count,
         (SELECT COUNT(*) FROM content_reports c WHERE c.status = 'open' AND (
             (c.content_type = 'review' AND c.content_id IN (SELECT id FROM tip_reviews WHERE listener_id = l.id)) OR
-            (c.content_type = 'photo' AND c.content_id IN (SELECT id FROM photos WHERE listener_id = l.id)))) AS open_reports
+            (c.content_type = 'photo' AND c.content_id IN (SELECT id FROM photos WHERE listener_id = l.id)) OR
+            (c.content_type = 'comment' AND c.content_id IN (SELECT id FROM gallery_comments WHERE listener_id = l.id)))) AS open_reports
      FROM listeners l {$where}
      ORDER BY l.deletion_requested_at IS NOT NULL, l.blocked_at IS NULL, l.nickname"
 );
@@ -140,7 +142,7 @@ $fmt = static fn (?string $dt): string => $dt ? date('d.m.Y', strtotime($dt)) : 
                 <td><?= $fmt($l['created_at']) ?></td>
                 <td><?= $fmt($l['last_login_at']) ?></td>
                 <td>
-                    <?= (int) $l['review_count'] ?> Rezension(en), <?= (int) $l['adopted_count'] ?> übernommen
+                    <?= (int) $l['review_count'] ?> Rezension(en)/Kommentar(e), <?= (int) $l['adopted_count'] ?> übernommen
                     <?php if ((int) $l['open_reports'] > 0): ?><br><a href="<?= BASE_PATH ?>/admin/reports.php" class="error"><?= (int) $l['open_reports'] ?> offene Meldung(en)</a><?php endif; ?>
                 </td>
                 <td>

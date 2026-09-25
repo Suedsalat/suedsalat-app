@@ -17,6 +17,9 @@ class GalleryScreen extends StatefulWidget {
 }
 
 class _GalleryScreenState extends State<GalleryScreen> {
+  /// Kommentar-Anzahlen, die sich seit dem Laden geaendert haben (Foto-ID -> Anzahl).
+  final Map<int, int> _kommentarAnzahl = {};
+
   final _api = ApiService();
   late Future<List<Photo>> _future;
   Set<String> _seenIds = {};
@@ -68,11 +71,13 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 isVideo: p.isVideo,
                 contentId: p.id,
                 isOwn: p.isOwn,
+                commentCount: _kommentarAnzahl[p.id] ?? p.commentCount,
               ),
           ],
           // Auch durchgewischte Eintraege gelten als gesehen, sonst bleibt der
           // gruene "Neu"-Punkt an Bildern haengen, die man gerade angeschaut hat.
           onPageShown: (index) => _markSeen(allPhotos[index]),
+          onCommentCountChanged: (id, anzahl) => _kommentarAnzahl[id] = anzahl,
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../widgets/tip_submitter_line.dart';
 import '../../widgets/content_menu_button.dart';
+import 'photo_comments_sheet.dart';
 import 'gallery_video_page.dart';
 
 /// Ein einzelnes Bild im Viewer. Bewusst ein eigener kleiner Typ statt des
@@ -25,6 +26,9 @@ class PhotoViewerItem {
   final int? contentId;
   final bool isOwn;
 
+  /// Anzahl der Kommentare (nur Galerie-Fotos).
+  final int commentCount;
+
   const PhotoViewerItem({
     required this.imageUrl,
     this.description,
@@ -33,6 +37,7 @@ class PhotoViewerItem {
     this.isVideo = false,
     this.contentId,
     this.isOwn = false,
+    this.commentCount = 0,
   });
 }
 
@@ -44,11 +49,15 @@ class PhotoViewerScreen extends StatefulWidget {
   /// Galerie auch durchgewischte Fotos als gesehen markieren kann.
   final void Function(int index)? onPageShown;
 
+  /// Nach Kommentieren/Loeschen: neue Anzahl fuer das Foto (Galerie merkt sie sich).
+  final void Function(int contentId, int count)? onCommentCountChanged;
+
   const PhotoViewerScreen.gallery({
     super.key,
     required this.items,
     required this.initialIndex,
     this.onPageShown,
+    this.onCommentCountChanged,
   });
 
   /// Einzelnes Bild ohne Blaettern - so rufen Veranstaltungen, Film- und
@@ -62,7 +71,8 @@ class PhotoViewerScreen extends StatefulWidget {
           PhotoViewerItem(imageUrl: imageUrl, description: description, publishedAt: publishedAt),
         ],
         initialIndex = 0,
-        onPageShown = null;
+        onPageShown = null,
+        onCommentCountChanged = null;
 
   @override
   State<PhotoViewerScreen> createState() => _PhotoViewerScreenState();
@@ -77,6 +87,19 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
   /// zum naechsten Foto weiter.
   final _transformController = TransformationController();
   bool _isZoomed = false;
+
+  /// Aktuelle Kommentar-Anzahl je Seite (nach Kommentieren nachgezogen).
+  late final List<int> _kommentarAnzahl = [for (final i in widget.items) i.commentCount];
+
+  Future<void> _kommentareOeffnen(int index) async {
+    final id = widget.items[index].contentId;
+    if (id == null) return;
+    final neu = await showPhotoComments(context, id);
+    if (neu != null && mounted && neu != _kommentarAnzahl[index]) {
+      setState(() => _kommentarAnzahl[index] = neu);
+      widget.onCommentCountChanged?.call(id, neu);
+    }
+  }
 
   @override
   void initState() {
@@ -212,6 +235,17 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (item.contentId != null)
+                    IconButton(
+                      tooltip: 'Kommentare',
+                      onPressed: () => _kommentareOeffnen(_currentIndex),
+                      icon: Badge(
+                        isLabelVisible: _kommentarAnzahl[_currentIndex] > 0,
+                        label: Text('${_kommentarAnzahl[_currentIndex]}'),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        child: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 28),
+                      ),
+                    ),
                   if (item.contentId != null)
                     ContentMenuButton(
                       key: ValueKey('menu-${item.contentId}'),
