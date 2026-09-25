@@ -21,8 +21,8 @@ void main() async {
 
   // Die freie Schriftlizenz (SIL OFL) verlangt, dass sie mitgeliefert wird.
   LicenseRegistry.addLicense(() async* {
-    final license = await rootBundle.loadString('assets/fonts/LibreFranklin-OFL.txt');
-    yield LicenseEntryWithLineBreaks(['Libre Franklin'], license);
+    final license = await rootBundle.loadString('assets/fonts/Suedsalat-OFL.txt');
+    yield LicenseEntryWithLineBreaks(['Schrift Suedsalat (Libre Franklin)'], license);
   });
 
   await Firebase.initializeApp();

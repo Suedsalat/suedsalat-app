@@ -16,23 +16,14 @@ class AppColors {
 class AppTheme {
   static const _borderRadiusContainer = 12.0;
   static const _borderRadiusInput = 6.0;
-  /// Libre Franklin, freie Nachbildung der Logo-Schrift Franklin Gothic (siehe pubspec.yaml).
-  static const fontFamily = 'LibreFranklin';
+  /// Hausschrift "Suedsalat" (aus Libre Franklin, auf das Logo abgestimmt - siehe pubspec.yaml).
+  static const fontFamily = 'Suedsalat';
 
-  // Ueberschriften (Titel/AppBar) halbfett wie "SUEDSALAT" im Logo (Franklin Gothic Demi),
-  // Fliesstext normal wie "THEMEN AUS DEM LEBEN" (Franklin Gothic Book). Libre Franklin laeuft
-  // etwas breiter als das Original, deshalb leicht engerer Buchstabenabstand (Vergleich vom
-  // 25.09.2026: Ueberschriften -2 %, Fliesstext -1 % der Schriftgroesse).
-  static TextStyle? _heading(TextStyle? s) => s?.copyWith(
-        fontFamily: fontFamily,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.02 * (s.fontSize ?? 16),
-      );
+  // Ueberschriften (Titel/AppBar) fett wie "SUEDSALAT" im Logo, Fliesstext normal wie
+  // "THEMEN AUS DEM LEBEN". Laufweite und Buchstabenabstaende stecken in der Schrift selbst.
+  static TextStyle? _heading(TextStyle? s) => s?.copyWith(fontFamily: fontFamily, fontWeight: FontWeight.w700);
 
-  static TextStyle? _body(TextStyle? s) => s?.copyWith(
-        fontFamily: fontFamily,
-        letterSpacing: -0.01 * (s.fontSize ?? 14),
-      );
+  static TextStyle? _body(TextStyle? s) => s?.copyWith(fontFamily: fontFamily);
 
   static TextTheme _textTheme(Brightness brightness) {
     final base = ThemeData(brightness: brightness, useMaterial3: true).textTheme;

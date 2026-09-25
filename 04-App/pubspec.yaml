@@ -116,7 +116,7 @@ flutter:
     - assets/images/feedback_rand.png
     - assets/audio/app-start.mp3
     # Lizenztext der Schrift (SIL OFL verlangt, dass er mitgeliefert wird, siehe main.dart)
-    - assets/fonts/LibreFranklin-OFL.txt
+    - assets/fonts/Suedsalat-OFL.txt
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -143,17 +143,18 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-  # Libre Franklin (freie Nachbildung von Franklin Gothic, SIL Open Font License) statt der
-  # lizenzpflichtigen Franklin Gothic Demi/Book aus dem Logo. Liegt in der App, nichts wird
-  # zur Laufzeit nachgeladen.
+  # Hausschrift "Suedsalat": aus Libre Franklin (SIL Open Font License) abgeleitet und auf das
+  # Logo abgestimmt (05-Assets/Fonts/Suedsalat, dort auch die Bauskripte). Ersetzt die
+  # lizenzpflichtige Franklin Gothic. Zwei Schnitte; 500/600 zeigen auf den naechstpassenden,
+  # damit Flutter nichts kuenstlich fett rechnet.
   fonts:
-    - family: LibreFranklin
+    - family: Suedsalat
       fonts:
-        - asset: assets/fonts/LibreFranklin-Regular.ttf
+        - asset: assets/fonts/Suedsalat-Regular.ttf
           weight: 400
-        - asset: assets/fonts/LibreFranklin-Medium.ttf
+        - asset: assets/fonts/Suedsalat-Regular.ttf
           weight: 500
-        - asset: assets/fonts/LibreFranklin-SemiBold.ttf
+        - asset: assets/fonts/Suedsalat-Bold.ttf
           weight: 600
-        - asset: assets/fonts/LibreFranklin-Bold.ttf
+        - asset: assets/fonts/Suedsalat-Bold.ttf
           weight: 700
