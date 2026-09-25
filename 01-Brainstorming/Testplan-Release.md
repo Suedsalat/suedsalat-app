@@ -93,7 +93,19 @@ Videos liegen in derselben Reihenfolge zwischen den Fotos und lassen sich im Vie
   geblättert wird. Bitte hier besonders genau hinschauen — diese beiden Gesten liegen dicht
   beieinander.
 
-### 7. Kopieren und Einfügen im Newsletter-Feld
+### 7. Bei jedem Film- und Locationtipp steht, von wem er ist
+
+Vorher trugen nur eingereichte Tipps einen Namen, und zwar vorne im Beschreibungstext („von Angela: …“).
+Tipps von Thorsten und Jenny hatten keinen. Gemeldet von Angela.
+
+**So prüfst du es:** Öffne Filmtipps und Locationtipps und tippe auch einmal einen Tipp an.
+
+**Erwartet:** Unter dem Titel steht klein „Tipp von …“ mit einem Personensymbol, sowohl in der Liste
+als auch im geöffneten Tipp. Das gilt bei eingereichten Tipps mit dem Namen des Einsenders und bei
+eigenen mit Thorsten oder Jenny. Die Beschreibung beginnt nicht mehr mit „von …:“. Tipps, bei denen
+jemand keinen Namen angegeben hat, zeigen einfach keine solche Zeile.
+
+### 8. Kopieren und Einfügen im Newsletter-Feld
 
 Vorher ließ sich im E-Mail-Feld der Newsletter-Anmeldung nichts kopieren oder einfügen (gemeldet auf
 einem Samsung-Gerät).
@@ -111,7 +123,7 @@ hinterlegte E-Mail-Adresse zum Ausfüllen an.
 Diese Dinge sind seit Mitte September fertig, kamen aber nie bei den Testern an. Wer von 1.3.2
 kommt, sieht sie jetzt zum ersten Mal — deshalb gehören sie in den Test.
 
-### 8. Android Auto
+### 9. Android Auto
 
 Die größte Neuerung dieses Sprungs. Die App meldet sich beim Auto als Medien-App an.
 
@@ -130,14 +142,14 @@ Die größte Neuerung dieses Sprungs. Die App meldet sich beim Auto als Medien-A
 **Bitte unbedingt melden, wenn** "Auswahl konnte nicht geladen werden" erscheint — das war der Fehler,
 der mehrere Anläufe gekostet hat, und der Fix ist in der Fassung, die ihr bekommt.
 
-### 9. Wiedergabe-Anzeige auf dem Sperrbildschirm
+### 10. Wiedergabe-Anzeige auf dem Sperrbildschirm
 
 **Erwartet:** Beim Abspielen erscheint eine Benachrichtigung mit Titel, Bild und Steuerung. Das
 Symbol in der Statusleiste ist einfarbig, nicht das bunte App-Icon. Läuft eine Folge ohne eigenes
 Bild, steht dort das quadratische Südsalat-Logo mit Schriftzug, kein einzelnes Mikrofon auf leerem
 Grund.
 
-### 10. Feedback einer Folge zuordnen
+### 11. Feedback einer Folge zuordnen
 
 **So prüfst du es:** Öffne das Feedback-Formular.
 
@@ -167,6 +179,9 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
 - **Rezensionsverwaltung ohne Freigabeschritt:** nur noch Bearbeiten und Löschen, eine gemeinsame
   Liste statt getrennt "Ausstehend"/"Freigegeben".
 - **Galerie:** Button-Farben von Retuschieren/Abbrechen korrigiert.
+- **Neues Feld „Tipp von“** bei Film- und Locationtipps. Beim Übernehmen einer Einsendung ist es mit
+  dem Namen des Einsenders vorbelegt, beim eigenen Anlegen mit dem Namen des angemeldeten Admins.
+  Leer lassen heißt: ohne Namen. Die Beschreibung bekommt kein „von …:“ mehr vorangestellt.
 
 ### Bereits live, nicht Teil dieses Release-Tests
 
@@ -188,6 +203,11 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
 4. Die Admin- und API-Dateien vollständig aus Git per SFTP hochladen, nicht nur einzelne — Live-Server
    und `main` sind derzeit bewusst auseinander. `admin/location-tips.php` ist live ein Mischstand und
    wird dabei einmal komplett überschrieben.
+4a. **Migration „Tipp von“ ZUERST ausführen**, dann erst die PHP-Dateien hochladen:
+   `sql/_add-tip-submitter-name-once.php?secret=suedsalat-tipvon-2026-temp`, danach vom Server löschen.
+   Die neuen `api/movie-tips.php` und `api/location-tips.php` fragen die Spalte `submitted_by_name` ab —
+   laufen sie vor der Migration, bleiben beide Tabs in der App leer. Die Migration entfernt außerdem das
+   „von …:“ aus bestehenden Beschreibungen, deshalb erst zusammen mit der neuen App-Version ausführen.
 5. Release-Notes decken alles seit **1.3.2** ab, nicht nur seit der letzten gebauten Fassung — das ist
    der Stand, von dem die Nutzer tatsächlich kommen.
 6. ~~Vor dem Build: Schrift in die App einbetten.~~ **Erledigt im Code (2026-09-25):** Open Sans 400

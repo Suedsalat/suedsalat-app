@@ -13,7 +13,7 @@ ApiAuth::requireDeviceToken();
 $pdo = Database::connection();
 $stmt = $pdo->query(
     'SELECT mt.id, mt.title, mt.description, mt.link, mt.episode_guid, mt.episode_timestamp_seconds,
-        mt.image_path, mt.created_at,
+        mt.image_path, mt.submitted_by_name, mt.created_at,
         (SELECT AVG(rating) FROM tip_reviews WHERE tip_type = "movie_tip" AND tip_id = mt.id AND approved = 1) AS avg_rating,
         (SELECT COUNT(*) FROM tip_reviews WHERE tip_type = "movie_tip" AND tip_id = mt.id AND approved = 1) AS review_count
      FROM movie_tips mt

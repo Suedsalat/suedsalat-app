@@ -6,6 +6,7 @@ import '../../models/location_tip.dart';
 import '../../services/api_service.dart';
 import '../../services/audio_player_service.dart';
 import '../../services/seen_items_service.dart';
+import '../../widgets/tip_submitter_line.dart';
 import '../../widgets/async_state_views.dart';
 import '../../widgets/new_dot.dart';
 import '../../widgets/rating/mikro_rating_display.dart';
@@ -157,6 +158,10 @@ class _LocationTipsListScreenState extends State<LocationTipsListScreen> {
                 ],
                 Text(tip.location, style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 8),
+                if (tip.submittedByName != null) ...[
+                  TipSubmitterLine(name: tip.submittedByName!),
+                  const SizedBox(height: 8),
+                ],
                 MikroRatingDisplay(
                   avgRating: tip.avgRating,
                   reviewCount: tip.reviewCount,
@@ -251,6 +256,10 @@ class _LocationTipsListScreenState extends State<LocationTipsListScreen> {
                               Text(tip.name, style: Theme.of(context).textTheme.titleMedium),
                               Text(tip.location, style: Theme.of(context).textTheme.bodySmall),
                               const SizedBox(height: 4),
+                              if (tip.submittedByName != null) ...[
+                                TipSubmitterLine(name: tip.submittedByName!),
+                                const SizedBox(height: 2),
+                              ],
                               MikroRatingDisplay(
                                 avgRating: tip.avgRating,
                                 reviewCount: tip.reviewCount,

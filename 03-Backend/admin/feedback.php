@@ -261,10 +261,10 @@ usort($activity, fn (array $a, array $b): int => strcmp($b['sort_date'], $a['sor
                                     <a class="button" href="<?= BASE_PATH ?>/admin/events.php?prefill_title=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($prefillDescriptionWithSender) ?>&prefill_date=<?= urlencode($msg['suggested_date'] ?? '') ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Veranstaltung daraus anlegen</a>
                                 <?php endif; ?>
                                 <?php if ($msg['type'] === 'kino_tipp' && empty($msg['movietip_created_at'])): ?>
-                                    <a class="button" href="<?= BASE_PATH ?>/admin/movie-tips.php?prefill_title=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($prefillDescriptionWithSender) ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Filmtipp daraus anlegen</a>
+                                    <a class="button" href="<?= BASE_PATH ?>/admin/movie-tips.php?prefill_title=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($msg['message']) ?>&prefill_submitter=<?= urlencode((string) ($msg['sender_name'] ?? '')) ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Filmtipp daraus anlegen</a>
                                 <?php endif; ?>
                                 <?php if ($msg['type'] === 'location_tipp' && empty($msg['locationtip_created_at'])): ?>
-                                    <a class="button" href="<?= BASE_PATH ?>/admin/location-tips.php?prefill_name=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($prefillDescriptionWithSender) ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Locationtipp daraus anlegen</a>
+                                    <a class="button" href="<?= BASE_PATH ?>/admin/location-tips.php?prefill_name=<?= urlencode(mb_strimwidth($msg['message'], 0, 80, '')) ?>&prefill_description=<?= urlencode($msg['message']) ?>&prefill_submitter=<?= urlencode((string) ($msg['sender_name'] ?? '')) ?>&prefill_feedback_id=<?= (int) $msg['id'] ?>">Locationtipp daraus anlegen</a>
                                 <?php endif; ?>
                                 <form method="post">
                                     <input type="hidden" name="toggle_id" value="<?= (int) $msg['id'] ?>">

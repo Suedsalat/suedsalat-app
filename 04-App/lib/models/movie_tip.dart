@@ -8,6 +8,9 @@ class MovieTip {
   final String? episodeGuid;
   final int? episodeTimestampSeconds;
   final String? imagePath;
+
+  /// Wer den Tipp gegeben hat ("Tipp von ..."), null = ohne Namen.
+  final String? submittedByName;
   final DateTime createdAt;
   final double? avgRating;
   final int reviewCount;
@@ -20,6 +23,7 @@ class MovieTip {
     this.episodeGuid,
     this.episodeTimestampSeconds,
     this.imagePath,
+    this.submittedByName,
     required this.createdAt,
     this.avgRating,
     this.reviewCount = 0,
@@ -34,9 +38,15 @@ class MovieTip {
       episodeGuid: json['episode_guid'] as String?,
       episodeTimestampSeconds: json['episode_timestamp_seconds'] as int?,
       imagePath: json['image_path'] as String?,
+      submittedByName: _nameOrNull(json['submitted_by_name']),
       createdAt: DateTime.parse(json['created_at'] as String),
       avgRating: parseNullableDouble(json['avg_rating']),
       reviewCount: parseIntOrZero(json['review_count']),
     );
   }
+}
+
+String? _nameOrNull(dynamic value) {
+  final name = value is String ? value.trim() : '';
+  return name.isEmpty ? null : name;
 }

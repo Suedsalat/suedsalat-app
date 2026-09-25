@@ -251,6 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
     $editId = isset($_POST['edit_id']) && $_POST['edit_id'] !== '' ? (int) $_POST['edit_id'] : null;
     $title = trim((string) $_POST['title']);
     $description = trim((string) ($_POST['description'] ?? '')) ?: null;
+    $submittedByName = mb_substr(trim((string) ($_POST['submitted_by_name'] ?? '')), 0, 100) ?: null;
     $link = trim((string) ($_POST['link'] ?? '')) ?: null;
     if ($link !== null && !preg_match('#^https?://#i', $link)) {
         $link = 'https://' . $link;
@@ -289,13 +290,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
         }
 
         $stmt = $pdo->prepare(
-            'UPDATE movie_tips SET title = :title, description = :description, link = :link,
+            'UPDATE movie_tips SET title = :title, description = :description, submitted_by_name = :submitted_by_name, link = :link,
              episode_guid = :episode_guid, episode_timestamp_seconds = :episode_timestamp_seconds,
              image_path = :image_path, updated_at = NOW() WHERE id = :id'
         );
         $stmt->execute([
             ':title' => $title,
             ':description' => $description,
+            ':submitted_by_name' => $submittedByName,
             ':link' => $link,
             ':episode_guid' => $episodeGuid,
             ':episode_timestamp_seconds' => $episodeTimestampSeconds,
@@ -325,12 +327,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
         $nextSortOrder = (int) $pdo->query('SELECT COALESCE(MAX(sort_order), 0) + 1 FROM movie_tips')->fetchColumn();
 
         $stmt = $pdo->prepare(
-            'INSERT INTO movie_tips (title, description, link, episode_guid, episode_timestamp_seconds, image_path, created_by, created_via_feedback_id, sort_order)
-             VALUES (:title, :description, :link, :episode_guid, :episode_timestamp_seconds, :image_path, :created_by, :feedback_id, :sort_order)'
+            'INSERT INTO movie_tips (title, description, link, episode_guid, episode_timestamp_seconds, image_path, created_by, created_via_feedback_id, submitted_by_name, sort_order)
+             VALUES (:title, :description, :link, :episode_guid, :episode_timestamp_seconds, :image_path, :created_by, :feedback_id, :submitted_by_name, :sort_order)'
         );
         $stmt->execute([
             ':title' => $title,
             ':description' => $description,
+            ':submitted_by_name' => $submittedByName,
             ':link' => $link,
             ':episode_guid' => $episodeGuid,
             ':episode_timestamp_seconds' => $episodeTimestampSeconds,
@@ -397,7 +400,14 @@ if (isset($_GET['edit'])) {
 // Vorbelegung aus einem Feedback-Filmtipp (siehe feedback.php) - der Feedback-Typ selbst heisst intern weiter "kino_tipp"
 $prefillTitle = (string) ($_GET['prefill_title'] ?? '');
 $prefillDescription = (string) ($_GET['prefill_description'] ?? '');
+$prefillSubmitter = (string) ($_GET['prefill_submitter'] ?? '');
 $prefillFeedbackId = (string) ($_GET['prefill_feedback_id'] ?? '');
+
+// "Tipp von": uebernommene Einsendung -> Name des Einsenders (leer, wenn er keinen
+// angegeben hat); selbst angelegt -> Name des angemeldeten Admins.
+$currentAdminNameStmt = $pdo->prepare('SELECT name FROM admins WHERE id = :id');
+$currentAdminNameStmt->execute([':id' => $adminId]);
+$defaultSubmitter = $prefillFeedbackId !== '' ? $prefillSubmitter : (string) $currentAdminNameStmt->fetchColumn();
 
 $prefillFeedbackImage = null;
 if ($prefillFeedbackId !== '') {
@@ -465,6 +475,7 @@ $showCreateForm = $editTip !== null || $error !== null || $prefillFeedbackId !==
             <input type="hidden" name="feedback_id" value="<?= htmlspecialchars($prefillFeedbackId, ENT_QUOTES) ?>">
         <?php endif; ?>
         <label>Titel des Films <input type="text" name="title" required value="<?= htmlspecialchars($editTip['title'] ?? $prefillTitle, ENT_QUOTES) ?>"></label>
+        <label>Tipp von <small>(steht in der App unter dem Tipp, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars($editTip ? (string) ($editTip['submitted_by_name'] ?? '') : $defaultSubmitter, ENT_QUOTES) ?>"></label>
         <label>Beschreibung (optional) <textarea name="description" rows="3"><?= htmlspecialchars($editTip['description'] ?? $prefillDescription, ENT_QUOTES) ?></textarea></label>
         <label>Link (optional, z. B. Trailer/Webseite) <input type="text" name="link" placeholder="www.beispiel.de" value="<?= htmlspecialchars($editTip['link'] ?? '', ENT_QUOTES) ?>"></label>
         <div class="field-row">

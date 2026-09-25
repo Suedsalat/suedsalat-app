@@ -254,6 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
     $name = trim((string) $_POST['name']);
     $location = trim((string) ($_POST['location'] ?? ''));
     $description = trim((string) ($_POST['description'] ?? '')) ?: null;
+    $submittedByName = mb_substr(trim((string) ($_POST['submitted_by_name'] ?? '')), 0, 100) ?: null;
     $link = trim((string) ($_POST['link'] ?? '')) ?: null;
     if ($link !== null && !preg_match('#^https?://#i', $link)) {
         $link = 'https://' . $link;
@@ -294,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
         }
 
         $stmt = $pdo->prepare(
-            'UPDATE location_tips SET name = :name, location = :location, description = :description, link = :link,
+            'UPDATE location_tips SET name = :name, location = :location, description = :description, submitted_by_name = :submitted_by_name, link = :link,
              episode_guid = :episode_guid, episode_timestamp_seconds = :episode_timestamp_seconds,
              image_path = :image_path, updated_at = NOW() WHERE id = :id'
         );
@@ -302,6 +303,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             ':name' => $name,
             ':location' => $location,
             ':description' => $description,
+            ':submitted_by_name' => $submittedByName,
             ':link' => $link,
             ':episode_guid' => $episodeGuid,
             ':episode_timestamp_seconds' => $episodeTimestampSeconds,
@@ -331,13 +333,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
         $nextSortOrder = (int) $pdo->query('SELECT COALESCE(MAX(sort_order), 0) + 1 FROM location_tips')->fetchColumn();
 
         $stmt = $pdo->prepare(
-            'INSERT INTO location_tips (name, location, description, link, episode_guid, episode_timestamp_seconds, image_path, created_by, created_via_feedback_id, sort_order)
-             VALUES (:name, :location, :description, :link, :episode_guid, :episode_timestamp_seconds, :image_path, :created_by, :feedback_id, :sort_order)'
+            'INSERT INTO location_tips (name, location, description, link, episode_guid, episode_timestamp_seconds, image_path, created_by, created_via_feedback_id, submitted_by_name, sort_order)
+             VALUES (:name, :location, :description, :link, :episode_guid, :episode_timestamp_seconds, :image_path, :created_by, :feedback_id, :submitted_by_name, :sort_order)'
         );
         $stmt->execute([
             ':name' => $name,
             ':location' => $location,
             ':description' => $description,
+            ':submitted_by_name' => $submittedByName,
             ':link' => $link,
             ':episode_guid' => $episodeGuid,
             ':episode_timestamp_seconds' => $episodeTimestampSeconds,
@@ -406,7 +409,14 @@ if (isset($_GET['edit'])) {
 // laesst sich nicht verlaesslich herausloesen - den traegt der Admin selbst ein.
 $prefillName = (string) ($_GET['prefill_name'] ?? '');
 $prefillDescription = (string) ($_GET['prefill_description'] ?? '');
+$prefillSubmitter = (string) ($_GET['prefill_submitter'] ?? '');
 $prefillFeedbackId = (string) ($_GET['prefill_feedback_id'] ?? '');
+
+// "Tipp von": uebernommene Einsendung -> Name des Einsenders (leer, wenn er keinen
+// angegeben hat); selbst angelegt -> Name des angemeldeten Admins.
+$currentAdminNameStmt = $pdo->prepare('SELECT name FROM admins WHERE id = :id');
+$currentAdminNameStmt->execute([':id' => $adminId]);
+$defaultSubmitter = $prefillFeedbackId !== '' ? $prefillSubmitter : (string) $currentAdminNameStmt->fetchColumn();
 
 $prefillFeedbackImage = null;
 if ($prefillFeedbackId !== '') {
@@ -472,6 +482,7 @@ $showCreateForm = $editTip !== null || $error !== null || $prefillFeedbackId !==
             <input type="hidden" name="feedback_id" value="<?= htmlspecialchars($prefillFeedbackId, ENT_QUOTES) ?>">
         <?php endif; ?>
         <label>Name der Location <input type="text" name="name" required value="<?= htmlspecialchars($editTip['name'] ?? $prefillName, ENT_QUOTES) ?>"></label>
+        <label>Tipp von <small>(steht in der App unter dem Tipp, leer = ohne Namen)</small> <input type="text" name="submitted_by_name" maxlength="100" value="<?= htmlspecialchars($editTip ? (string) ($editTip['submitted_by_name'] ?? '') : $defaultSubmitter, ENT_QUOTES) ?>"></label>
         <label>Ort <input type="text" name="location" required value="<?= htmlspecialchars($editTip['location'] ?? '', ENT_QUOTES) ?>"></label>
         <label>Beschreibung (optional) <textarea name="description" rows="3"><?= htmlspecialchars($editTip['description'] ?? $prefillDescription, ENT_QUOTES) ?></textarea></label>
         <label>Link (optional, z. B. Homepage/Karte) <input type="text" name="link" placeholder="www.beispiel.de" value="<?= htmlspecialchars($editTip['link'] ?? '', ENT_QUOTES) ?>"></label>
