@@ -235,9 +235,23 @@ Alles von der bisherigen Liste, für beide Rollen, soweit nicht anders vermerkt:
      Spitzname, Zuordnung der Beiträge. Nach 30 Tagen löscht der Server alles endgültig.
    - **Wahlweise „Sofort endgültig löschen“:** Konto, Name, E-Mail und die Verknüpfungen werden sofort und
      unwiderruflich gelöscht, auch aus dem Admin-Bereich.
-   - Hat jemand im Löschvorgang „Beiträge mitlöschen“ gewählt, werden diese bei der Rückkehrfrist sofort
-     ausgeblendet und erst nach 30 Tagen gelöscht (bei Rückkehr wieder sichtbar), bei „sofort endgültig“
-     sofort gelöscht.
+   - **Zwei getrennte Häkchen im Lösch-Dialog**, beide standardmäßig aus:
+     - ☐ **Meine Texte löschen** – Kommentare, Rezensionen, Veranstaltungs-, Film- und Locationtipps
+     - ☐ **Meine Fotos löschen** – Fotos und Videos in der Galerie
+
+     Überschneidung bei Tipps mit eingereichtem Bild: *nur Fotos* angehakt → der Tipp bleibt als
+     „Ehemaliges Mitglied“, sein Bild wird entfernt; *nur Texte* angehakt → der Tipp verschwindet samt
+     Bild. Was nicht angehakt ist, bleibt ohne Namen als „Ehemaliges Mitglied“ stehen.
+   - Bei der Rückkehrfrist wird Angehaktes sofort ausgeblendet und erst nach 30 Tagen gelöscht (bei
+     Rückkehr wieder sichtbar); bei „sofort endgültig“ sofort gelöscht.
+   - **Nicht öffentliche Nachrichten** (allgemeines Feedback, Fragen): bei der Rückkehrfrist bleiben sie
+     im Admin-Bereich, nach Ablauf ohne Namen („Ehemaliges Mitglied“); bei „sofort endgültig“ werden sie
+     mitgelöscht (Vorschlag, bis Thorsten etwas anderes sagt).
+   - **Rechtliche Voraussetzungen, dass Unangehaktes stehen bleiben darf:** keinerlei Verknüpfung mehr
+     zum alten Konto oder Gerät; Nutzungsrecht über die Kontolöschung hinaus in den
+     Nutzungsbedingungen; Hinweis im Lösch-Dialog und in der Datenschutzerklärung. Einzelne Beiträge, die
+     die Person trotzdem erkennbar machen (vor allem Fotos, auf denen sie zu sehen ist), auf Anfrage
+     per Mail löschen.
    - **Im Admin-Bereich** stehen Konten in der Rückkehrfrist sichtbar als *„Löschung vorgemerkt –
      Rückkehrfrist bis TT.MM.JJJJ“*, samt gewählter Option zu den Beiträgen.
    - Der Lösch-Dialog erklärt beide Wege in klaren Worten; die Datenschutzerklärung nennt die 30 Tage.
