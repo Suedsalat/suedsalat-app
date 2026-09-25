@@ -1,6 +1,6 @@
 # Konzept Version 2.0.0 – Gast und registrierter Hörer
 
-Stand: 2026-09-25 · Status: **Brainstorming abgeschlossen, alle Entscheidungen getroffen, noch nicht gebaut**
+Stand: 2026-09-25 · Status: **Alle Entscheidungen getroffen – bereit zum Bauen**
 
 **Veröffentlichung:** Es gibt kein eigenes 1.3.7. Alles, was für das gesammelte Release gebaut ist,
 geht zusammen mit dem Hörerkonto als **2.0.0 (Android-Code 18)** raus, am Ende der Testphase. Bis dahin
@@ -95,12 +95,12 @@ automatisch zum Newsletter an.
 
 - **Abmelden**
 - **Spitzname ändern** (mit denselben Regeln wie bei der Registrierung)
-- **Konto löschen** – direkt in der App, Pflicht bei Apple und Google. Gelöscht werden immer Konto,
-  Vor-/Nachname und E-Mail-Adresse. Im Löschvorgang wird **angeboten**, die eigenen öffentlichen
-  Beiträge (Tipps, Fotos, Rezensionen, Kommentare) **mitzulöschen** – Standard ist: nur das Konto.
-  Bleiben Beiträge stehen, erscheinen sie ohne Spitznamen als **„Ehemaliges Mitglied“** (Vorschlag):
-  Der Spitzname wird dadurch wieder frei, und niemand kann später unter demselben Namen
-  scheinbar die alten Beiträge fortsetzen.
+- **Konto löschen** – direkt in der App, Pflicht bei Apple und Google. Standard: **30 Tage Rückkehrfrist**,
+  wahlweise **sofort endgültig** (Einzelheiten in Abschnitt 10, Punkt 7). Im Löschvorgang wird
+  **angeboten**, die eigenen öffentlichen Beiträge **mitzulöschen** – Standard ist: nur das Konto.
+  Bleiben Beiträge stehen, erscheinen sie ohne Spitznamen als **„Ehemaliges Mitglied“**: Der Spitzname
+  wird dadurch wieder frei, und niemand kann später unter demselben Namen scheinbar die alten Beiträge
+  fortsetzen.
 - **Anonyme Statistik** ein/aus
 - Gäste: **gemerkter Name** für Feedback ändern/löschen; **Anmelden / Registrieren**
 
@@ -223,8 +223,26 @@ Alles von der bisherigen Liste, für beide Rollen, soweit nicht anders vermerkt:
 4. **Bestehendes bleibt das Fundament**, vorhandene Rezensionen und Tipps bleiben unverändert.
 5. **CarPlay-Menü kommt mit in 2.0.0**, gleichwertig zu Android Auto.
 
-Einziger noch zu bestätigender Vorschlag: die Anzeige „Ehemaliges Mitglied“ bei stehengebliebenen
-Beiträgen gelöschter Konten.
+6. **„Ehemaliges Mitglied“ bestätigt.** Wer sein Konto löscht, erscheint bei stehengebliebenen
+   Beiträgen nicht mehr mit Spitznamen. Eine **Neuregistrierung** mit derselben E-Mail ist jederzeit
+   möglich – als neues Mitglied; der alte Spitzname nur, wenn er noch frei ist; alte Beiträge werden
+   nicht wieder zugeordnet.
+
+7. **Konto löschen mit 30 Tagen Rückkehrfrist, wahlweise sofort endgültig:**
+   - **Standard – 30 Tage Rückkehrfrist:** Das Konto wird sofort stillgelegt. Der Spitzname ist nirgends
+     mehr zu sehen, Beiträge zeigen „Ehemaliges Mitglied“, die Person ist auf allen Geräten abgemeldet.
+     Wer sich innerhalb von 30 Tagen mit derselben E-Mail wieder anmeldet, bekommt alles zurück: Konto,
+     Spitzname, Zuordnung der Beiträge. Nach 30 Tagen löscht der Server alles endgültig.
+   - **Wahlweise „Sofort endgültig löschen“:** Konto, Name, E-Mail und die Verknüpfungen werden sofort und
+     unwiderruflich gelöscht, auch aus dem Admin-Bereich.
+   - Hat jemand im Löschvorgang „Beiträge mitlöschen“ gewählt, werden diese bei der Rückkehrfrist sofort
+     ausgeblendet und erst nach 30 Tagen gelöscht (bei Rückkehr wieder sichtbar), bei „sofort endgültig“
+     sofort gelöscht.
+   - **Im Admin-Bereich** stehen Konten in der Rückkehrfrist sichtbar als *„Löschung vorgemerkt –
+     Rückkehrfrist bis TT.MM.JJJJ“*, samt gewählter Option zu den Beiträgen.
+   - Der Lösch-Dialog erklärt beide Wege in klaren Worten; die Datenschutzerklärung nennt die 30 Tage.
+
+Alle Punkte sind entschieden – das Konzept ist bereit zum Bauen.
 
 **Grobe Schätzung:** Server 2–3 Tage, App 3–4 Tage, dazu Nutzungsbedingungen, Datenschutz, Store-Angaben
 und Testen.
