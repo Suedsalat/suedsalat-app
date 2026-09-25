@@ -134,6 +134,14 @@ try {
     // Login-Versuche nur fuer das 15-Minuten-Rate-Limit relevant (siehe Auth::isRateLimited) -
     // 30 Tage Aufbewahrung als grosszuegiger Puffer fuer eine manuelle Nachschau.
     $pdo->exec('DELETE FROM login_attempts WHERE attempted_at < (NOW() - INTERVAL 30 DAY)');
+    // Loeschfristen aus der Datenschutzerklaerung (seiten/datenschutz.html, Abschnitt 2):
+    // App-Installationen, die ein Jahr nicht mehr benutzt wurden, verlieren ihre Kennung.
+    // last_seen_at wird bei jeder Token-Erneuerung aktualisiert (api/auth/refresh.php),
+    // aktive Installationen sind also nie betroffen. Rezensionen bleiben erhalten,
+    // tip_reviews.device_id wird per ON DELETE SET NULL nur entkoppelt.
+    $pdo->exec('DELETE FROM devices WHERE COALESCE(last_seen_at, created_at) < (NOW() - INTERVAL 12 MONTH)');
+    // Pseudonyme Zaehlwerte fuer "eindeutige Hoerer" nach 14 Monaten entfernen.
+    $pdo->exec('DELETE FROM episode_unique_devices WHERE day < (CURDATE() - INTERVAL 14 MONTH)');
     echo 'Aufraeumen abgeschlossen.' . PHP_EOL;
 } catch (\Throwable $e) {
     error_log('Cleanup alter Auth-Zeilen fehlgeschlagen: ' . $e->getMessage());

@@ -49,6 +49,19 @@ if ($result['subject_type'] !== 'device') {
     exit;
 }
 
+// "Zuletzt gesehen" bei jeder Erneuerung mitfuehren - daran haengt die Loeschfrist
+// fuer inaktive Installationen im Cronjob (siehe cron/sync-episodes.php). Ohne das
+// stuende hier nur der Zeitpunkt der Erstanmeldung, und die Frist wuerde auch
+// Geraete treffen, die die App taeglich nutzen. Der Zeitstempel ist Nebensache:
+// schlaegt er fehl, darf das die Token-Erneuerung selbst nie verhindern.
+try {
+    \Suedsalat\Database::connection()
+        ->prepare('UPDATE devices SET last_seen_at = NOW() WHERE id = :id')
+        ->execute([':id' => (int) $result['subject_id']]);
+} catch (\Throwable $e) {
+    error_log('last_seen_at konnte nicht aktualisiert werden: ' . $e->getMessage());
+}
+
 $accessToken = Jwt::issue(['sub' => $result['subject_id'], 'typ' => 'device'], JWT_ACCESS_TTL_MINUTES * 60);
 
 echo json_encode([
