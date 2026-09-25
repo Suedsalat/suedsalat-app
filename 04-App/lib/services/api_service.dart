@@ -33,7 +33,18 @@ class ApiException implements Exception {
 ///
 /// Die Basis-URL wird gesetzt, sobald das Backend auf Strato erreichbar ist.
 class ApiService {
-  static const String baseUrl = 'https://www.xn--sdsalat-n2a.eu/APP/api';
+  static const String _liveBaseUrl = 'https://www.xn--sdsalat-n2a.eu/APP/api';
+
+  /// Server-Adresse. Normale Builds sprechen mit dem Live-Server; eine Test-App fuer den
+  /// Testbereich wird mit --dart-define=API_BASE_URL=https://www.xn--sdsalat-n2a.eu/APP-test/api
+  /// gebaut (siehe 03-Backend/TESTBEREICH.md).
+  static const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: _liveBaseUrl);
+
+  /// Test-App: zeigt ein "TEST"-Band, damit sie niemand mit der echten verwechselt.
+  static const bool isTestBackend = baseUrl != _liveBaseUrl;
+
+  /// Admin-Bereich passend zum Server (live bzw. Testbereich).
+  static String get adminLoginUrl => '${baseUrl.substring(0, baseUrl.length - '/api'.length)}/admin/login.php';
 
   /// Fuehrt [send] mit einem gueltigen Access-Token im Authorization-Header aus.
   /// Bei 401 wird einmal mit erzwungenem Token-Refresh wiederholt (deckt

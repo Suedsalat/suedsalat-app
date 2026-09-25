@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/account_service.dart';
+import '../../services/api_service.dart';
 import '../../services/push_notification_service.dart';
 import '../../services/stats_consent_service.dart';
 import '../account/account_screen.dart';
@@ -193,9 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     leading: const Icon(Icons.admin_panel_settings_outlined),
                     title: const Text('Admin-Bereich'),
                     subtitle: const Text('Für Jenny & Thorsten'),
-                    onTap: () => _openUrl(
-                      'https://www.xn--sdsalat-n2a.eu/APP/admin/login.php',
-                    ),
+                    onTap: () => _openUrl(ApiService.adminLoginUrl),
                   ),
                   const Divider(),
                   Padding(

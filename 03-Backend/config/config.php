@@ -88,6 +88,8 @@ define('SMTP_FROM_NAME', env('SMTP_FROM_NAME', 'Suedsalat'));
 // Nur Testumgebung: Mails werden als Dateien in diesen Ordner geschrieben statt verschickt.
 // Live nicht gesetzt.
 define('MAIL_CAPTURE_DIR', env('MAIL_CAPTURE_DIR'));
+// Nur Testbereich auf Strato (APP-test/): Praefix fuer den Mail-Betreff, z. B. "[TEST]".
+define('MAIL_SUBJECT_PREFIX', env('MAIL_SUBJECT_PREFIX'));
 
 define('APP_URL', env('APP_URL', 'https://www.suedsalat.eu'));
 define('CRON_SECRET', env('CRON_SECRET'));

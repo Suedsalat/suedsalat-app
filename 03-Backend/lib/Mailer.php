@@ -11,6 +11,11 @@ final class Mailer
     /** @throws PHPMailerException */
     public static function send(string $toEmail, string $toName, string $subject, string $htmlBody): void
     {
+        // Testbereich auf Strato (APP-test/): Betreff mit "[TEST]" davor, damit niemand eine
+        // Test-Mail fuer echt haelt. Live nicht gesetzt.
+        if (MAIL_SUBJECT_PREFIX !== null && MAIL_SUBJECT_PREFIX !== '') {
+            $subject = MAIL_SUBJECT_PREFIX . ' ' . $subject;
+        }
         // Testumgebung: nichts verschicken, sondern die Mail als Datei ablegen, damit sich
         // Inhalt und Aufmachung pruefen lassen. MAIL_CAPTURE_DIR ist live nie gesetzt.
         if (MAIL_CAPTURE_DIR !== null) {

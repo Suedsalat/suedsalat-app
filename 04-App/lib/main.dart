@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/splash_screen.dart';
 import 'services/account_service.dart';
+import 'services/api_service.dart';
 import 'services/audio_handler.dart';
 import 'services/push_notification_service.dart';
 import 'services/stats_consent_service.dart';
@@ -93,7 +94,10 @@ class SuedsalatApp extends StatelessWidget {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: _kMaxAppWidth),
-              child: child,
+              // Test-App gegen den Testbereich: unuebersehbares Band oben links.
+              child: ApiService.isTestBackend
+                  ? Banner(message: 'TEST', location: BannerLocation.topStart, child: child)
+                  : child,
             ),
           ),
         );
