@@ -276,8 +276,10 @@ final class Listener
         }
 
         $pdo->exec('DELETE FROM listener_login_codes WHERE created_at < DATE_SUB(NOW(), INTERVAL 1 DAY)');
+        // Erledigte Meldungen nach 12 Monaten loeschen (Datenschutzerklaerung); offene bleiben bis zur Entscheidung.
+        $meldungen = $pdo->exec("DELETE FROM content_reports WHERE status <> 'open' AND handled_at < DATE_SUB(NOW(), INTERVAL 12 MONTH)");
 
-        return "Hoererkonten: {$reminded} Erinnerung(en), {$deleted} endgueltig geloescht.";
+        return "Hoererkonten: {$reminded} Erinnerung(en), {$deleted} endgueltig geloescht, {$meldungen} alte Meldung(en) geloescht.";
     }
 
     /** Was die App ueber das eigene Konto sehen darf (kein interner Kram). @param array<string,mixed> $l */

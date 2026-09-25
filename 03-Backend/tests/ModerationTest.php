@@ -108,6 +108,15 @@ check(($r['reviews'][0]['is_own'] ?? null) === false && !array_key_exists('liste
 [, $r] = api('GET', '/api/tip-reviews.php?tip_type=movie_tip&tip_id=1', $gast);
 check(($r['reviews'][0]['is_own'] ?? null) === false, 'Gast: is_own false');
 
+echo "Aufbewahrung von Meldungen\n";
+$pdo->exec("INSERT INTO content_reports (content_type, content_id, reporter_device_id, category, status, handled_at) VALUES
+            ('review', 999, 1, 'spam', 'dismissed', DATE_SUB(NOW(), INTERVAL 13 MONTH)),
+            ('review', 998, 1, 'spam', 'removed', DATE_SUB(NOW(), INTERVAL 11 MONTH)),
+            ('review', 997, 1, 'spam', 'open', NULL)");
+\Suedsalat\Listener::runMaintenance($pdo);
+check((int) $pdo->query('SELECT COUNT(*) FROM content_reports WHERE content_id = 999')->fetchColumn() === 0, 'erledigte Meldung nach 12 Monaten geloescht');
+check((int) $pdo->query('SELECT COUNT(*) FROM content_reports WHERE content_id IN (997, 998)')->fetchColumn() === 2, 'juengere und offene Meldungen bleiben');
+
 echo "Gesperrte Hoerer\n";
 $pdo->exec("UPDATE listeners SET blocked_at = NOW() WHERE nickname = 'Dora'");
 [$s] = $report($tok['Dora'], 'review', $rid);

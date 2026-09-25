@@ -191,6 +191,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   ListTile(
+                    leading: const Icon(Icons.gavel_outlined),
+                    title: const Text('Nutzungsbedingungen'),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacyScreen.nutzungsbedingungen(),
+                      ),
+                    ),
+                  ),
+                  ListTile(
                     leading: const Icon(Icons.admin_panel_settings_outlined),
                     title: const Text('Admin-Bereich'),
                     subtitle: const Text('Für Jenny & Thorsten'),

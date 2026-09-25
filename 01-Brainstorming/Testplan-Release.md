@@ -237,14 +237,20 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    Fließtext normal, auf das Logo abgestimmt. Die lizenzpflichtige Franklin Gothic, Open Sans und das
    Paket `google_fonts` sind raus, die App lädt keine Schrift nach. `test/schrift_test.dart` schlägt
    fehl, wenn das Theme eine Stärke ohne Datei anfordert. Beim Testen auf das Schriftbild achten.
-6a. **Mit dem Release: Datenschutzerklärung Abschnitt 2 c anpassen** (`seiten/datenschutz.html`), weil der
-   Name bei Tipps dann Pflicht ist und immer öffentlich erscheint. Zwei Stellen ersetzen:
-   - „Optional kannst du deinen Namen angeben, die Nachricht …“ →
-     „Dazu gibst du einen Namen an – ein Spitzname genügt. Optional kannst du die Nachricht …“
-   - „Hast du einen Namen angegeben, nennen wir dich dabei in der Regel als Einsender (z. B. „von Inga“).
-     Möchtest du das nicht, lass das Namensfeld einfach leer.“ →
-     „Dabei steht dein Name dabei („Tipp von Inga“ bzw. „Foto von Inga“) – du kannst dafür auch einen
-     Spitznamen verwenden. Unsere eigenen Beiträge erscheinen als „Südsalat“.“
+6a. **Rechtstexte mit dem Release hochladen** (liegen fertig in `U:\Web\seiten`, Stand 25.09.2026):
+   - `nutzungsbedingungen.html` neu hochladen (Fassung 2026-10 = `Listener::TERMS_VERSION`). Die App
+     verlinkt sie bei der Registrierung und in den Einstellungen – vorher gibt es dort nur eine 404.
+   - `datenschutz-2.0.html` als `datenschutz.html` hochladen (alte Fassung vorher lokal sichern). Neu:
+     Hörerkonto, Kommentare, Melden/Ausblenden/Sperren, Statistik nur mit Einwilligung, eigene Schrift.
+   - In `index.html` und `impressum.html` im Fußbereich den Link „Nutzungsbedingungen“ ergänzen.
+   - Empfehlung: beide Texte vorher von einer fachkundigen Stelle prüfen lassen (vor allem Nr. 6
+     „Rechte an deinen Beiträgen“ und die Haftung).
+6b. **Noch zu bauen, Pflicht für die Stores:** (1) **Web-Seite zum Löschen des Kontos** ohne App – Google
+   verlangt die Adresse in der Play Console. (2) **Demo-Konto für die Apple-Prüfer** mit festem Code, weil
+   die Anmeldung per Mail-Code läuft.
+6c. **Bevor die Nutzungsbedingungen später einmal geändert werden:** In der App eine erneute Zustimmung
+   einbauen (die Bedingungen versprechen in Nr. 12, dass neue Beiträge erst nach Zustimmung zur neuen
+   Fassung möglich sind). Die Fassung steht pro Konto in `listeners.terms_version`.
 7. **Nach dem Release beider Stores:** in `seiten/datenschutz.html` den Übergangsabsatz
    „2 h) Schriftart“ entfernen, sobald keine App-Version mehr im Umlauf ist, die die Schrift von
    Google lädt.

@@ -20,16 +20,30 @@ import '../../widgets/async_state_views.dart';
 /// Zusage in Abschnitt 2d/6 widersprechen, dass die App selbst kein Tracking
 /// enthaelt. Stattdessen wird nur das reine HTML aus dem <main>-Bereich
 /// geladen und ohne Skriptausfuehrung nativ gerendert.
+///
+/// Dieselbe Ansicht zeigt auch die Nutzungsbedingungen (PrivacyScreen.nutzungsbedingungen).
 class PrivacyScreen extends StatefulWidget {
-  const PrivacyScreen({super.key});
+  static const datenschutzUrl =
+      'https://www.xn--sdsalat-n2a.eu/seiten/datenschutz.html';
+  static const nutzungsbedingungenUrl =
+      'https://www.xn--sdsalat-n2a.eu/seiten/nutzungsbedingungen.html';
+
+  final String url;
+  final String title;
+
+  const PrivacyScreen({super.key})
+    : url = datenschutzUrl,
+      title = 'Datenschutzerklärung';
+
+  const PrivacyScreen.nutzungsbedingungen({super.key})
+    : url = nutzungsbedingungenUrl,
+      title = 'Nutzungsbedingungen';
 
   @override
   State<PrivacyScreen> createState() => _PrivacyScreenState();
 }
 
 class _PrivacyScreenState extends State<PrivacyScreen> {
-  static const _url = 'https://www.xn--sdsalat-n2a.eu/seiten/datenschutz.html';
-
   late Future<String> _future;
 
   @override
@@ -39,9 +53,11 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
   }
 
   Future<String> _load() async {
-    final response = await http.get(Uri.parse(_url));
+    final response = await http.get(Uri.parse(widget.url));
     if (response.statusCode != 200) {
-      throw Exception('Datenschutzerklärung konnte nicht geladen werden (${response.statusCode})');
+      throw Exception(
+        '${widget.title} konnte nicht geladen werden (${response.statusCode})',
+      );
     }
 
     // Die Seite deklariert UTF-8 nur per <meta charset>, nicht im HTTP-Header -
@@ -49,7 +65,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     final document = html_parser.parse(utf8.decode(response.bodyBytes));
     final main = document.querySelector('main');
     if (main == null || main.innerHtml.trim().isEmpty) {
-      throw Exception('Datenschutzerklärung hat ein unerwartetes Format.');
+      throw Exception('${widget.title} hat ein unerwartetes Format.');
     }
 
     // "Zurück zur Hauptseite"-Link entfernen - das ist Homepage-Navigation,
@@ -66,8 +82,22 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     await _future;
   }
 
+  /// Links in den Texten sind relativ zur Homepage-Seite ("impressum.html"). Verweise zwischen
+  /// Datenschutzerklaerung und Nutzungsbedingungen oeffnen sich direkt in der App.
   Future<void> _openLink(String url) async {
-    final uri = Uri.parse(url);
+    final uri = Uri.parse(widget.url).resolve(url);
+    final ziel = uri.toString();
+    if (ziel == PrivacyScreen.datenschutzUrl ||
+        ziel == PrivacyScreen.nutzungsbedingungenUrl) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ziel == PrivacyScreen.datenschutzUrl
+              ? const PrivacyScreen()
+              : const PrivacyScreen.nutzungsbedingungen(),
+        ),
+      );
+      return;
+    }
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -76,7 +106,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Datenschutzerklärung')),
+      appBar: AppBar(title: Text(widget.title)),
       body: FutureBuilder<String>(
         future: _future,
         builder: (context, snapshot) {

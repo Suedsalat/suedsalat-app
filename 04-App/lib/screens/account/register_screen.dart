@@ -1,16 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/account_service.dart';
 import '../../services/stats_consent_service.dart';
 import '../settings/privacy_screen.dart';
 import 'code_screen.dart';
 import 'login_screen.dart';
-
-/// Nutzungsbedingungen auf der Homepage (Etappe 8 des 2.0-Plans).
-const kTermsUrl =
-    'https://www.xn--sdsalat-n2a.eu/seiten/nutzungsbedingungen.html';
 
 /// Registrierung: Vorname, Nachname, E-Mail, Spitzname -> Code per Mail -> Konto.
 /// Schliesst sich mit `true`, wenn das Konto angelegt ist.
@@ -178,9 +173,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       text: 'Nutzungsbedingungen',
                       style: linkStyle,
                       recognizer: TapGestureRecognizer()
-                        ..onTap = () => launchUrl(
-                          Uri.parse(kTermsUrl),
-                          mode: LaunchMode.externalApplication,
+                        ..onTap = () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const PrivacyScreen.nutzungsbedingungen(),
+                          ),
                         ),
                     ),
                     const TextSpan(text: ' und bin mindestens 16 Jahre alt.'),
