@@ -37,11 +37,16 @@ Verbleibende Unterschiede sind kleine Formdetails; SÜDSALAT deckt sich zu 90 % 
 
 ## In Windows installiert
 
-Seit 25.09.2026 für Thorstens Windows-Benutzer installiert (ohne Admin-Rechte):
-`%LOCALAPPDATA%\Microsoft\Windows\Fonts\Suedsalat-*.ttf`, eingetragen unter
-`HKCU\Software\Microsoft\Windows NT\CurrentVersion\Fonts`. Auf einem anderen PC: beide
-`.ttf` rechts anklicken › „Installieren“. Eine neuere Fassung einfach genauso darüber installieren
-(laufende Programme vorher schließen).
+Für Thorstens Windows-Benutzer installiert (ohne Admin-Rechte), aktuell **Version 1.002**:
+`%LOCALAPPDATA%\Microsoft\Windows\Fonts\Suedsalat-Regular-v1002.ttf` und `...-Bold-v1002.ttf`,
+eingetragen unter `HKCU\Software\Microsoft\Windows NT\CurrentVersion\Fonts`.
+
+**Neue Fassung installieren:** immer unter einem **neuen Dateinamen** (z. B. `-v1003`), Registry-
+Eintrag darauf umstellen, alte Datei löschen. Überschreibt man die Datei unter gleichem Namen, merkt
+der Schriften-Zwischenspeicher von Windows (WPF/DirectWrite, auch Office) das nicht und findet die
+Schrift nicht mehr – so am 25.09.2026 passiert. Auf einem anderen PC: alte Südsalat-Schriften in
+Einstellungen › Schriftarten deinstallieren, dann beide `.ttf` rechts anklicken › „Installieren“.
+Laufende Programme danach neu starten.
 
 ## Logo in PowerPoint mit Südsalat setzen
 
