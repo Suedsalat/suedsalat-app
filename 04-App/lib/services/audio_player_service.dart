@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
+import '../models/bonus_item.dart';
 import '../models/episode.dart';
 import 'api_service.dart';
 import 'car_context_service.dart';
@@ -165,7 +166,7 @@ class AudioPlayerService extends ChangeNotifier {
     notifyListeners();
     _firedMilestones.clear();
     await _player.play(UrlSource(episode.audioUrl), position: start);
-    unawaited(_trackPlayWithCarContext(episode.guid));
+    if (!_isBonus(episode)) unawaited(_trackPlayWithCarContext(episode.guid));
   }
 
   // Wiedergabeposition merken: alle 10 Sekunden Wiedergabe, beim Pausieren, Stoppen und beim
@@ -201,9 +202,12 @@ class AudioPlayerService extends ChangeNotifier {
   /// da manche Hoerer schon beim Abspann abschalten, bevor die Datei technisch
   /// zu Ende ist - eine strikte "letzte Sekunde"-Pruefung wuerde solche
   /// vollstaendigen Anhoerungen sonst nicht mitzaehlen.
+  /// Bonus und Outtakes laufen im selben Player, zaehlen aber nicht in der Folgen-Statistik.
+  static bool _isBonus(Episode episode) => episode.guid.startsWith(BonusItem.guidPrefix);
+
   void _checkMilestones() {
     final episode = currentEpisode;
-    if (episode == null) return;
+    if (episode == null || _isBonus(episode)) return;
 
     for (final entry in _minuteMilestones.entries) {
       if (!_firedMilestones.contains(entry.key) && position >= entry.value) {

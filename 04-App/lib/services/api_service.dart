@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+import '../models/bonus_item.dart';
 import '../models/episode.dart';
 import '../models/event.dart';
 import '../models/json_helpers.dart';
@@ -99,6 +100,18 @@ class ApiService {
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data.map((e) => Episode.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// Bonus und Outtakes - nur mit Hoererkonto (sonst 403).
+  Future<List<BonusItem>> fetchBonus() async {
+    final response = await _authorizedRequest(
+      (headers) => http.get(Uri.parse('$baseUrl/bonus.php'), headers: headers),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Bonus und Outtakes konnten nicht geladen werden (${response.statusCode})');
+    }
+    final data = jsonDecode(response.body) as List<dynamic>;
+    return data.map((e) => BonusItem.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<List<Event>> fetchEvents() async {

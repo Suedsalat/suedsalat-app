@@ -229,6 +229,24 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     // ---------------------------------------------------------------------------------------
+    // Etappe 7: Bonus und Outtakes
+    // ---------------------------------------------------------------------------------------
+
+    // Eigene Audiodateien (nicht aus dem RSS-Feed), nur Thorsten laedt hoch, nur angemeldete
+    // Hoerer sehen den Bereich. audio_url wie image_path bei Fotos als volle Adresse.
+    create_table($pdo, 'bonus_content', "CREATE TABLE bonus_content (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        title VARCHAR(200) NOT NULL,
+        description TEXT NULL,
+        audio_url VARCHAR(500) NOT NULL,
+        published_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        created_by INT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NULL,
+        KEY bonus_content_published_idx (published_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // ---------------------------------------------------------------------------------------
     // Store-Pruefung und Kontoloeschung ueber die Website
     // ---------------------------------------------------------------------------------------
 

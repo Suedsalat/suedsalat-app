@@ -204,6 +204,30 @@ Rückkehrfrist“ ausprobieren und dich danach wieder anmelden.
 - „Datenschutzerklärung“ und „Nutzungsbedingungen“ öffnen sich lesbar in der App.
 - Überall die neue Südsalat-Schrift: Überschriften fett, nichts abgeschnitten, keine Ersatzschrift.
 
+### 16. Folge geht an der letzten Stelle weiter
+
+Vorher fing eine Folge nach einer Unterbrechung oder einem Neustart der App wieder von vorn an.
+
+**So prüfst du es:** Hör eine Folge ein paar Minuten, schließ die App ganz (aus der Übersicht der
+offenen Apps wischen) und starte dieselbe Folge wieder.
+
+**Erwartet:**
+- Die Folge geht ein paar Sekunden vor der Stelle weiter, an der du aufgehört hast.
+- In der Folgenliste steht bei ihr „Weiter bei 12:34“.
+- Wer nach weniger als 30 Sekunden abbricht oder bis zum Ende hört, fängt beim nächsten Mal vorn an.
+- Ein Sprung von einer Veranstaltung oder einem Tipp zur passenden Stelle einer Folge geht weiterhin
+  genau dorthin.
+
+### 17. Bonus und Outtakes
+
+**So prüfst du es:** Schau als Gast und angemeldet auf die Startseite.
+
+**Erwartet:**
+- Als Gast gibt es die Kachel „Bonus und Outtakes“ nicht.
+- Angemeldet steht sie direkt unter der Galerie. Sie öffnet die Liste mit Titel, Datum und Text.
+- Antippen spielt den Beitrag im normalen Player, auch mit gesperrtem Bildschirm.
+- Das Symbol ist noch ein Platzhalter, bis Thorstens eigenes fertig ist.
+
 ---
 
 ## Teil B — Aus 1.3.3 bis 1.3.6, für die Tester zum ersten Mal sichtbar
@@ -211,7 +235,7 @@ Rückkehrfrist“ ausprobieren und dich danach wieder anmelden.
 Diese Dinge sind seit Mitte September fertig, kamen aber nie bei den Testern an. Wer von 1.3.2
 kommt, sieht sie jetzt zum ersten Mal — deshalb gehören sie in den Test.
 
-### 16. Android Auto
+### 18. Android Auto
 
 Die größte Neuerung dieses Sprungs. Die App meldet sich beim Auto als Medien-App an.
 
@@ -230,14 +254,14 @@ Die größte Neuerung dieses Sprungs. Die App meldet sich beim Auto als Medien-A
 **Bitte unbedingt melden, wenn** "Auswahl konnte nicht geladen werden" erscheint — das war der Fehler,
 der mehrere Anläufe gekostet hat, und der Fix ist in der Fassung, die ihr bekommt.
 
-### 17. Wiedergabe-Anzeige auf dem Sperrbildschirm
+### 19. Wiedergabe-Anzeige auf dem Sperrbildschirm
 
 **Erwartet:** Beim Abspielen erscheint eine Benachrichtigung mit Titel, Bild und Steuerung. Das
 Symbol in der Statusleiste ist einfarbig, nicht das bunte App-Icon. Läuft eine Folge ohne eigenes
 Bild, steht dort das quadratische Südsalat-Logo mit Schriftzug, kein einzelnes Mikrofon auf leerem
 Grund.
 
-### 18. Feedback einer Folge zuordnen
+### 20. Feedback einer Folge zuordnen
 
 **So prüfst du es:** Öffne das Feedback-Formular.
 
@@ -274,6 +298,10 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
 - **Rezensionen im Admin-Bereich:** Der Name ist in allen drei Formularen Pflicht und mit „Südsalat“
   vorbelegt; auch die Rezension per Häkchen beim Anlegen eines Tipps heißt „Südsalat“. Beim Bearbeiten
   einer Rezension lässt sich der Name nicht leeren.
+
+- **Neue Seite „Bonus und Outtakes“** (nur Thorsten, Menü „Inhalte“): Titel, Text und Audiodatei
+  (MP3 oder M4A, höchstens 24 MB) anlegen, bearbeiten, Datei austauschen, löschen. Erscheint sofort in der
+  App, eine Push-Nachricht geht nicht raus. Jenny sieht die Seite nicht.
 
 ### Bereits live, nicht Teil dieses Release-Tests
 

@@ -65,6 +65,9 @@ function admin_nav_active(string $page, string $current): string
         <a class="<?= admin_nav_active('movie-tips.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/movie-tips.php">Filmtipps</a>
         <a class="<?= admin_nav_active('location-tips.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/location-tips.php">Locations</a>
         <a class="<?= admin_nav_active('tip-reviews.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/tip-reviews.php">Rezensionen</a>
+        <?php if ($isOwner): ?>
+        <a class="<?= admin_nav_active('bonus.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/bonus.php">Bonus und Outtakes</a>
+        <?php endif; ?>
 
         <div class="sidebar-group-label">Hörer</div>
         <a class="<?= admin_nav_active('listeners.php', $currentAdminPage) ?>" href="<?= BASE_PATH ?>/admin/listeners.php">Hörerkonten</a>
