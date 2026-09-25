@@ -22,15 +22,15 @@ Adminbereich.
 
 Vorher wurde die App beim Zurückwischen sofort beendet, egal wo man gerade war.
 
-**So prüfst du es:** Geh unten auf einen beliebigen Bereich (Folgen, Filmtipps, Galerie …) und wisch
-vom Bildschirmrand nach innen zurück.
+**So prüfst du es:** Geh unten auf einen beliebigen Bereich (Folgen, Filmtipps, Galerie …) und geh
+zurück — per Wischgeste vom Bildschirmrand **oder** mit der Zurück-Taste unten.
 
-**Erwartet:** Du landest auf der Startseite. Wischst du dort noch einmal zurück, schließt sich die App
+**Erwartet:** Du landest auf der Startseite. Gehst du dort noch einmal zurück, schließt sich die App
 wie gewohnt. Öffnest du vorher noch einen einzelnen Eintrag, bringt dich Zurück erst wieder in die
 Liste und von dort auf die Startseite.
 
-**Besonders wichtig für:** alle mit Wischgeste statt der drei Tasten unten. Gemeldet von Daniel auf
-dem Pixel 9a.
+**Betrifft beide Bedienarten:** Wischgeste und Zurück-Taste lösen unter Android denselben Vorgang aus.
+Gemeldet von Daniel (Pixel 9a, Wischgeste) und Angela (Zurück-Taste).
 
 ### 2. Folge springt nicht mehr fälschlich auf "beendet"
 
@@ -190,9 +190,11 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    wird dabei einmal komplett überschrieben.
 5. Release-Notes decken alles seit **1.3.2** ab, nicht nur seit der letzten gebauten Fassung — das ist
    der Stand, von dem die Nutzer tatsächlich kommen.
-6. **Vor dem Build: Schrift in die App einbetten.** Die App lädt Open Sans bisher zur Laufzeit von
-   Google (`GoogleFonts.openSansTextTheme()` in `lib/theme/app_theme.dart`). Schriftdateien als Asset
-   mitliefern und das Nachladen abschalten (`GoogleFonts.config.allowRuntimeFetching = false`).
+6. ~~Vor dem Build: Schrift in die App einbetten.~~ **Erledigt im Code (2026-09-25):** Open Sans 400
+   liegt unter `assets/google_fonts/`, das Nachladen von Google ist in `main.dart` abgeschaltet. Der
+   Test `test/google_fonts_offline_test.dart` schlägt fehl, falls das Theme je eine Variante anfordert,
+   die dort nicht liegt. Beim Testen der App kurz auf die Schrift achten: Fließtext muss wie bisher
+   aussehen, nicht wie Roboto oder eine andere Systemschrift.
 7. **Nach dem Release beider Stores:** in `seiten/datenschutz.html` den Übergangsabsatz
    „2 h) Schriftart“ entfernen, sobald keine App-Version mehr im Umlauf ist, die die Schrift von
    Google lädt.

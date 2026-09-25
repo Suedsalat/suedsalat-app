@@ -116,6 +116,9 @@ flutter:
     - assets/images/newsletter.png
     - assets/images/feedback_rand.png
     - assets/audio/app-start.mp3
+    # Open Sans wird mitgeliefert statt zur Laufzeit von Google geladen
+    # (Datenschutz, siehe main.dart) - nur die Staerke, die das Textschema anfordert (400).
+    - assets/google_fonts/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
