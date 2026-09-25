@@ -291,6 +291,20 @@ Alles von der bisherigen Liste, für beide Rollen, soweit nicht anders vermerkt:
      per Mail löschen.
    - **Im Admin-Bereich** stehen Konten in der Rückkehrfrist sichtbar als *„Löschung vorgemerkt –
      Rückkehrfrist bis TT.MM.JJJJ“*, samt gewählter Option zu den Beiträgen.
+   - **E-Mails an den Hörer**, alle im Südsalat-Briefkopf (vorhanden: `render_branded_email_html()`):
+     - **Bestätigung direkt beim Löschen**, je nach Auswahl: was gelöscht wurde (Konto, Name, E-Mail,
+       ggf. Rezensionen/Kommentare und Fotos), was als „Ehemaliges Mitglied“ bleibt. Bei der Rückkehrfrist
+       mit Datum der endgültigen Löschung und dem Hinweis, dass eine Anmeldung bis dahin alles
+       wiederherstellt. Bei „sofort endgültig“ die Bestätigung der endgültigen Löschung – danach wird auch
+       die E-Mail-Adresse gelöscht. (Erfüllt zugleich Art. 12 Abs. 3 DSGVO: Information über die
+       ausgeführte Löschung.)
+     - **Erinnerung drei Tage vor Fristende:** „Dein Konto wird am … endgültig gelöscht. Wenn du es behalten
+       möchtest, melde dich einfach an.“
+     - **„Willkommen zurück“**, wenn jemand sein Konto innerhalb der Frist wiederherstellt.
+   - **Bestätigungscode vor „sofort endgültig“:** Weil diese Löschung nicht rückgängig zu machen ist, wird
+     sie erst ausgeführt, nachdem ein per Mail gesendeter Code in der App eingegeben wurde. Schützt davor,
+     dass jemand mit einem fremden, entsperrten Handy ein Konto unwiderruflich löscht. Bei der Rückkehrfrist
+     nicht nötig, dort warnt die Bestätigungsmail und alles lässt sich zurückholen.
    - Der Lösch-Dialog erklärt beide Wege in klaren Worten; die Datenschutzerklärung nennt die 30 Tage.
 
 Alle Punkte sind entschieden – das Konzept ist bereit zum Bauen.
