@@ -1,0 +1,2 @@
+# Tests laufen nur lokal gegen die Testumgebung - nie von aussen erreichbar.
+Require all denied

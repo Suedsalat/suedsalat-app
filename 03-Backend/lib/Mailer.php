@@ -14,9 +14,11 @@ final class Mailer
         // Testumgebung: nichts verschicken, sondern die Mail als Datei ablegen, damit sich
         // Inhalt und Aufmachung pruefen lassen. MAIL_CAPTURE_DIR ist live nie gesetzt.
         if (MAIL_CAPTURE_DIR !== null) {
-            $datei = MAIL_CAPTURE_DIR . '/' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(3)), 0, 6) . '.html';
-            file_put_contents($datei, "<!-- An: {$toName} <{$toEmail}> | Betreff: {$subject} -->
-" . $htmlBody);
+            // Mikrosekunden im Namen, damit die Dateien auch bei mehreren Mails pro Sekunde in der
+            // richtigen Reihenfolge sortieren (Tests lesen "die neueste Mail an X").
+            $zeit = explode('.', sprintf('%.6F', microtime(true)));
+            $datei = MAIL_CAPTURE_DIR . '/' . date('Ymd-His', (int) $zeit[0]) . '-' . $zeit[1] . '.html';
+            file_put_contents($datei, "<!-- An: {$toName} <{$toEmail}> | Betreff: {$subject} -->\n" . $htmlBody);
             return;
         }
 

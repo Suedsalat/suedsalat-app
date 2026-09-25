@@ -146,3 +146,12 @@ try {
 } catch (\Throwable $e) {
     error_log('Cleanup alter Auth-Zeilen fehlgeschlagen: ' . $e->getMessage());
 }
+
+// Hoererkonten (App 2.0): Erinnerung drei Tage vor Ende der Rueckkehrfrist, endgueltige Loeschung
+// danach, alte Anmelde-Codes wegraeumen. Eigener try-Block - ein Fehler hier darf weder den
+// RSS-Sync noch das Aufraeumen oben beeinflussen.
+try {
+    echo \Suedsalat\Listener::runMaintenance($pdo) . PHP_EOL;
+} catch (Throwable $e) {
+    error_log('Pflege der Hoererkonten fehlgeschlagen: ' . $e->getMessage());
+}
