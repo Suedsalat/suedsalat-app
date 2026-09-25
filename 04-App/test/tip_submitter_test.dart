@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:suedsalat_app/models/event.dart';
 import 'package:suedsalat_app/models/location_tip.dart';
 import 'package:suedsalat_app/models/movie_tip.dart';
 import 'package:suedsalat_app/models/photo.dart';
+import 'package:suedsalat_app/widgets/tip_submitter_line.dart';
 
 void main() {
   Map<String, dynamic> filmtipp(Map<String, dynamic> extra) =>
@@ -32,5 +34,25 @@ void main() {
     expect(LocationTip.fromJson(locationtipp({'submitted_by_name': null})).submittedByName, isNull);
     expect(Event.fromJson(veranstaltung({})).submittedByName, isNull);
     expect(Photo.fromJson(foto({})).submittedByName, isNull);
+  });
+
+  Future<void> zeige(WidgetTester tester, TipSubmitterLine zeile) =>
+      tester.pumpWidget(MaterialApp(home: Scaffold(body: zeile)));
+
+  testWidgets('Geloeschtes Konto: "Tipp von einem ehemaligen Mitglied"', (tester) async {
+    await zeige(tester, const TipSubmitterLine(name: kFormerMember));
+    expect(find.text('Tipp von einem ehemaligen Mitglied'), findsOneWidget);
+    await zeige(tester, const TipSubmitterLine(name: kFormerMember, prefix: 'Foto von'));
+    expect(find.text('Foto von einem ehemaligen Mitglied'), findsOneWidget);
+  });
+
+  testWidgets('Geloeschtes Konto allein (Rezension): "Ehemaliges Mitglied"', (tester) async {
+    await zeige(tester, const TipSubmitterLine(name: kFormerMember, prefix: ''));
+    expect(find.text('Ehemaliges Mitglied'), findsOneWidget);
+  });
+
+  testWidgets('Normale Namen unveraendert', (tester) async {
+    await zeige(tester, const TipSubmitterLine(name: 'Angela'));
+    expect(find.text('Tipp von Angela'), findsOneWidget);
   });
 }
