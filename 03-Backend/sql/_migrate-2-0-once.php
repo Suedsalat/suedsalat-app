@@ -181,6 +181,31 @@ try {
         CONSTRAINT fk_listener_hidden_target FOREIGN KEY (hidden_listener_id) REFERENCES listeners(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    // ---------------------------------------------------------------------------------------
+    // Etappe 5: Statistik nur mit Einwilligung (§ 25 TDDDG)
+    // ---------------------------------------------------------------------------------------
+
+    // Aktueller Stand pro Installation - danach richtet sich, ob gezaehlt wird.
+    // NULL = noch nicht gefragt (z. B. alte App-Version) -> es wird nichts gezaehlt.
+    add_column($pdo, 'devices', 'stats_consent', "ENUM('granted','denied') NULL DEFAULT NULL");
+    add_column($pdo, 'devices', 'stats_consent_version', 'VARCHAR(20) NULL DEFAULT NULL');
+    add_column($pdo, 'devices', 'stats_consent_at', 'DATETIME NULL DEFAULT NULL');
+
+    // Nachweis (Art. 7 Abs. 1 DSGVO): jede Entscheidung mit Zeitpunkt und Fassung des Dialogtexts.
+    // Verschwindet mit der Installation (Geraete werden nach 12 Monaten ohne Nutzung geloescht).
+    create_table($pdo, 'statistics_consents', "CREATE TABLE statistics_consents (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        device_id INT NOT NULL,
+        listener_id INT NULL,
+        decision ENUM('granted','denied') NOT NULL,
+        text_version VARCHAR(20) NOT NULL,
+        platform VARCHAR(10) NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        KEY statistics_consents_device_idx (device_id, created_at),
+        CONSTRAINT fk_statistics_consents_device FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+        CONSTRAINT fk_statistics_consents_listener FOREIGN KEY (listener_id) REFERENCES listeners(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
     echo "Fertig.\n";
 } catch (\Throwable $e) {
     echo 'FEHLER: ' . $e->getMessage() . "\n";

@@ -111,3 +111,42 @@ function resetTables(PDO $pdo, array $tables): void
     $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
     $pdo->exec("INSERT IGNORE INTO admins (id, name, email, password_hash, role) VALUES (1, 'Thorsten', 'owner@test.local', 'x', 'owner')");
 }
+
+/** Sitzungsdatei fuer einen angemeldeten Admin anlegen, liefert die Sitzungs-ID. */
+function adminSession(int $adminId): string
+{
+    $id = 'admintest' . $adminId . bin2hex(random_bytes(8));
+    file_put_contents(session_save_path() . '/sess_' . $id,
+        'admin_id|i:' . $adminId . ';last_activity|i:' . time() . ';');
+    return $id;
+}
+
+/** Admin-Seite aufrufen (ohne Weiterleitungen zu folgen). @return array{0:int,1:string,2:string} Status, HTML, Location */
+function page(string $session, string $path, ?array $post = null): array
+{
+    $ch = curl_init(APP_URL . $path);
+    $location = '';
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ['Cookie: PHPSESSID=' . $session],
+        CURLOPT_HEADERFUNCTION => static function ($ch, string $h) use (&$location): int {
+            if (stripos($h, 'Location:') === 0) {
+                $location = trim(substr($h, 9));
+            }
+            return strlen($h);
+        },
+    ]);
+    if ($post !== null) {
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+    }
+    $html = (string) curl_exec($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return [$status, $html, $location];
+}
+
+function clean(string $html): bool
+{
+    return !preg_match('/(Warning|Notice|Deprecated|Fatal error|Uncaught)\b.*? in [A-Z]:?[\\\\\/]/', $html);
+}

@@ -11,10 +11,11 @@ require_once __DIR__ . '/../config/bootstrap.php';
 use Suedsalat\ApiAuth;
 use Suedsalat\Database;
 use Suedsalat\RateLimiter;
+use Suedsalat\StatsConsent;
 
 header('Content-Type: application/json; charset=utf-8');
 
-ApiAuth::requireDeviceToken();
+$claims = ApiAuth::requireDeviceToken();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -47,6 +48,12 @@ $existsStmt->execute([':guid' => $episodeGuid]);
 if ($existsStmt->fetchColumn() === false) {
     http_response_code(422);
     echo json_encode(['error' => 'Unbekannte Folge.']);
+    exit;
+}
+
+// App 2.0: nur mit Einwilligung zaehlen (§ 25 TDDDG), siehe track-view.php.
+if (!StatsConsent::allowed($pdo, isset($claims['sub']) ? (int) $claims['sub'] : null)) {
+    echo json_encode(['status' => 'ok', 'counted' => false]);
     exit;
 }
 

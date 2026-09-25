@@ -221,6 +221,12 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    fragen die Spalte `submitted_by_name` ab — laufen sie vor der Migration, bleiben diese vier Tabs in der
    App leer. Auch `config/config.php` mit hochladen (Konstante `OWN_CONTENT_NAME`). Die Migration entfernt außerdem das
    „von …:“ aus bestehenden Beschreibungen, deshalb erst zusammen mit der neuen App-Version ausführen.
+4b. **Danach die 2.0-Migration** `sql/_migrate-2-0-once.php?secret=suedsalat-migrate20-2026-temp`,
+   erst dann die PHP-Dateien hochladen; danach die Migration vom Server löschen.
+   **Achtung Statistik:** Ab diesem Moment zählt der Server nur noch Geräte, die im neuen
+   Einwilligungsdialog zugestimmt haben. Alte App-Versionen (bis 1.3.x) liefern keine Zahlen mehr.
+   Die Kurven im Admin fallen deshalb nach dem Release sichtbar ab. Das ist gewollt (§ 25 TDDDG) und
+   kein Fehler. Wie viele zugestimmt haben, steht oben auf der Seite „Statistiken“.
 5. Release-Notes decken alles seit **1.3.2** ab, nicht nur seit der letzten gebauten Fassung — das ist
    der Stand, von dem die Nutzer tatsächlich kommen.
 6. ~~Vor dem Build: Schrift in die App einbetten.~~ **Erledigt im Code (2026-09-25):** Open Sans 400

@@ -13,6 +13,14 @@ $currentAdminRole = $pdo->prepare('SELECT role FROM admins WHERE id = :id');
 $currentAdminRole->execute([':id' => $adminId]);
 $isOwner = $currentAdminRole->fetchColumn() === 'owner';
 
+// Einwilligung in die Statistik (App 2.0) - nur Zahlen, keine Namen oder Geraete.
+// try/catch, damit die Seite auch ohne die 2.0-Spalten laeuft.
+try {
+    $consent = \Suedsalat\StatsConsent::summary($pdo);
+} catch (\PDOException $e) {
+    $consent = null;
+}
+
 // Alle Folgen fuer den Filter-Dropdown, neueste zuerst.
 $allEpisodes = $pdo->query('SELECT guid, title, pub_date FROM episodes_cache ORDER BY pub_date DESC')->fetchAll();
 
@@ -223,6 +231,26 @@ $episodeShortLabel = static function (string $title): string {
 <?php require __DIR__ . '/partials/sidebar-open.php'; ?>
 <main class="content-box">
     <h1>Statistiken <span style="font-weight:normal;font-size:0.85rem;">(anonym, ohne Personenbezug)</span></h1>
+
+    <?php if ($consent !== null): ?>
+    <div class="statistics-consent" id="consent">
+        <h2>Einwilligung in die Statistik</h2>
+        <p>
+            <strong><?= $consent['granted'] ?></strong> zugestimmt ·
+            <strong><?= $consent['denied'] ?></strong> abgelehnt ·
+            <strong><?= $consent['not_asked'] ?></strong> noch nicht gefragt
+            <span style="font-size:0.85rem;color:#666;">(Installationen der letzten 12 Monate)</span>
+        </p>
+        <?php if (count($consent['by_platform']) > 1): ?>
+            <p style="font-size:0.9rem;">
+                <?php foreach ($consent['by_platform'] as $platform => $c): ?>
+                    <?= $platform === 'ios' ? 'iPhone' : 'Android' ?>: <?= $c['granted'] ?> / <?= $c['denied'] ?> / <?= $c['not_asked'] ?><br>
+                <?php endforeach; ?>
+            </p>
+        <?php endif; ?>
+        <p style="font-size:0.85rem;color:#666;">Seit App-Version 2.0 zählt die App nur auf Geräten, deren Nutzer zugestimmt haben (§ 25 TDDDG). „Noch nicht gefragt“ sind vor allem ältere App-Versionen – von dort kommen keine Zahlen mehr. Die Werte unten zeigen also nur einen Teil aller Hörer.</p>
+    </div>
+    <?php endif; ?>
 
     <form method="get" class="statistics-filter">
         <div class="field-row">

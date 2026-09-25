@@ -14,6 +14,7 @@ require_once __DIR__ . '/../config/bootstrap.php';
 use Suedsalat\ApiAuth;
 use Suedsalat\Database;
 use Suedsalat\RateLimiter;
+use Suedsalat\StatsConsent;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -53,6 +54,12 @@ if ($existsStmt->fetchColumn() === false) {
     exit;
 }
 
+// App 2.0: nur mit Einwilligung zaehlen (§ 25 TDDDG), siehe track-view.php.
+if (!StatsConsent::allowed($pdo, isset($claims['sub']) ? (int) $claims['sub'] : null)) {
+    echo json_encode(['status' => 'ok', 'counted' => false]);
+    exit;
+}
+
 $hour = (int) date('G');
 $stmt = $pdo->prepare(
     'INSERT INTO episode_play_counts (episode_guid, day, hour, count) VALUES (:guid, CURDATE(), :hour, 1)
@@ -77,10 +84,13 @@ if ($deviceId !== null) {
         $stmt->execute([':guid' => $episodeGuid, ':platform' => $platformValue]);
     }
 
-    // Keine Zaehlung "eindeutiger Hoerer" mehr (Stand 2026-09-25): Sie erkennt ein Geraet
-    // ueber die gespeicherte Installations-Kennung wieder und braucht dafuer nach
-    // § 25 TDDDG eine Einwilligung. Kommt mit App-Version 2.0.0 zurueck - dann nur fuer
-    // Geraete, deren Nutzer der Statistik ausdruecklich zugestimmt haben.
+    // "Eindeutige Hoerer" (seit 2.0 wieder, nur mit Einwilligung - siehe oben): Einweg-Hash aus
+    // Geraet + Folge + Tag, der sich nicht folgen- oder tagesuebergreifend zuordnen laesst.
+    $deviceHash = hash('sha256', $deviceId . '|' . $episodeGuid . '|' . date('Y-m-d') . '|' . APP_SECRET);
+    $stmt = $pdo->prepare(
+        'INSERT IGNORE INTO episode_unique_devices (episode_guid, day, device_hash) VALUES (:guid, CURDATE(), :hash)'
+    );
+    $stmt->execute([':guid' => $episodeGuid, ':hash' => $deviceHash]);
 }
 
 // Android Auto/CarPlay-Kontext (siehe CarContextService in der App) - rein
