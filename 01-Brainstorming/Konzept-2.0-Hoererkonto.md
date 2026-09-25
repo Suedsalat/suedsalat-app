@@ -309,5 +309,16 @@ Alles von der bisherigen Liste, für beide Rollen, soweit nicht anders vermerkt:
 
 Alle Punkte sind entschieden – das Konzept ist bereit zum Bauen.
 
+## 11. Danach: Admin-Bereich überarbeiten
+
+Thorsten empfindet den Admin-Bereich als unübersichtlich, vielleicht sind die Knöpfe zu groß, die
+Struktur muss überdacht werden. **Kommt nach 2.0**, wenn die App so funktioniert, wie sie soll: Der
+Admin-Bereich ist reiner Server-Teil, braucht keinen App-Build und darf direkt live. Die neuen
+2.0-Seiten (Hörerliste, Meldungen, „Tipps ohne Bild“, Einwilligungen, Outtakes) werden zunächst im
+heutigen Stil gebaut und bei der Überarbeitung mit neu geordnet.
+
+Vorgehen: erst gemeinsam anhand von Screenshots sammeln, was stört, dann einen Plan machen, dann bauen –
+nicht drauflos gestalten (ein Navigations-Dropdown wurde im September nach zwei Runden verworfen).
+
 **Grobe Schätzung:** Server 2–3 Tage, App 3–4 Tage, dazu Nutzungsbedingungen, Datenschutz, Store-Angaben
 und Testen.
