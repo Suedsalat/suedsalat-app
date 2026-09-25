@@ -33,7 +33,9 @@ def setze(links, rechts, delta):
             kern[(a, b)] = kern.get((a, b), 0) + delta
 
 LOGO_BREITEN = [80.1, 70.2, 82.3, 80.1, 88.7, 62.4, 151.8]   # S Ü D S A L AT, % Versalhoehe
-STAERKE, HOEHE = 668, 14                                      # Staemme / waagerechte Striche wie im Logo
+STAERKE, HOEHE = 668, 14
+# S-Enden wie im Logo (gemessen 13,1°/11,8°, Anlauf 66°; Konstruktionswerte auf gleiche Messung abgeglichen)
+S_ENDEN = (12.0, 11.1, 70, 0.25)                                      # Staemme / waagerechte Striche wie im Logo
 breiten = {'S': [0, 0, True], 'U': [0, 0, False], 'D': [0, 0, False], 'A': [0, 0, False],
            'L': [0, 0, False], 'T': [0, 90, False]}
 
@@ -45,6 +47,7 @@ def segmente(path):
 
 def form():
     f = dict(FORM_FETT); f['fett_vertikal'] = HOEHE
+    f['s_enden'] = S_ENDEN
     f['breiten'] = {k: tuple(v) for k, v in breiten.items()}
     return f
 
@@ -83,7 +86,7 @@ for runde in range(3):
     print('mehr Luft:', len(eng), 'Paare:', ', '.join(a + b for _, (a, b) in eng[:40]))
 print('Fett: Ecken geschaerft', f['ecken'], '| Punkte rund', f['punkte'])
 
-fr = {'breiten': {'S': (67, 0, True), 'T': (-30, 45, False), 'D': (22, 0, False)}}
+fr = {'breiten': {'S': (67, 0, True), 'T': (-30, 45, False), 'D': (22, 0, False)}, 's_enden': S_ENDEN}
 kern_normal = {**{(a, u): -25 for a in A_VARIANTEN for u in ('U', 'Udieresis')}, ('U', 'S'): -24, ('Udieresis', 'S'): -24}
 baue('Regular', 400, 1.0, -12, 75, kern_normal, 400, 'Suedsalat-Regular.ttf', fr)
 print('Normal: Ecken geschaerft', fr['ecken'], '| Punkte rund', fr['punkte'])

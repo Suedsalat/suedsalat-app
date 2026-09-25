@@ -336,3 +336,81 @@ def kerben_fuellen(font, max_kerbe=25):
         if geaendert:
             _setze(g, neu, glyf)
     return anzahl
+
+
+def s_enden(font, name, winkel_oben, winkel_unten, anlauf=None, bogen_anteil=0.5):
+    """Die beiden Enden des S wie im Logo anschneiden: innerer Endpunkt der Schnittkante bleibt,
+    der aeussere Bogen laeuft in seiner eigenen Richtung weiter, bis die neue Kante den gemessenen
+    Winkel hat (oben rechts steigend, unten links fallend). Liefert die neuen Kanten."""
+    import pathops
+    from fontTools.pens.ttGlyphPen import TTGlyphPen
+    from fontTools.pens.cu2quPen import Cu2QuPen
+    glyf = font['glyf']; g = glyf[name]; g.recalcBounds(glyf)
+    cx, cy = (g.xMin + g.xMax) / 2, (g.yMin + g.yMax) / 2; breite = g.xMax - g.xMin
+    konturen = _konturen(g)
+    dreiecke, info = [], []
+    for k in konturen:
+        n = len(k)
+        for i in range(n):
+            a, b = k[i], k[(i + 1) % n]
+            if not (a[2] and b[2]):
+                continue
+            mx = (a[0] + b[0]) / 2
+            if g.xMin + 0.3 * breite <= mx <= g.xMax - 0.3 * breite:
+                continue                                  # Rueckgrat in der Mitte, kein Ende
+            oben = mx > cx
+            # aeusserer Punkt = weiter weg von der Mitte; dessen anderer Nachbar gibt die Bogenrichtung
+            ia, ib = i, (i + 1) % n
+            if math.hypot(a[0] - cx, a[1] - cy) > math.hypot(b[0] - cx, b[1] - cy):
+                io, ii, inach = ia, ib, (ia - 1) % n
+            else:
+                io, ii, inach = ib, ia, (ib + 1) % n
+            schritt = (inach - io) % n                         # 1 = vorwaerts, n-1 = rueckwaerts
+            # ueber eine evtl. abgerundete Aussenecke zurueck bis zum echten Bogenende
+            j = inach
+            while not k[j][2]:
+                j = (j + schritt) % n
+            pe, pn, pi = k[j], k[(j + schritt) % n], k[ii]
+            po = pe
+            tx, ty = pe[0] - pn[0], pe[1] - pn[1]            # Bogen laeuft ueber pe hinaus weiter
+            w = math.radians(winkel_oben if oben else 180 + winkel_unten)
+            dx, dy = math.cos(w), math.sin(w)                # Richtung innen -> aussen der neuen Kante
+            # pi + s*d = po + t*T
+            nenner = dx * ty - dy * tx
+            t = ((po[0] - pi[0]) * dy - (po[1] - pi[1]) * dx) / nenner
+            neu = (po[0] + t * tx, po[1] + t * ty)
+            if t < 0:
+                raise ValueError(f'{name}: Ende {"oben" if oben else "unten"} wuerde kuerzer statt laenger')
+            kontrolle = None
+            if anlauf:
+                # Verlaengerung als Kurve: startet in Bogenrichtung, kommt mit dem Logo-Winkel
+                # (anlauf, gegen die Waagerechte) in der Ecke an
+                tl = math.hypot(tx, ty); ux, uy = tx / tl, ty / tl
+                c = (pe[0] + ux * bogen_anteil * t * tl, pe[1] + uy * bogen_anteil * t * tl)
+                a = math.radians(anlauf)
+                ex, ey = math.copysign(math.cos(a), tx), math.copysign(math.sin(a), ty)
+                n2 = dx * ey - dy * ex
+                u = ((c[0] - pi[0]) * ey - (c[1] - pi[1]) * ex) / n2
+                neu = (pi[0] + u * dx, pi[1] + u * dy); kontrolle = c
+            dreiecke.append([pi[:2], po[:2], neu, kontrolle])
+            info.append(('oben' if oben else 'unten', pi[:2], po[:2], (round(neu[0]), round(neu[1]))))
+    if len(dreiecke) != 2:
+        raise ValueError(f'{name}: {len(dreiecke)} statt 2 Enden gefunden')
+    pfade = []
+    p = pathops.Path(); g.draw(p.getPen(), glyf); pfade.append(p)
+    for d in dreiecke:
+        q = pathops.Path(); pen = q.getPen()
+        pen.moveTo(d[0]); pen.lineTo(d[1])
+        if d[3] is not None:
+            pen.qCurveTo(d[3], d[2])
+        else:
+            pen.lineTo(d[2])
+        pen.closePath(); pfade.append(q)
+    ttpen = TTGlyphPen(None)
+    pathops.union(pfade, Cu2QuPen(ttpen, 1.0, reverse_direction=False), clockwise=True)
+    neu = ttpen.glyph()
+    g.coordinates, g.endPtsOfContours, g.flags = neu.coordinates, neu.endPtsOfContours, neu.flags
+    g.numberOfContours = neu.numberOfContours
+    g.program = ttProgram.Program(); g.program.fromBytecode(b'')
+    g.recalcBounds(glyf)
+    return info

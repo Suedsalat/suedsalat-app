@@ -3,7 +3,7 @@
 Eigene Schrift des Podcasts Südsalat in zwei Schnitten: **Südsalat Bold** (Überschriften, wie
 „SÜDSALAT“ im Logo) und **Südsalat Regular** (Untertitel und Text, wie „THEMEN AUS DEM LEBEN“).
 Im Schriftmenü heißt sie „Südsalat“; nur der technische PostScript-Name ist „Suedsalat-Bold“ /
-„Suedsalat-Regular“ (dort sind keine Umlaute erlaubt), ebenso die Dateinamen. Version 1.001.
+„Suedsalat-Regular“ (dort sind keine Umlaute erlaubt), ebenso die Dateinamen. Version 1.002.
 
 ## Herkunft und Lizenz
 
@@ -26,12 +26,14 @@ aus dem Logo-Bild gemessen wurden.
 - spitze Ecken (Libre Franklin rundet sie leicht ab), auch Innenecken von M, W, N ohne
   „Tintenfallen“; runde Punkte (Umlaute, i, j, Satzzeichen)
 - Ü-Punkte in Größe, Abstand und Höhe wie im Logo
+- **S-Enden wie im Logo:** flach abgeschnitten (13,1° oben, 11,8° unten, aus dem Logo gemessen),
+  der Bogen läuft steil (66°) in die Ecke – in beiden Schnitten
 - alle Paare aus Groß-, Kleinbuchstaben und Ziffern geprüft: mindestens 3 % der Versalhöhe
   Abstand, nichts berührt sich
 
 Vergleiche: `Logo-Vergleich.png` (ganzes Logo, auch U:\Suedsalat-Logo-Vergleich.png),
 `Vergleich-mit-Logo.png` (übereinandergelegt, auch U:\Suedsalat-Schrift-Vergleich.png), `Probeblatt.png`.
-Verbleibender sichtbarer Unterschied: die Form der S-Enden.
+Verbleibende Unterschiede sind kleine Formdetails; SÜDSALAT deckt sich zu 90 % mit dem Original.
 
 ## In Windows installiert
 

@@ -7,7 +7,7 @@ from fontTools.otlLib.builder import buildPairPosGlyphsSubtable, buildValue, bui
 from fontTools.varLib.instancer import instantiateVariableFont
 
 VF = 'LibreFranklin-VF.ttf'
-VERSION = 1.001   # bei jeder geaenderten Fassung erhoehen (1.001, 1.002 ...)
+VERSION = 1.002   # bei jeder geaenderten Fassung erhoehen (1.001, 1.002 ...)
 A_VARIANTEN = ['A', 'Agrave', 'Aacute', 'Acircumflex', 'Atilde', 'Adieresis', 'Aring']
 
 
@@ -128,6 +128,9 @@ def baue(stil, wght, faktor, track, space_extra, paare, gewicht, ziel, formen=No
         from formen import breite
         for name, (d, mitte, skal) in formen.get('breiten', {}).items():
             breite(font, name, d, mitte, skal)
+        if formen.get('s_enden'):
+            from formen import s_enden
+            s_enden(font, 'S', *formen['s_enden'])
         if formen.get('umlaut_abstand') is not None:
             umlaute_hoehe(font, formen['umlaut_abstand'])
         glyf, hmtx = font['glyf'], font['hmtx']
