@@ -34,9 +34,9 @@ foreach (['kino_tipp', 'location_tipp', 'termin_tipp', 'foto_vorschlag', 'sprach
 $datei = tempnam(sys_get_temp_dir(), 'bild') . '.jpg';
 file_put_contents($datei, 'kein echtes Bild');
 [$s, $r] = $feedback($gast, ['type' => 'allgemein', 'message' => 'mit Anhang', 'sender_name' => 'Gast Gustav', 'media' => new CURLFile($datei, 'image/jpeg')]);
-check($s === 403 && str_contains($r['error'] ?? '', 'registrierter'), 'Gast: allgemeines Feedback mit Foto abgelehnt');
+check($s === 403 && str_contains($r['error'] ?? '', 'bitte aktualisiere'), 'Gast: allgemeines Feedback mit Foto abgelehnt');
 [$s, $r] = $review($gast, ['reviewer_name' => 'Gast Gustav']);
-check($s === 403 && str_contains($r['error'] ?? '', 'registrierter'), 'Gast: Rezension abgelehnt');
+check($s === 403 && str_contains($r['error'] ?? '', 'bitte aktualisiere'), 'Gast: Rezension abgelehnt');
 
 echo "Registrierter Hoerer\n";
 [$s] = $feedback($hoerer, ['type' => 'kino_tipp', 'message' => 'Unbedingt ansehen: Dune', 'sender_name' => 'Falscher Name']);
@@ -85,8 +85,9 @@ $pdo->exec("UPDATE listeners SET blocked_at = NOW(), blocked_reason = 'Test' WHE
 check(($r['listener']['blocked'] ?? false) === true, 'gesperrt: App erfaehrt es ueber me');
 [$s] = $review($hoerer);
 check($s === 403, 'gesperrt: keine Rezension');
-[$s] = $feedback($hoerer, ['type' => 'kino_tipp', 'message' => 'x']);
+[$s, $r] = $feedback($hoerer, ['type' => 'kino_tipp', 'message' => 'x']);
 check($s === 403, 'gesperrt: kein Tipp');
+check(str_contains($r['error'] ?? '', 'gesperrt') && !str_contains($r['error'] ?? '', 'aktualisiere'), 'gesperrt: Hinweis auf die Sperre, nicht aufs Aktualisieren');
 [$s] = $feedback($hoerer, ['type' => 'allgemein', 'message' => 'Darf ich noch schreiben?']);
 check($s === 200, 'gesperrt: allgemeines Feedback wie ein Gast weiter moeglich');
 

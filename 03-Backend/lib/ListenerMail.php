@@ -38,21 +38,26 @@ final class ListenerMail
         $zweck = match ($purpose) {
             'register' => 'um deine Registrierung bei der Südsalat-App abzuschließen',
             'delete_now' => 'um die <strong>sofortige und endgültige Löschung</strong> deines Kontos zu bestätigen',
+            'delete_web' => 'um die <strong>Löschung deines Kontos</strong> zu bestätigen',
             default => 'um dich in der Südsalat-App anzumelden',
         };
-        $hinweis = $purpose === 'delete_now'
-            ? 'Diese Löschung lässt sich nicht rückgängig machen. Falls du das nicht warst, ignoriere diese E-Mail – dann passiert nichts.'
-            : 'Falls du das nicht angefordert hast, ignoriere diese E-Mail.';
+        $loeschen = in_array($purpose, ['delete_now', 'delete_web'], true);
+        $hinweis = match ($purpose) {
+            'delete_now' => 'Diese Löschung lässt sich nicht rückgängig machen. Falls du das nicht warst, ignoriere diese E-Mail – dann passiert nichts.',
+            'delete_web' => 'Falls du das nicht warst, ignoriere diese E-Mail – dann passiert nichts.',
+            default => 'Falls du das nicht angefordert hast, ignoriere diese E-Mail.',
+        };
         $gruss = $firstName !== '' ? 'Hallo ' . self::e($firstName) . ',' : 'Hallo,';
+        $wo = $purpose === 'delete_web' ? 'auf unserer Website' : 'in der App';
 
         $body = self::p($gruss)
-            . self::p("gib diesen Code in der App ein, {$zweck}:")
+            . self::p("gib diesen Code {$wo} ein, {$zweck}:")
             . '<p style="margin:0 0 16px;font-size:28px;font-weight:bold;letter-spacing:4px;text-align:center;">' . self::e($code) . '</p>'
             . self::p('Der Code ist ' . Listener::CODE_TTL_MINUTES . ' Minuten gültig.')
             . '<p style="margin:0;font-size:16px;line-height:1.5;">' . $hinweis . '</p>';
 
-        $betreff = $purpose === 'delete_now' ? 'Kontolöschung bestätigen – Südsalat' : 'Dein Code für die Südsalat-App';
-        self::send($email, $firstName, $betreff, $purpose === 'delete_now' ? 'Konto löschen' : 'Dein Code', $body);
+        $betreff = $loeschen ? 'Kontolöschung bestätigen – Südsalat' : 'Dein Code für die Südsalat-App';
+        self::send($email, $firstName, $betreff, $loeschen ? 'Konto löschen' : 'Dein Code', $body);
     }
 
     /**

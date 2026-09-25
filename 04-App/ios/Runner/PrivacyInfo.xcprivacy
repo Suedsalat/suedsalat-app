@@ -4,9 +4,10 @@
   Muss zu den Angaben unter "App-Datenschutz" in App Store Connect und zur
   Datenschutzerklaerung (seiten/datenschutz.html, Abschnitt 2) passen - siehe
   01-Brainstorming/Datenschutz-Angaben-Stores.md.
-  "Linked" = mit der Installations-Kennung verknuepft: Bewertungen speichern
-  Name und Text zusammen mit ihr. Einsendungen, E-Mail-Adresse und die
-  Nutzungsstatistik (nur Summen) sind es nicht.
+  "Linked" = mit der Person verknuepft: Seit 2.0 gehoeren Name, E-Mail-Adresse,
+  Spitzname und alle Beitraege (Tipps, Fotos, Videos, Sprachnachrichten,
+  Rezensionen, Kommentare, Feedback) zum Hoererkonto. Nur die Nutzungsstatistik
+  (nur Summen, nur mit Einwilligung) ist es nicht.
 -->
 <plist version="1.0">
 <dict>
@@ -30,7 +31,7 @@
 				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
 			</array>
 		</dict>
-		<!-- Name bei Bewertungen (Pflicht) und Einsendungen (freiwillig) -->
+		<!-- Vor- und Nachname im Hoererkonto (nie oeffentlich), Name bei Gast-Feedback -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeName</string>
@@ -43,17 +44,31 @@
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>
-		<!-- Newsletter-Anmeldung in der App -->
+		<!-- E-Mail-Adresse: Hoererkonto (Anmeldecode, Kontomails) und Newsletter-Anmeldung -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeEmailAddress</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 				<string>NSPrivacyCollectedDataTypePurposeDeveloperAdvertising</string>
+			</array>
+		</dict>
+		<!-- Spitzname und Konto-ID des Hoererkontos (Spitzname ist oeffentlich) -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeUserID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>
 		<!-- Fotos und Videos in Einsendungen -->
@@ -61,7 +76,7 @@
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypePhotosorVideos</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
@@ -74,7 +89,7 @@
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeAudioData</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
@@ -82,7 +97,7 @@
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>
-		<!-- Feedback-Texte und Bewertungstexte -->
+		<!-- Feedback, Tipps, Rezensionen, Foto-Kommentare, Meldungen -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
@@ -95,7 +110,7 @@
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>
-		<!-- Nutzungsstatistik: geoeffnete Bereiche, Wiedergaben, Hoerdauer-Stufen (nur Summen) -->
+		<!-- Nutzungsstatistik nur mit Einwilligung: geoeffnete Bereiche, Wiedergaben, Hoerdauer-Stufen (nur Summen) -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeProductInteraction</string>

@@ -136,7 +136,8 @@ $fmt = static fn (?string $dt): string => $dt ? date('d.m.Y', strtotime($dt)) : 
         <?php foreach ($listeners as $l): ?>
             <?php $inGrace = $l['deletion_requested_at'] !== null; ?>
             <tr id="listener-<?= (int) $l['id'] ?>" class="<?= $inGrace ? 'is-done' : '' ?>">
-                <td><strong><?= htmlspecialchars($l['nickname'], ENT_QUOTES) ?></strong></td>
+                <td><strong><?= htmlspecialchars($l['nickname'], ENT_QUOTES) ?></strong>
+                    <?php if ((int) $l['review_account']): ?><br><small title="Beiträge sieht nur dieses Konto selbst">Prüfkonto (Apple/Google)</small><?php endif; ?></td>
                 <td><?= htmlspecialchars($l['first_name'] . ' ' . $l['last_name'], ENT_QUOTES) ?></td>
                 <td><?= htmlspecialchars($l['email'], ENT_QUOTES) ?></td>
                 <td><?= $fmt($l['created_at']) ?></td>

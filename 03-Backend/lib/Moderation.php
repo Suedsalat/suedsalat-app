@@ -87,7 +87,8 @@ final class Moderation
         if (self::TYPES[$type]['hideable']) {
             $count = $pdo->prepare(
                 "SELECT COUNT(DISTINCT reporter_listener_id) FROM content_reports
-                 WHERE content_type = :t AND content_id = :id AND status = 'open' AND reporter_listener_id IS NOT NULL"
+                 WHERE content_type = :t AND content_id = :id AND status = 'open' AND reporter_listener_id IS NOT NULL
+                   AND " . self::notReviewAccountSql('reporter_listener_id')
             );
             $count->execute([':t' => $type, ':id' => $id]);
             if ((int) $count->fetchColumn() >= self::AUTO_HIDE_THRESHOLD) {
@@ -177,14 +178,25 @@ final class Moderation
         return array_map(static fn ($r) => ['id' => (int) $r['id'], 'nickname' => (string) $r['nickname']], $stmt->fetchAll());
     }
 
-    /** SQL-Bedingung: Beitraege von Nutzern, die der Betrachter ausgeblendet hat, weglassen. */
+    /**
+     * SQL-Bedingung fuer oeffentliche Listen: Beitraege des Pruefkontos sieht nur es selbst, und
+     * Beitraege von Nutzern, die der Betrachter ausgeblendet hat, fehlen fuer ihn.
+     */
     public static function viewerFilterSql(string $alias, ?int $viewerId): string
     {
+        $sql = ' AND (' . self::notReviewAccountSql("{$alias}.listener_id")
+            . ($viewerId !== null ? " OR {$alias}.listener_id = " . (int) $viewerId : '') . ')';
         if ($viewerId === null) {
-            return '';
+            return $sql;
         }
-        return " AND ({$alias}.listener_id IS NULL OR {$alias}.listener_id NOT IN"
+        return $sql . " AND ({$alias}.listener_id IS NULL OR {$alias}.listener_id NOT IN"
             . " (SELECT hidden_listener_id FROM listener_hidden WHERE listener_id = " . (int) $viewerId . '))';
+    }
+
+    /** SQL-Bedingung: die Spalte gehoert nicht dem Pruefkonto (fuer Durchschnitte, Zaehler, Listen). */
+    public static function notReviewAccountSql(string $column): string
+    {
+        return "({$column} IS NULL OR {$column} NOT IN (SELECT id FROM listeners WHERE review_account = 1))";
     }
 
     // ---------------------------------------------------------------------------------------

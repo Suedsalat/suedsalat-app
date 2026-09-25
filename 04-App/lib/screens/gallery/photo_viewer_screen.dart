@@ -91,6 +91,20 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
   /// Aktuelle Kommentar-Anzahl je Seite (nach Kommentieren nachgezogen).
   late final List<int> _kommentarAnzahl = [for (final i in widget.items) i.commentCount];
 
+  /// Hoehe der Beschriftung unten (Text, „Foto von“, Datum, Kommentare). Fotos duerfen darunter
+  /// weiterlaufen, Videos nicht: deren Steuerung (Fortschrittsleiste, Vollbild) sitzt unten und
+  /// waere bei Hochkant-Videos sonst verdeckt und nicht mehr antippbar.
+  final _beschriftungKey = GlobalKey();
+  double _beschriftungHoehe = 0;
+
+  void _beschriftungMessen() {
+    final box = _beschriftungKey.currentContext?.findRenderObject() as RenderBox?;
+    final hoehe = (box != null && box.hasSize) ? box.size.height : 0.0;
+    if ((hoehe - _beschriftungHoehe).abs() > 0.5 && mounted) {
+      setState(() => _beschriftungHoehe = hoehe);
+    }
+  }
+
   Future<void> _kommentareOeffnen(int index) async {
     final id = widget.items[index].contentId;
     if (id == null) return;
@@ -136,6 +150,8 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
     final item = widget.items[_currentIndex];
     final hasCaption = item.description != null && item.description!.isNotEmpty;
     final hasMultiple = widget.items.length > 1;
+    // Beschriftung aendert sich mit der Seite - danach neu messen (setzt nur bei Aenderung).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _beschriftungMessen());
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -152,10 +168,14 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
               itemBuilder: (context, index) {
                 final pageItem = widget.items[index];
                 if (pageItem.isVideo) {
-                  return GalleryVideoPage(
-                    videoUrl: pageItem.imageUrl,
-                    isActive: index == _currentIndex,
-                    autoPlay: index == widget.initialIndex,
+                  return Padding(
+                    key: ValueKey('video-$index'),
+                    padding: EdgeInsets.only(bottom: _beschriftungHoehe),
+                    child: GalleryVideoPage(
+                      videoUrl: pageItem.imageUrl,
+                      isActive: index == _currentIndex,
+                      autoPlay: index == widget.initialIndex,
+                    ),
                   );
                 }
                 return InteractiveViewer(
@@ -178,6 +198,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
               right: 0,
               bottom: 0,
               child: SafeArea(
+                key: _beschriftungKey,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),

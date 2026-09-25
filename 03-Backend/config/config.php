@@ -191,6 +191,12 @@ define('API_AUTH_ENFORCE', env('API_AUTH_ENFORCE', 'false') === 'true');
 define('JWT_ACCESS_TTL_MINUTES', 60);
 define('JWT_REFRESH_TTL_DAYS', 180);
 
+// Pruefkonto fuer die Store-Pruefung (Apple/Google): fuer genau diese Adresse gilt statt eines
+// Zufallscodes dieser feste sechsstellige Code - Versuchs- und Mengengrenzen bleiben.
+// Beitraege des Pruefkontos sieht nur es selbst (siehe Listener::isReviewEmail). Leer = aus.
+define('REVIEW_LOGIN_EMAIL', (string) env('REVIEW_LOGIN_EMAIL', ''));
+define('REVIEW_LOGIN_CODE', (string) env('REVIEW_LOGIN_CODE', ''));
+
 // Zusaetzliche Bestaetigung vor endgueltigen Loeschvorgaengen/sensiblen
 // Aktionen im gesamten Admin-Bereich - prueft die AKTUELL eingeloggte Person,
 // unabhaengig davon, wessen Datensatz betroffen ist. Bevorzugt den 6-stelligen

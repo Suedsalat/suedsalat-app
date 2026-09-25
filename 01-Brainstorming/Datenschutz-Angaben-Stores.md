@@ -95,3 +95,68 @@ Der Satz über Tracking ist in `App-Store-Listing.md` und `Play-Store-Listing.md
   also mit **Ja** antworten. Einsendungen (Fotos, Tipps) werden weiterhin vorher geprüft.
 - **Datenschutzerklärung:** den Übergangsabsatz „2 h) Schriftart“ entfernen, sobald keine ältere
   App-Version mehr die Schrift von Google lädt (siehe Release-Checkliste im Testplan).
+- **Die Angaben aus Abschnitt 1 und 2 durch Abschnitt 5 ersetzen** (Hörerkonto).
+
+---
+
+## 5. Ab 2.0.0: Angaben mit Hörerkonto (Stand 25.09.2026)
+
+Mit dem Hörerkonto hängt alles, was jemand einreicht, an seinem Konto – deshalb wird fast überall
+„verknüpft“ zu **Ja**. Die iOS-Datei `PrivacyInfo.xcprivacy` ist schon auf diesem Stand.
+
+### App Store Connect → „App-Datenschutz“
+
+| Kategorie | Datentyp | Zweck | Mit Identität verknüpft? | Tracking? |
+|---|---|---|---|---|
+| Kontaktinformationen | **Name** | App-Funktionalität | **Ja** | Nein |
+| Kontaktinformationen | **E-Mail-Adresse** | App-Funktionalität **und** Werbung oder Marketing durch den Entwickler | **Ja** | Nein |
+| Kennungen | **Nutzer-ID** | App-Funktionalität | **Ja** | Nein |
+| Kennungen | **Geräte-ID** | App-Funktionalität **und** Analyse | **Ja** | Nein |
+| Nutzerinhalte | **Fotos oder Videos** | App-Funktionalität | **Ja** | Nein |
+| Nutzerinhalte | **Audiodaten** | App-Funktionalität | **Ja** | Nein |
+| Nutzerinhalte | **Andere Nutzerinhalte** | App-Funktionalität | **Ja** | Nein |
+| Nutzungsdaten | **Produktinteraktion** | Analyse | Nein | Nein |
+
+- **Name:** Vor- und Nachname im Konto (nie öffentlich), bei Gästen der Name beim Feedback.
+- **E-Mail-Adresse:** für den Anmeldecode und Mails zum Konto (App-Funktionalität) und weiterhin für
+  die Newsletter-Anmeldung (Marketing).
+- **Nutzer-ID:** der Spitzname (öffentlich sichtbar) und die interne Kontonummer.
+- **Andere Nutzerinhalte:** Tipps, Rezensionen, Foto-Kommentare, Feedback, Meldungen.
+- **Produktinteraktion:** nur mit Einwilligung und nur als Summen, deshalb „nicht verknüpft“.
+
+**Anmeldung für die Prüfung** (App Store Connect → Version → „App-Prüfungsinformationen“):
+„Anmeldung erforderlich“ anhaken, Benutzername = `REVIEW_LOGIN_EMAIL`, Passwort = `REVIEW_LOGIN_CODE`.
+Als Hinweis dazuschreiben:
+
+> The app has no passwords. Sign-in works with a 6-digit code sent by e-mail. For this review account
+> the code is always the one given above. Einstellungen › Anmelden → enter the e-mail → enter the code.
+> Posts made with this account are only visible to the account itself.
+
+### Play Console → „Datensicherheit“
+
+**Welche Kontoerstellungsmethoden unterstützt deine App?** → **Nutzername und andere Authentifizierung**
+(E-Mail-Adresse + Einmal-Code per Mail, kein Passwort)
+**Link zum Löschen des Kontos:** `https://www.xn--sdsalat-n2a.eu/APP/konto-loeschen.php`
+**Können Nutzer einzelne Daten löschen, ohne das Konto zu löschen?** → **Ja** (eigene Kommentare
+in der App, sonst per E-Mail an `info@südsalat.eu`)
+
+| Kategorie | Datentyp | Erforderlich oder optional? | Zwecke |
+|---|---|---|---|
+| Personenbezogene Daten | **Name** | Optional | App-Funktionen, Kontoverwaltung |
+| Personenbezogene Daten | **E-Mail-Adresse** | Optional | App-Funktionen, Kontoverwaltung, Entwicklerkommunikation |
+| Personenbezogene Daten | **Nutzer-IDs** | Optional | App-Funktionen, Kontoverwaltung |
+| Fotos und Videos | **Fotos** | Optional | App-Funktionen |
+| Fotos und Videos | **Videos** | Optional | App-Funktionen |
+| Audiodateien | **Sprach- oder Tonaufnahmen** | Optional | App-Funktionen |
+| App-Aktivitäten | **App-Interaktionen** | **Optional** (nur mit Einwilligung) | Analyse |
+| App-Aktivitäten | **Sonstige nutzergenerierte Inhalte** | Optional | App-Funktionen |
+| Geräte- oder andere IDs | **Geräte- oder andere IDs** | Erforderlich | App-Funktionen, Analyse, Betrugsprävention, Sicherheit und Compliance |
+
+„Optional“ bei Name, E-Mail und Nutzer-IDs, weil man die App ohne Konto als Gast nutzen kann.
+
+**App-Zugriff** (Play Console → „App-Inhalte“ → „App-Zugriff“): „Alle oder einige Funktionen sind
+eingeschränkt“ → Anleitung hinzufügen mit E-Mail und Code des Prüfkontos, gleicher Hinweistext wie bei
+Apple.
+
+**Inhaltseinstufung:** Nutzer können miteinander interagieren bzw. Inhalte teilen → **Ja**
+(Rezensionen und Kommentare erscheinen sofort, Melden und Ausblenden sind eingebaut).

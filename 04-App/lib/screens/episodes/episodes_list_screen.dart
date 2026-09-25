@@ -5,6 +5,7 @@ import '../../models/episode.dart';
 import '../../services/api_service.dart';
 import '../../services/audio_player_service.dart';
 import '../../services/listened_episodes_service.dart';
+import '../../services/playback_position_service.dart';
 import '../../services/seen_items_service.dart';
 import '../../widgets/async_state_views.dart';
 import '../../widgets/new_dot.dart';
@@ -21,6 +22,7 @@ class _EpisodesListScreenState extends State<EpisodesListScreen> {
   final _api = ApiService();
   late Future<({List<Episode> episodes, Set<String> listened})> _future;
   Set<String> _seenGuids = {};
+  Map<String, Duration> _positions = {};
 
   @override
   void initState() {
@@ -33,7 +35,13 @@ class _EpisodesListScreenState extends State<EpisodesListScreen> {
     final listened = await ListenedEpisodesService.getListened();
     await SeenItemsService.ensureBaseline('episode', episodes.map((e) => e.guid));
     final seen = await SeenItemsService.getSeen('episode');
-    if (mounted) setState(() => _seenGuids = seen);
+    final positions = await PlaybackPositionService.all();
+    if (mounted) {
+      setState(() {
+        _seenGuids = seen;
+        _positions = positions;
+      });
+    }
     return (episodes: episodes, listened: listened);
   }
 
@@ -42,14 +50,25 @@ class _EpisodesListScreenState extends State<EpisodesListScreen> {
     await _future;
   }
 
-  void _openEpisode(List<Episode> episodes, int index) {
+  Future<void> _openEpisode(List<Episode> episodes, int index) async {
     final episode = episodes[index];
     SeenItemsService.markSeen('episode', episode.guid);
     setState(() => _seenGuids = {..._seenGuids, episode.guid});
     AudioPlayerService.instance.playFromList(episodes, index);
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const EpisodePlayerScreen()),
     );
+    // Zurueck aus dem Player: „Weiter bei …“ auf den neuen Stand bringen.
+    final positions = await PlaybackPositionService.all();
+    if (mounted) setState(() => _positions = positions);
+  }
+
+  static String _zeit(Duration d) {
+    String zwei(int n) => n.toString().padLeft(2, '0');
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    return h > 0 ? '$h:${zwei(m)}:${zwei(s)}' : '$m:${zwei(s)}';
   }
 
   @override
@@ -105,7 +124,9 @@ class _EpisodesListScreenState extends State<EpisodesListScreen> {
                     subtitle: Text(
                       isListened
                           ? '${DateFormat('dd.MM.yyyy').format(episode.pubDate)} · Gehört'
-                          : DateFormat('dd.MM.yyyy').format(episode.pubDate),
+                          : _positions[episode.guid] != null
+                              ? '${DateFormat('dd.MM.yyyy').format(episode.pubDate)} · Weiter bei ${_zeit(_positions[episode.guid]!)}'
+                              : DateFormat('dd.MM.yyyy').format(episode.pubDate),
                     ),
                     trailing: Icon(
                       isListened ? Icons.check_circle : Icons.play_circle_outline,

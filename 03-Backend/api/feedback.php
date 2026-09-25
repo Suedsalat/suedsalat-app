@@ -43,14 +43,22 @@ if (!in_array($type, $allowedTypes, true)) {
 $listener = Listener::forDevice(Database::connection(), isset($claims['sub']) ? (int) $claims['sub'] : null);
 $mayContribute = $listener !== null && $listener['blocked_at'] === null;
 if (!$mayContribute) {
+    // Gaeste landen hier praktisch nur noch mit einer alten App-Version (bis 1.3.x) - die neue
+    // fragt vorher nach dem Konto. Deshalb der Hinweis aufs Aktualisieren.
+    $gesperrt = $listener !== null && (!in_array($type, ['allgemein', 'frage'], true) || !empty($_FILES['media']['name']));
+    if ($gesperrt) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Dein Konto ist für Beiträge gesperrt. Schriftliches Feedback und Fragen kannst du weiter schicken.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     if (!in_array($type, ['allgemein', 'frage'], true)) {
         http_response_code(403);
-        echo json_encode(['error' => 'Tipps, Fotos und Sprachnachrichten kannst du als registrierter Hörer einreichen.'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => 'Tipps, Fotos und Sprachnachrichten kannst du jetzt mit einem Hörerkonto einreichen. Dafür brauchst du die neueste Version der Südsalat-App – bitte aktualisiere sie im App Store oder bei Google Play und registriere dich dann kostenlos.'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     if (!empty($_FILES['media']['name'])) {
         http_response_code(403);
-        echo json_encode(['error' => 'Fotos und Videos kannst du als registrierter Hörer mitschicken.'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => 'Fotos und Videos kannst du jetzt mit einem Hörerkonto mitschicken. Dafür brauchst du die neueste Version der Südsalat-App – bitte aktualisiere sie im App Store oder bei Google Play und registriere dich dann kostenlos.'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 }

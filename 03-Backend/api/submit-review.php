@@ -33,7 +33,7 @@ $pdo = Database::connection();
 $listener = Listener::forDevice($pdo, isset($claims['sub']) ? (int) $claims['sub'] : null);
 if ($listener === null) {
     http_response_code(403);
-    echo json_encode(['error' => 'Bewertungen kannst du als registrierter Hörer abgeben. Registriere dich kostenlos in den Einstellungen.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'Bewertungen kannst du jetzt mit einem Hörerkonto abgeben. Dafür brauchst du die neueste Version der Südsalat-App – bitte aktualisiere sie im App Store oder bei Google Play und registriere dich dann kostenlos.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 if ($listener['blocked_at'] !== null) {

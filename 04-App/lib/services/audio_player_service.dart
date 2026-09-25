@@ -7,6 +7,7 @@ import '../models/episode.dart';
 import 'api_service.dart';
 import 'car_context_service.dart';
 import 'listened_episodes_service.dart';
+import 'playback_position_service.dart';
 
 /// Haelt genau einen AudioPlayer als App-weiten Singleton, damit eine laufende
 /// Folge weiterspielt, auch wenn der Nutzer den Player-Bildschirm verlaesst
@@ -23,6 +24,7 @@ class AudioPlayerService extends ChangeNotifier {
     _player.onPositionChanged.listen((newPosition) {
       position = newPosition;
       _checkMilestones();
+      _savePositionPeriodically();
       notifyListeners();
     });
     _player.onDurationChanged.listen((newDuration) {
@@ -52,6 +54,9 @@ class AudioPlayerService extends ChangeNotifier {
       final finished = currentEpisode;
       if (finished != null) {
         await ListenedEpisodesService.markListened(finished.guid);
+        await PlaybackPositionService.clear(finished.guid);
+        // Sonst merkt sich der Folgenwechsel gleich wieder die Endposition.
+        position = Duration.zero;
       }
       if (hasNext) {
         await playNext();
@@ -141,23 +146,45 @@ class AudioPlayerService extends ChangeNotifier {
   Future<void> playEpisode(Episode episode, {Duration? startAt}) async {
     _queue = [episode];
     _queueIndex = 0;
-    await _playCurrent();
-    if (startAt != null) {
-      await seek(startAt);
+    await _playCurrent(startAt: startAt);
+  }
+
+  /// Startet die aktuelle Folge der Liste. Ohne [startAt] geht es dort weiter, wo die Folge
+  /// zuletzt unterbrochen wurde (PlaybackPositionService); ein Sprung von einem Termin oder
+  /// Tipp aus ([startAt]) hat Vorrang.
+  Future<void> _playCurrent({Duration? startAt}) async {
+    if (_queueIndex < 0 || _queueIndex >= _queue.length) return;
+    await _configureAudioContext();
+    await _saveCurrentPosition();
+    final episode = _queue[_queueIndex];
+    final start = startAt ?? await PlaybackPositionService.resumePosition(episode.guid);
+    currentEpisode = episode;
+    position = start ?? Duration.zero;
+    duration = Duration.zero;
+    _lastSavedPosition = position;
+    notifyListeners();
+    _firedMilestones.clear();
+    await _player.play(UrlSource(episode.audioUrl), position: start);
+    unawaited(_trackPlayWithCarContext(episode.guid));
+  }
+
+  // Wiedergabeposition merken: alle 10 Sekunden Wiedergabe, beim Pausieren, Stoppen und beim
+  // Wechsel zur naechsten Folge - so geht auch nach einem Absturz hoechstens ein paar Sekunden
+  // verloren.
+  static const _saveInterval = Duration(seconds: 10);
+  Duration _lastSavedPosition = Duration.zero;
+
+  void _savePositionPeriodically() {
+    if ((position - _lastSavedPosition).abs() >= _saveInterval) {
+      unawaited(_saveCurrentPosition());
     }
   }
 
-  Future<void> _playCurrent() async {
-    if (_queueIndex < 0 || _queueIndex >= _queue.length) return;
-    await _configureAudioContext();
-    final episode = _queue[_queueIndex];
-    currentEpisode = episode;
-    position = Duration.zero;
-    duration = Duration.zero;
-    notifyListeners();
-    _firedMilestones.clear();
-    await _player.play(UrlSource(episode.audioUrl));
-    unawaited(_trackPlayWithCarContext(episode.guid));
+  Future<void> _saveCurrentPosition() async {
+    final episode = currentEpisode;
+    if (episode == null) return;
+    _lastSavedPosition = position;
+    await PlaybackPositionService.save(episode.guid, position, duration);
   }
 
   /// Ermittelt beim Start einer Folge, ob gerade ueber Android Auto/CarPlay
@@ -214,6 +241,7 @@ class AudioPlayerService extends ChangeNotifier {
 
   Future<void> pause() async {
     await _player.pause();
+    await _saveCurrentPosition();
   }
 
   /// Springt zu [newPosition]. Aktualisiert `position` sofort selbst, statt nur
@@ -228,6 +256,7 @@ class AudioPlayerService extends ChangeNotifier {
 
   Future<void> stop() async {
     await _player.stop();
+    await _saveCurrentPosition();
     currentEpisode = null;
     _queue = [];
     _queueIndex = -1;

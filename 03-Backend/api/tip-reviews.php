@@ -36,7 +36,8 @@ $viewerId = $viewer !== null ? (int) $viewer['id'] : null;
 // weder im Durchschnitt noch in der Liste. Der Name kommt live aus dem Konto.
 $summaryStmt = $pdo->prepare(
     'SELECT AVG(rating) AS avg_rating, COUNT(*) AS review_count
-     FROM tip_reviews WHERE tip_type = :tip_type AND tip_id = :tip_id AND approved = 1 AND hidden_at IS NULL'
+     FROM tip_reviews WHERE tip_type = :tip_type AND tip_id = :tip_id AND approved = 1 AND hidden_at IS NULL
+       AND ' . Moderation::notReviewAccountSql('tip_reviews.listener_id')
 );
 $summaryStmt->execute([':tip_type' => $tipType, ':tip_id' => $tipId]);
 $summary = $summaryStmt->fetch();

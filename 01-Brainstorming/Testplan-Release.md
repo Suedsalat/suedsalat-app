@@ -106,7 +106,7 @@ Locationtipps und „Foto von …“ in der Galerie, sowohl in der Übersicht al
 Ansicht. Bei Einsendungen steht der Name des Einsenders, bei eigenen Beiträgen immer „Südsalat“. Keine
 Beschreibung beginnt mehr mit „von …:“. Ältere Einsendungen ohne Namen zeigen keine solche Zeile.
 
-**Außerdem neu im Feedback-Formular:** Der Name ist jetzt bei **allen** Einsendungen Pflicht. Absenden
+**Außerdem neu im Feedback-Formular:** Der Name ist jetzt bei **allen** Einsendungen Pflicht (seit dem Hörerkonto nur noch für Gäste – angemeldet kommt er aus dem Konto, siehe 11). Absenden
 ohne Namen muss die Meldung „Bitte gib deinen Namen ein.“ zeigen. Bei Tipps steht unter dem Feld, dass der
 Name öffentlich beim Tipp erscheint, bei allgemeinem Feedback und Fragen nur „Ein Spitzname geht auch.“
 
@@ -124,6 +124,86 @@ kopierte Adresse ein.
 **Erwartet:** Das Menü mit Einfügen/Kopieren erscheint und funktioniert. Die Tastatur bietet die
 hinterlegte E-Mail-Adresse zum Ausfüllen an.
 
+### 9. Startauswahl nach dem Update
+
+Neu in 2.0: Beim ersten Start fragt die App, wie du sie nutzen willst.
+
+**So prüfst du es:** Aktualisiere die App und öffne sie.
+
+**Erwartet:** Eine Startseite mit „Registrieren“, „Anmelden“ und „Als Gast weiter“. Danach fragt die App
+einmal, ob sie eine anonyme Statistik führen darf – „Ja, gern“ und „Nein, danke“ sind gleichwertig.
+Beim nächsten Start erscheint beides nicht mehr.
+
+### 10. Registrieren und Anmelden mit Code
+
+Ein Passwort gibt es nicht. Man meldet sich mit einem sechsstelligen Code per E-Mail an.
+
+**So prüfst du es:** Registriere dich mit Vorname, Nachname, E-Mail-Adresse und Spitzname. Gib den Code aus
+der Mail ein. Melde dich danach ab (Einstellungen › Mein Konto) und wieder an.
+
+**Erwartet:**
+- Die Mail kommt innerhalb einer Minute (sonst im Spam-Ordner nachsehen), der Code gilt 15 Minuten.
+- „Neuen Code anfordern“ schickt einen neuen Code.
+- Ein falscher Code zeigt „Der Code stimmt nicht.“, nach fünf Fehlversuchen muss ein neuer her.
+- Spitznamen wie „Südsalat“, „Thorsten“ oder „Jenny“ werden abgelehnt, ebenso einer, den es schon gibt.
+- Adressen mit Umlaut nach dem @ (z. B. `…@müller.de`) funktionieren.
+
+### 11. Mitmachen nur mit Konto
+
+**So prüfst du es:** Versuch als Gast einen Tipp, ein Foto, eine Sprachnachricht oder eine Rezension zu
+schicken. Dann dasselbe angemeldet.
+
+**Erwartet:**
+- Als Gast erscheint vorher der Hinweis, dass es dafür ein kostenloses Konto braucht, mit dem Weg zum
+  Registrieren. Eine Frage oder allgemeines Feedback geht weiter ohne Konto.
+- Angemeldet steht im Formular „Du schreibst als …“ mit deinem Spitznamen, ein Namensfeld gibt es nicht.
+- Deine Rezension erscheint sofort unter deinem Spitznamen.
+
+### 12. Kommentare unter Galerie-Fotos
+
+**So prüfst du es:** Öffne ein Foto in der Galerie. Unter der Bildunterschrift steht „Kommentieren“ bzw.
+„1 Kommentar“ / „N Kommentare“. Schreib einen Kommentar und lösch ihn wieder.
+
+**Erwartet:**
+- Der Kommentar erscheint sofort, mit deinem Spitznamen oben klein.
+- Nur eigene Kommentare haben „Löschen“.
+- Die Kommentarzahl in der Galerie stimmt danach.
+- **Bitte besonders darauf achten:** Verdeckt die Kommentarzeile bei einem Video die Steuerung
+  (Fortschrittsleiste, Vollbild)?
+
+### 13. Melden und Nutzer ausblenden
+
+**So prüfst du es:** Tippe bei einer Rezension oder einem Kommentar auf „⋮“.
+
+**Erwartet:**
+- „Melden“ fragt nach einem Grund (Pflicht) und einem Text (freiwillig) und bedankt sich danach. Das geht
+  auch als Gast.
+- „Nutzer ausblenden“ (nur angemeldet) lässt alle Beiträge dieser Person für dich verschwinden. Unter
+  Einstellungen › Mein Konto › Ausgeblendete Nutzer holst du sie zurück.
+- Bei eigenen Beiträgen gibt es beides nicht.
+
+### 14. Mein Konto und Konto löschen
+
+**So prüfst du es:** Einstellungen › Mein Konto: Spitzname ändern. Dann „Konto löschen“ mit „Mit 30 Tagen
+Rückkehrfrist“ ausprobieren und dich danach wieder anmelden.
+
+**Erwartet:**
+- Der neue Spitzname steht sofort bei all deinen Beiträgen.
+- Nach dem Stilllegen bist du abgemeldet, und deine Beiträge heißen „Ehemaliges Mitglied“ (oder sind
+  weg, wenn du sie mitlöschen wolltest). Eine Bestätigungsmail kommt.
+- Meldest du dich innerhalb der 30 Tage wieder an, ist alles wie vorher („Willkommen zurück“-Mail).
+- „Sofort und endgültig“ fragt vorher einen Code per Mail ab.
+
+### 15. Einstellungen, Rechtstexte und Schrift
+
+**So prüfst du es:** Öffne die Einstellungen.
+
+**Erwartet:**
+- Oben steht der Kontobereich (als Gast: Registrieren/Anmelden).
+- Der Schalter „Anonyme Statistik“ zeigt deine Entscheidung vom Start und lässt sich umstellen.
+- „Datenschutzerklärung“ und „Nutzungsbedingungen“ öffnen sich lesbar in der App.
+- Überall die neue Südsalat-Schrift: Überschriften fett, nichts abgeschnitten, keine Ersatzschrift.
+
 ---
 
 ## Teil B — Aus 1.3.3 bis 1.3.6, für die Tester zum ersten Mal sichtbar
@@ -131,7 +211,7 @@ hinterlegte E-Mail-Adresse zum Ausfüllen an.
 Diese Dinge sind seit Mitte September fertig, kamen aber nie bei den Testern an. Wer von 1.3.2
 kommt, sieht sie jetzt zum ersten Mal — deshalb gehören sie in den Test.
 
-### 9. Android Auto
+### 16. Android Auto
 
 Die größte Neuerung dieses Sprungs. Die App meldet sich beim Auto als Medien-App an.
 
@@ -150,14 +230,14 @@ Die größte Neuerung dieses Sprungs. Die App meldet sich beim Auto als Medien-A
 **Bitte unbedingt melden, wenn** "Auswahl konnte nicht geladen werden" erscheint — das war der Fehler,
 der mehrere Anläufe gekostet hat, und der Fix ist in der Fassung, die ihr bekommt.
 
-### 10. Wiedergabe-Anzeige auf dem Sperrbildschirm
+### 17. Wiedergabe-Anzeige auf dem Sperrbildschirm
 
 **Erwartet:** Beim Abspielen erscheint eine Benachrichtigung mit Titel, Bild und Steuerung. Das
 Symbol in der Statusleiste ist einfarbig, nicht das bunte App-Icon. Läuft eine Folge ohne eigenes
 Bild, steht dort das quadratische Südsalat-Logo mit Schriftzug, kein einzelnes Mikrofon auf leerem
 Grund.
 
-### 11. Feedback einer Folge zuordnen
+### 18. Feedback einer Folge zuordnen
 
 **So prüfst du es:** Öffne das Feedback-Formular.
 
@@ -245,9 +325,12 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    - In `index.html` und `impressum.html` im Fußbereich den Link „Nutzungsbedingungen“ ergänzen.
    - Empfehlung: beide Texte vorher von einer fachkundigen Stelle prüfen lassen (vor allem Nr. 6
      „Rechte an deinen Beiträgen“ und die Haftung).
-6b. **Noch zu bauen, Pflicht für die Stores:** (1) **Web-Seite zum Löschen des Kontos** ohne App – Google
-   verlangt die Adresse in der Play Console. (2) **Demo-Konto für die Apple-Prüfer** mit festem Code, weil
-   die Anmeldung per Mail-Code läuft.
+6b. **Pflicht für die Stores (gebaut 25.09.2026, noch nicht live):** (1) **Web-Seite zum Löschen des Kontos**
+   `APP/konto-loeschen.php` – Adresse in der Play Console unter „Datensicherheit › Kontolöschung“ eintragen.
+   (2) **Prüfkonto** für Apple und Google: in der Live-`.env` `REVIEW_LOGIN_EMAIL` (echtes Postfach oder
+   Weiterleitung) und `REVIEW_LOGIN_CODE` (6 Ziffern) setzen, Adresse + Code in App Store Connect
+   („Anmeldung erforderlich“) und Play Console („App-Zugriff“) eintragen. Beiträge des Prüfkontos sieht
+   nur es selbst; im Admin-Bereich steht es als „Prüfkonto (Apple/Google)“.
 6c. **Bevor die Nutzungsbedingungen später einmal geändert werden:** In der App eine erneute Zustimmung
    einbauen (die Bedingungen versprechen in Nr. 12, dass neue Beiträge erst nach Zustimmung zur neuen
    Fassung möglich sind). Die Fassung steht pro Konto in `listeners.terms_version`.

@@ -144,6 +144,18 @@ final class Listener
     // Codes per Mail
     // ---------------------------------------------------------------------------------------
 
+    /**
+     * Ist das die Adresse des Pruefkontos fuer Apple/Google? Nur wenn REVIEW_LOGIN_EMAIL gesetzt ist
+     * und REVIEW_LOGIN_CODE genau sechs Ziffern hat - sonst ist das Pruefkonto abgeschaltet.
+     */
+    public static function isReviewEmail(string $email): bool
+    {
+        if (REVIEW_LOGIN_EMAIL === '' || preg_match('/^\d{6}$/', REVIEW_LOGIN_CODE) !== 1) {
+            return false;
+        }
+        return mb_strtolower(normalize_email(REVIEW_LOGIN_EMAIL), 'UTF-8') === $email;
+    }
+
     private static function codeHash(string $email, string $code): string
     {
         return hash_hmac('sha256', $email . '|' . $code, APP_SECRET);
@@ -160,7 +172,8 @@ final class Listener
         $pdo->prepare('DELETE FROM listener_login_codes WHERE email = :e AND purpose = :p AND used_at IS NULL')
             ->execute([':e' => $email, ':p' => $purpose]);
 
-        $code = (string) random_int(100000, 999999);
+        // Das Pruefkonto bekommt immer denselben Code - die Store-Pruefer kommen nicht an die Mails.
+        $code = self::isReviewEmail($email) ? (string) REVIEW_LOGIN_CODE : (string) random_int(100000, 999999);
         $pdo->prepare(
             'INSERT INTO listener_login_codes (email, purpose, code_hash, payload, device_id, expires_at)
              VALUES (:e, :p, :h, :payload, :d, DATE_ADD(NOW(), INTERVAL ' . self::CODE_TTL_MINUTES . ' MINUTE))'

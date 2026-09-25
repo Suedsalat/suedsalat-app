@@ -42,8 +42,8 @@ if ($row['purpose'] === 'register') {
     try {
         $pdo->prepare(
             'INSERT INTO listeners (first_name, last_name, email, nickname, nickname_key, email_verified_at,
-                terms_accepted_at, terms_version)
-             VALUES (:fn, :ln, :e, :n, :k, NOW(), :ta, :tv)'
+                terms_accepted_at, terms_version, review_account)
+             VALUES (:fn, :ln, :e, :n, :k, NOW(), :ta, :tv, :r)'
         )->execute([
             ':fn' => $data['first_name'],
             ':ln' => $data['last_name'],
@@ -52,6 +52,7 @@ if ($row['purpose'] === 'register') {
             ':k' => Listener::nicknameKey($nickname),
             ':ta' => $row['created_at'],
             ':tv' => $data['terms_version'] ?? Listener::TERMS_VERSION,
+            ':r' => Listener::isReviewEmail($email) ? 1 : 0,
         ]);
     } catch (PDOException $e) {
         // Eindeutigkeit von E-Mail/Spitzname: im selben Augenblick hat jemand anderes zugegriffen.
@@ -69,6 +70,10 @@ if ($row['purpose'] === 'register') {
 $listener = Listener::findByEmail($pdo, $email);
 if ($listener === null) {
     Api::fail(422, 'Zu dieser E-Mail-Adresse gibt es kein Konto.');
+}
+// Pruefkonto: auch ein Konto, das schon vor dem Eintrag in der .env bestand, wird dazu.
+if (Listener::isReviewEmail($email) && !(int) $listener['review_account']) {
+    $pdo->prepare('UPDATE listeners SET review_account = 1 WHERE id = :id')->execute([':id' => $listener['id']]);
 }
 $restored = false;
 if ($listener['deletion_requested_at'] !== null) {

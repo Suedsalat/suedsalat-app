@@ -95,7 +95,7 @@ try {
     create_table($pdo, 'listener_login_codes', "CREATE TABLE listener_login_codes (
         id INT PRIMARY KEY AUTO_INCREMENT,
         email VARCHAR(255) NOT NULL,
-        purpose ENUM('login','register','delete_now') NOT NULL,
+        purpose ENUM('login','register','delete_now','delete_web') NOT NULL,
         code_hash CHAR(64) NOT NULL,
         payload TEXT NULL,
         device_id INT NULL,
@@ -227,6 +227,18 @@ try {
         CONSTRAINT fk_gallery_comments_photo FOREIGN KEY (photo_id) REFERENCES photos(id) ON DELETE CASCADE,
         CONSTRAINT fk_gallery_comments_listener FOREIGN KEY (listener_id) REFERENCES listeners(id) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // ---------------------------------------------------------------------------------------
+    // Store-Pruefung und Kontoloeschung ueber die Website
+    // ---------------------------------------------------------------------------------------
+
+    // review_account: das Pruefkonto fuer Apple/Google (REVIEW_LOGIN_EMAIL). Seine Rezensionen,
+    // Kommentare und Fotos sieht nur es selbst, und seine Meldungen blenden nichts aus.
+    add_column($pdo, 'listeners', 'review_account', 'TINYINT(1) NOT NULL DEFAULT 0');
+
+    // delete_web: Code fuer die Kontoloeschung auf der Website (konto-loeschen.php).
+    $pdo->exec("ALTER TABLE listener_login_codes MODIFY purpose ENUM('login','register','delete_now','delete_web') NOT NULL");
+    echo "OK: listener_login_codes.purpose kennt delete_web.\n";
 
     echo "Fertig.\n";
 } catch (\Throwable $e) {
