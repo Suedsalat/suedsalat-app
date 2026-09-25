@@ -285,6 +285,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
         }
 
         $newEventId = (int) $pdo->lastInsertId();
+        if ($feedbackId) {
+            // Die Veranstaltung gehoert dem Konto des Einsenders (Live-Name, Kontoloeschung).
+            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'events', $newEventId, $feedbackId);
+        }
         FcmSender::sendToAllDevices("Neue Veranstaltung: $title", date('d.m.Y', strtotime($eventDate)));
         header('Location: ' . BASE_PATH . '/admin/events.php#event-' . $newEventId);
         exit;

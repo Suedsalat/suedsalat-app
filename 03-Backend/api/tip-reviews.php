@@ -5,6 +5,7 @@ require_once __DIR__ . '/../config/bootstrap.php';
 
 use Suedsalat\ApiAuth;
 use Suedsalat\Database;
+use Suedsalat\ListenerContent;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -24,17 +25,20 @@ if (!in_array($tipType, $allowedTipTypes, true) || $tipId <= 0) {
 
 $pdo = Database::connection();
 
+// Ausgeblendete Rezensionen (Kontoloeschung in der Rueckkehrfrist, spaeter Meldungen) zaehlen
+// weder im Durchschnitt noch in der Liste. Der Name kommt live aus dem Konto.
 $summaryStmt = $pdo->prepare(
     'SELECT AVG(rating) AS avg_rating, COUNT(*) AS review_count
-     FROM tip_reviews WHERE tip_type = :tip_type AND tip_id = :tip_id AND approved = 1'
+     FROM tip_reviews WHERE tip_type = :tip_type AND tip_id = :tip_id AND approved = 1 AND hidden_at IS NULL'
 );
 $summaryStmt->execute([':tip_type' => $tipType, ':tip_id' => $tipId]);
 $summary = $summaryStmt->fetch();
 
 $reviewsStmt = $pdo->prepare(
-    'SELECT id, rating, review_text, reviewer_name, created_at
-     FROM tip_reviews WHERE tip_type = :tip_type AND tip_id = :tip_id AND approved = 1
-     ORDER BY created_at DESC'
+    'SELECT r.id, r.rating, r.review_text, ' . ListenerContent::displayNameSql('r', 'reviewer_name') . ' AS reviewer_name, r.created_at
+     FROM tip_reviews r ' . ListenerContent::joinSql('r') . '
+     WHERE r.tip_type = :tip_type AND r.tip_id = :tip_id AND r.approved = 1 AND r.hidden_at IS NULL
+     ORDER BY r.created_at DESC'
 );
 $reviewsStmt->execute([':tip_type' => $tipType, ':tip_id' => $tipId]);
 

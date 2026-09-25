@@ -129,6 +129,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_id'])
                 ':feedback_id' => $feedbackId,
             ]);
             $newPhotoId = (int) $pdo->lastInsertId();
+            // Das Foto gehoert dem Konto des Einsenders (Live-Name, Kontoloeschung).
+            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'photos', $newPhotoId, $feedbackId);
 
             $update = $pdo->prepare(
                 'UPDATE feedback_messages SET photo_imported_at = NOW(), status = "erledigt", handled_by = :admin_id, handled_at = NOW() WHERE id = :id'
@@ -190,6 +192,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_feedback_media
                 ':feedback_id' => $mediaRow['feedback_message_id'],
             ]);
             $newPhotoId = (int) $pdo->lastInsertId();
+            // Das Foto gehoert dem Konto des Einsenders (Live-Name, Kontoloeschung).
+            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'photos', $newPhotoId, (int) $mediaRow['feedback_message_id']);
 
             $update = $pdo->prepare('UPDATE feedback_media SET imported_at = NOW() WHERE id = :id');
             $update->execute([':id' => $mediaId]);

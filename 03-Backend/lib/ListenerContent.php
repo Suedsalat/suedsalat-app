@@ -44,6 +44,30 @@ final class ListenerContent
         return "LEFT JOIN listeners {$listenerAlias} ON {$listenerAlias}.id = {$alias}.listener_id";
     }
 
+    /** Voreinstellung der Bildart beim Uebernehmen (Konzept: Film/Veranstaltung Plakat, sonst eigenes Foto). */
+    public const DEFAULT_IMAGE_KIND = [
+        'movie_tips' => 'poster',
+        'events' => 'poster',
+        'location_tips' => 'own',
+        'photos' => 'own',
+    ];
+
+    /**
+     * Beim Uebernehmen einer Einsendung: Der neue Eintrag gehoert dem Konto des Einsenders
+     * (Live-Name, Loeschen). $imageKind setzt die Bildart, sofern der Eintrag ein Bild hat;
+     * null = Voreinstellung der Tabelle.
+     */
+    public static function adoptFromFeedback(PDO $pdo, string $table, int $contentId, int $feedbackId, ?string $imageKind = null): void
+    {
+        if (!array_key_exists($table, self::DEFAULT_IMAGE_KIND)) {
+            throw new \InvalidArgumentException("Unbekannte Tabelle: {$table}");
+        }
+        $kind = in_array($imageKind, ['own', 'poster'], true) ? $imageKind : self::DEFAULT_IMAGE_KIND[$table];
+        $pdo->prepare("UPDATE {$table} SET listener_id = (SELECT listener_id FROM feedback_messages WHERE id = :fid),
+                           image_kind = IF(image_path IS NULL, image_kind, :kind)
+                       WHERE id = :id")->execute([':fid' => $feedbackId, ':kind' => $kind, ':id' => $contentId]);
+    }
+
     /**
      * Beginn der Rueckkehrfrist (und erster Schritt bei "sofort endgueltig"): gewaehlte Beitraege
      * ausblenden, eigene Bilder von Tipps abnehmen und Thorsten informieren.

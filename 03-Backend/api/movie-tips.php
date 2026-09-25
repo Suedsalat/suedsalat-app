@@ -5,6 +5,7 @@ require_once __DIR__ . '/../config/bootstrap.php';
 
 use Suedsalat\ApiAuth;
 use Suedsalat\Database;
+use Suedsalat\ListenerContent;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -12,11 +13,12 @@ ApiAuth::requireDeviceToken();
 
 $pdo = Database::connection();
 $stmt = $pdo->query(
+    // Name live aus dem Konto (siehe ListenerContent); ausgeblendete Rezensionen zaehlen nicht mit.
     'SELECT mt.id, mt.title, mt.description, mt.link, mt.episode_guid, mt.episode_timestamp_seconds,
-        mt.image_path, mt.submitted_by_name, mt.created_at,
-        (SELECT AVG(rating) FROM tip_reviews WHERE tip_type = "movie_tip" AND tip_id = mt.id AND approved = 1) AS avg_rating,
-        (SELECT COUNT(*) FROM tip_reviews WHERE tip_type = "movie_tip" AND tip_id = mt.id AND approved = 1) AS review_count
-     FROM movie_tips mt
+        mt.image_path, ' . ListenerContent::displayNameSql('mt', 'submitted_by_name') . ' AS submitted_by_name, mt.created_at,
+        (SELECT AVG(rating) FROM tip_reviews WHERE tip_type = "movie_tip" AND tip_id = mt.id AND approved = 1 AND hidden_at IS NULL) AS avg_rating,
+        (SELECT COUNT(*) FROM tip_reviews WHERE tip_type = "movie_tip" AND tip_id = mt.id AND approved = 1 AND hidden_at IS NULL) AS review_count
+     FROM movie_tips mt ' . ListenerContent::joinSql('mt') . '
      ORDER BY mt.sort_order ASC'
 );
 

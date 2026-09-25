@@ -350,6 +350,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'])) {
                 'UPDATE feedback_messages SET movietip_created_at = NOW(), status = "erledigt", handled_by = :admin_id, handled_at = NOW() WHERE id = :id'
             );
             $markDone->execute([':admin_id' => $adminId, ':id' => $feedbackId]);
+            // Der Tipp gehoert dem Konto des Einsenders (Live-Name, Kontoloeschung).
+            \Suedsalat\ListenerContent::adoptFromFeedback($pdo, 'movie_tips', $newTipId, $feedbackId);
         }
 
         // Rezension gleich beim Anlegen mit eintragen, falls das Haekchen gesetzt war.

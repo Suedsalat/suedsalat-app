@@ -5,12 +5,13 @@ require_once __DIR__ . '/../config/bootstrap.php';
 
 use Suedsalat\ApiAuth;
 use Suedsalat\Database;
+use Suedsalat\Listener;
 use Suedsalat\Mailer;
 use Suedsalat\RateLimiter;
 
 header('Content-Type: application/json; charset=utf-8');
 
-ApiAuth::requireDeviceToken();
+$claims = ApiAuth::requireDeviceToken();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -34,6 +35,27 @@ $episodeGuid = trim((string) ($_POST['episode_guid'] ?? '')) ?: null;
 $allowedTypes = ['allgemein', 'termin_tipp', 'foto_vorschlag', 'kino_tipp', 'sprachnachricht', 'frage', 'location_tipp'];
 if (!in_array($type, $allowedTypes, true)) {
     $type = 'allgemein';
+}
+
+// App 2.0: Gaeste (und gesperrte Hoerer) senden nur schriftliches allgemeines Feedback oder
+// Fragen - keine Tipps, Fotos, Videos oder Sprachnachrichten. Registrierte senden alles; ihr
+// Name kommt dann immer aus dem Konto (Spitzname), nie aus dem Formular.
+$listener = Listener::forDevice(Database::connection(), isset($claims['sub']) ? (int) $claims['sub'] : null);
+$mayContribute = $listener !== null && $listener['blocked_at'] === null;
+if (!$mayContribute) {
+    if (!in_array($type, ['allgemein', 'frage'], true)) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Tipps, Fotos und Sprachnachrichten kannst du als registrierter Hörer einreichen.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    if (!empty($_FILES['media']['name'])) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Fotos und Videos kannst du als registrierter Hörer mitschicken.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+if ($listener !== null) {
+    $senderName = (string) $listener['nickname'];
 }
 
 if ($type !== 'sprachnachricht' && $message === '') {
@@ -207,11 +229,12 @@ if ($episodeGuid !== null) {
 }
 
 $stmt = $pdo->prepare(
-    'INSERT INTO feedback_messages (sender_name, type, episode_guid, message, suggested_date, image_path, media_type, consent_publish)
-     VALUES (:sender_name, :type, :episode_guid, :message, :suggested_date, :image_path, :media_type, :consent_publish)'
+    'INSERT INTO feedback_messages (sender_name, listener_id, type, episode_guid, message, suggested_date, image_path, media_type, consent_publish)
+     VALUES (:sender_name, :listener_id, :type, :episode_guid, :message, :suggested_date, :image_path, :media_type, :consent_publish)'
 );
 $stmt->execute([
     ':sender_name' => $senderName !== '' ? $senderName : null,
+    ':listener_id' => $listener !== null ? $listener['id'] : null,
     ':type' => $type,
     ':episode_guid' => $episodeGuid,
     ':message' => $message,

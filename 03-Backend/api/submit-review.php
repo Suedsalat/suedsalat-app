@@ -5,6 +5,7 @@ require_once __DIR__ . '/../config/bootstrap.php';
 
 use Suedsalat\ApiAuth;
 use Suedsalat\Database;
+use Suedsalat\Listener;
 use Suedsalat\RateLimiter;
 
 header('Content-Type: application/json; charset=utf-8');
@@ -25,6 +26,21 @@ if (RateLimiter::tooMany('review_submit', $ip, 20, 60)) {
 }
 RateLimiter::record('review_submit', $ip);
 
+// App 2.0: Rezensionen gibt es nur mit Konto, und der Name kommt immer aus dem Konto
+// (Spitzname) - nie aus dem Formular. Gaeste und gesperrte Hoerer koennen nicht bewerten.
+$pdo = Database::connection();
+$listener = Listener::forDevice($pdo, isset($claims['sub']) ? (int) $claims['sub'] : null);
+if ($listener === null) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Bewertungen kannst du als registrierter Hörer abgeben. Registriere dich kostenlos in den Einstellungen.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+if ($listener['blocked_at'] !== null) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Dein Konto ist für Beiträge gesperrt.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // Rezensionen gibt es bewusst nur fuer Filmtipps und Locationtipps, nicht fuer
 // Veranstaltungen - dort ergibt eine Bewertung inhaltlich keinen Sinn.
 $tipTypeTables = [
@@ -36,7 +52,7 @@ $tipType = (string) ($_POST['tip_type'] ?? '');
 $tipId = (int) ($_POST['tip_id'] ?? 0);
 $rating = (int) ($_POST['rating'] ?? 0);
 $reviewText = trim((string) ($_POST['review_text'] ?? ''));
-$reviewerName = trim((string) ($_POST['reviewer_name'] ?? ''));
+$reviewerName = (string) $listener['nickname'];
 
 if (!isset($tipTypeTables[$tipType]) || $tipId <= 0) {
     http_response_code(422);
@@ -67,8 +83,6 @@ if (mb_strlen($reviewerName) > 100) {
     $reviewerName = mb_substr($reviewerName, 0, 100);
 }
 
-$pdo = Database::connection();
-
 $existsStmt = $pdo->prepare('SELECT id FROM ' . $tipTypeTables[$tipType] . ' WHERE id = :id');
 $existsStmt->execute([':id' => $tipId]);
 if ($existsStmt->fetchColumn() === false) {
@@ -77,9 +91,8 @@ if ($existsStmt->fetchColumn() === false) {
     exit;
 }
 
-// deviceId bleibt null im Soft-Auth-Modus (API_AUTH_ENFORCE=false) ohne gueltiges Token -
-// die Rezension wird trotzdem angenommen, nur ohne Geraete-Zuordnung.
-$deviceId = $claims['sub'] ?? null;
+// Seit 2.0 gibt es Rezensionen nur mit Konto, also immer mit gueltigem Geraete-Token.
+$deviceId = (int) $claims['sub'];
 
 // Rezensionen erscheinen ab sofort direkt live in der App, ohne Admin-
 // Freigabe - Admins koennen sie im Nachhinein im Admin-Bereich bearbeiten
@@ -88,8 +101,8 @@ $deviceId = $claims['sub'] ?? null;
 // alte, noch nicht freigegebene Rezensionen aus der Zeit vor dieser
 // Umstellung weiter korrekt behandelt werden.
 $stmt = $pdo->prepare(
-    'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, reviewer_name, device_id, approved, approved_at)
-     VALUES (:tip_type, :tip_id, :rating, :review_text, :reviewer_name, :device_id, 1, NOW())'
+    'INSERT INTO tip_reviews (tip_type, tip_id, rating, review_text, reviewer_name, device_id, listener_id, approved, approved_at)
+     VALUES (:tip_type, :tip_id, :rating, :review_text, :reviewer_name, :device_id, :listener_id, 1, NOW())'
 );
 $stmt->execute([
     ':tip_type' => $tipType,
@@ -98,6 +111,7 @@ $stmt->execute([
     ':review_text' => $reviewText,
     ':reviewer_name' => $reviewerName,
     ':device_id' => $deviceId,
+    ':listener_id' => $listener['id'],
 ]);
 
 echo json_encode(['status' => 'ok']);
