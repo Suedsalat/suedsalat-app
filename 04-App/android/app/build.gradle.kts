@@ -28,8 +28,13 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "eu.suedsalat.suedsalat_app"
+        // Test-App "Suedsalat TEST": eigene Kennung, laesst sich neben der Store-App installieren
+        // (fuer Tests gegen den Testbereich). Nur beim Bauen mit ORG_GRADLE_PROJECT_suedsalatTest=true;
+        // ohne diesen Schalter (Codemagic, Store) bleibt alles wie bisher. Die Kennung ist in
+        // google-services.json als zweite App im Firebase-Projekt eingetragen.
+        val testApp = (project.findProperty("suedsalatTest") as String?) == "true"
+        applicationId = if (testApp) "eu.suedsalat.suedsalat_app.test" else "eu.suedsalat.suedsalat_app"
+        manifestPlaceholders["appLabel"] = if (testApp) "Südsalat TEST" else "Südsalat"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
