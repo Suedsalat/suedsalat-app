@@ -3,3 +3,4 @@ vendor/
 uploads/*
 !uploads/.htaccess
 *.log
+cron/*.json
