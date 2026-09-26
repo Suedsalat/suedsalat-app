@@ -342,7 +342,8 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
   (MP3 oder M4A, höchstens 24 MB) anlegen, bearbeiten, Datei austauschen, löschen. Erscheint sofort in der
   App, eine Push-Nachricht geht nicht raus. Jenny sieht die Seite nicht.
 
-- **Neue Seite „Folgen“** (nur Thorsten): neue Folge anlegen (MP3 vorher per FTP nach `episodes/`,
+- **Neue Seite „Folgen“** (nur Thorsten, **seit 26.09.2026 vorab live**, damit Kapitel schon nachgetragen
+  werden können): neue Folge anlegen (MP3 vorher per FTP nach `episodes/`,
   dann aus der Liste wählen; Länge und Größe ermittelt der Server), jede Folge bearbeiten, Kapitel
   eintragen („00:00 Titel“ je Zeile, auch für alte Folgen), Kurztext fürs Archiv. Schreibt
   `podcast.rss`, die bisherige Fassung wird aufgehoben und lässt sich wiederherstellen. Prüfen: eine
@@ -355,6 +356,10 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
 - **Änderungen an alten Folgen kommen jetzt in der App an** (Titel, Text, Kapitel), ohne Push.
 
 ### Bereits live, nicht Teil dieses Release-Tests
+
+- **Neue Logos mit der Schrift Südsalat (26.09.2026):** Homepage-Kopf, Vorschaubild, E-Mails,
+  Admin-Seitenleiste, Ersatz-Cover in Android Auto/CarPlay; Podcast-Cover in der RSS
+  (`logo/suedsalat_podcast_cover.jpg`, 3000 px). In der App (Startseite, Startauswahl) erst mit 2.0.
 
 - Push-Nachrichten nennen den tatsächlich handelnden Admin statt immer "Jenny".
 - Aus einem eingereichten Locationtipp lässt sich ein Locationtipp anlegen (war nie gebaut).
@@ -412,9 +417,12 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    nur es selbst; im Admin-Bereich steht es als „Prüfkonto (Apple/Google)“.
 6d. **Homepage und Folgen (Stand 26.09.2026):**
    - Backend hochladen und die 2.0-Migration laufen lassen (legt u. a. `rss_versions` an).
-   - Aus `U:Web` hochladen: `podcast.rss` (Kurztexte der Folgen 1–29, fünf korrigierte Titel) und
-     `index.html` (Folgenbereich zwischen den Markierungen `FOLGEN-ANFANG`/`FOLGEN-ENDE`). Die Reihenfolge
-     ist egal: Ohne Markierungen fasst der Server die Seite nicht an.
+   - **`podcast.rss` NICHT mehr hochladen** – sie ist seit 26.09.2026 live das Original (Kurztexte,
+     korrigierte Titel, neues Cover, Thorstens Kapitel) und wird nur noch unter „Folgen“ gepflegt, das
+     seit 26.09. vorab live ist.
+   - Aus `U:\Web` nur `index.html` hochladen (Folgenbereich zwischen den Markierungen
+     `FOLGEN-ANFANG`/`FOLGEN-ENDE`). Vorher mit der Live-Fassung vergleichen, falls außerhalb der
+     Markierungen inzwischen etwas geändert wurde.
    - Danach im Admin-Bereich unter „Homepage“ auf „Jetzt aktualisieren“ klicken und die Seite ansehen.
      Der Folgenteil muss aussehen wie vorher. Neu: Der Download-Knopf von Folge 35 funktioniert.
    - **Ab dann Folgen nur noch im Admin-Bereich unter „Folgen“ pflegen**, nicht mehr `podcast.rss`
