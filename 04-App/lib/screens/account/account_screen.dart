@@ -14,6 +14,7 @@ class AccountScreen extends StatelessWidget {
     var busy = false;
     await showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: const Text('Spitzname ändern'),
@@ -71,6 +72,7 @@ class AccountScreen extends StatelessWidget {
   Future<void> _logout(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('Abmelden?'),
         content: const Text(

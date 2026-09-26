@@ -66,6 +66,7 @@ class ContentMenuButton extends StatelessWidget {
   Future<void> _hideAuthor(BuildContext context) async {
     final ok = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('Nutzer ausblenden?'),
         content: const Text(
@@ -95,6 +96,8 @@ Future<void> showReportSheet(BuildContext context, String contentType, int conte
   final messenger = ScaffoldMessenger.of(context);
   final result = await showModalBottomSheet<String>(
     context: context,
+    isDismissible: false,
+    enableDrag: false,
     isScrollControlled: true,
     builder: (context) => _ReportSheet(contentType: contentType, contentId: contentId),
   );
@@ -182,11 +185,21 @@ class _ReportSheetState extends State<_ReportSheet> {
               if (_error != null)
                 Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: _busy ? null : _send,
-                child: _busy
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Meldung senden'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: _busy ? null : () => Navigator.of(context).pop(),
+                    child: const Text('Abbrechen'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: _busy ? null : _send,
+                    child: _busy
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('Meldung senden'),
+                  ),
+                ],
               ),
             ],
           ),

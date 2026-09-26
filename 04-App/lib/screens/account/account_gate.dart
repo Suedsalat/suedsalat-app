@@ -14,6 +14,7 @@ Future<bool> ensureCanContribute(BuildContext context) async {
   if (account.isLoggedIn) {
     await showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('Dein Konto ist für Beiträge gesperrt'),
         content: const Text(
@@ -33,6 +34,7 @@ Future<bool> ensureCanContribute(BuildContext context) async {
 
   final choice = await showDialog<String>(
     context: context,
+    barrierDismissible: false,
     builder: (context) => AlertDialog(
       title: const Text('Zum Mitmachen kostenlos registrieren'),
       content: const Text(

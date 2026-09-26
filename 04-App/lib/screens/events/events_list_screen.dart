@@ -110,8 +110,16 @@ class _EventsListScreenState extends State<EventsListScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text(event.title),
+        // Melden steht wie bei Rezensionen und Fotos im "⋮"-Menue oben rechts.
+        title: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: Text(event.title)),
+            ContentMenuButton(contentType: 'event', contentId: event.id, color: Theme.of(context).colorScheme.primary),
+          ],
+        ),
         content: SingleChildScrollView(
           child: SizedBox(
             width: double.maxFinite,
@@ -172,12 +180,6 @@ class _EventsListScreenState extends State<EventsListScreen> {
           ),
         ),
         actions: [
-          // Tipps werden nicht automatisch ausgeblendet, Meldungen landen aber bei Jenny und Thorsten.
-          IconButton(
-            icon: const Icon(Icons.flag_outlined),
-            tooltip: 'Melden',
-            onPressed: () => showReportSheet(context, 'event', event.id),
-          ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Schließen'),

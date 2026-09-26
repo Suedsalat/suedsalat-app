@@ -255,6 +255,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     if (!await ensureCanContribute(context) || !mounted) return;
     final choice = await showModalBottomSheet<({ImageSource source, bool isVideo})>(
       context: context,
+      isDismissible: false,
+      enableDrag: false,
       builder: (context) => SafeArea(
         child: Wrap(
           children: [
@@ -277,6 +279,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               leading: const Icon(Icons.video_library),
               title: const Text('Video aus Galerie wählen'),
               onTap: () => Navigator.of(context).pop((source: ImageSource.gallery, isVideo: true)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.close),
+              title: const Text('Abbrechen'),
+              onTap: () => Navigator.of(context).pop(),
             ),
           ],
         ),
@@ -418,6 +425,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     // der Hinweis unter dem Feld sagt deshalb je nach Art, ob der Name oeffentlich wird.
     final isTipp = const {'termin_tipp', 'kino_tipp', 'location_tipp', 'foto_vorschlag'}.contains(_type);
     final listener = AccountService.instance.listener;
+    final canContribute = AccountService.instance.canContribute;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Feedback')),
@@ -426,9 +434,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text(
-              'Hast du einen Veranstaltungstipp, einen Filmtipp, einen Fotovorschlag, eine Frage oder einfach Feedback für uns? '
-              'Schreib uns direkt – Jenny und Thorsten lesen jede Nachricht.',
+            // Gaeste sehen nur, was sie auch schicken koennen (allgemeines Feedback, Frage) - Tipps,
+            // Fotos, Videos und Sprachnachrichten tauchen fuer sie gar nicht erst auf.
+            Text(
+              canContribute
+                  ? 'Hast du einen Veranstaltungstipp, einen Filmtipp, einen Fotovorschlag, eine Frage oder einfach Feedback für uns? '
+                      'Schreib uns direkt – Jenny und Thorsten lesen jede Nachricht.'
+                  : 'Hast du eine Frage oder einfach Feedback für uns? Schreib uns direkt – Jenny und Thorsten lesen jede Nachricht.',
             ),
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(
@@ -436,6 +448,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               decoration: const InputDecoration(labelText: 'Worum geht es?'),
               hint: const Text('Bitte hier auswählen'),
               items: _typeLabels.entries
+                  // Die gewaehlte Art bleibt drin, bis der Registrieren-Hinweis sie zuruecksetzt
+                  // (sonst stuerzt die Auswahl ab, wenn ein Gast direkt mit einer Tipp-Art kommt).
+                  .where((entry) => canContribute || !_contributionTypes.contains(entry.key) || entry.key == _type)
                   .map((entry) => DropdownMenuItem(value: entry.key, child: Text(entry.value)))
                   .toList(),
               validator: (value) => value == null ? 'Bitte eine Kategorie auswählen.' : null,
@@ -621,7 +636,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 icon: const Icon(Icons.add_a_photo),
                 label: const Text('Weiteres Foto hinzufügen'),
               ),
-            ] else if (!isSprachnachricht)
+            ] else if (!isSprachnachricht && canContribute)
               OutlinedButton.icon(
                 onPressed: _pickMedia,
                 icon: const Icon(Icons.add_a_photo),

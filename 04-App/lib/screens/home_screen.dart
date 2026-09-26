@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/account_service.dart';
 import '../services/api_service.dart';
 import '../services/stats_consent_service.dart';
 import '../services/seen_items_service.dart';
@@ -221,7 +222,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ],
         ),
         body: screens[_currentIndex],
-        floatingActionButton: _buildTipFab(),
+        // Tipps einreichen gibt es nur mit Konto - Gaeste sehen den Knopf gar nicht.
+        floatingActionButton: ListenableBuilder(
+          listenable: AccountService.instance,
+          builder: (context, _) =>
+              AccountService.instance.canContribute ? (_buildTipFab() ?? const SizedBox.shrink()) : const SizedBox.shrink(),
+        ),
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

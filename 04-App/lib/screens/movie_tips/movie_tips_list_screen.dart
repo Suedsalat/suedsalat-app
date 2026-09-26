@@ -92,8 +92,10 @@ class _MovieTipsListScreenState extends State<MovieTipsListScreen> {
     );
   }
 
-  void _openReviews(MovieTip tip) {
-    Navigator.of(context).push(
+  /// [from]: aus dem Infofenster dessen Kontext - baut sich die Liste waehrend des offenen Fensters
+  /// neu auf (App kommt aus dem Hintergrund zurueck), ist der eigene Kontext nicht mehr gueltig.
+  void _openReviews(MovieTip tip, [BuildContext? from]) {
+    Navigator.of(from ?? context).push(
       MaterialPageRoute(
         builder: (_) => TipReviewsScreen(tipType: 'movie_tip', tipId: tip.id, tipTitle: tip.title),
       ),
@@ -109,8 +111,16 @@ class _MovieTipsListScreenState extends State<MovieTipsListScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text(tip.title),
+        // Melden steht wie bei Rezensionen und Fotos im "⋮"-Menue oben rechts.
+        title: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: Text(tip.title)),
+            ContentMenuButton(contentType: 'movie_tip', contentId: tip.id, color: Theme.of(context).colorScheme.primary),
+          ],
+        ),
         content: SingleChildScrollView(
           child: SizedBox(
             width: double.maxFinite,
@@ -164,7 +174,7 @@ class _MovieTipsListScreenState extends State<MovieTipsListScreen> {
                 MikroRatingDisplay(
                   avgRating: tip.avgRating,
                   reviewCount: tip.reviewCount,
-                  onTap: () => _openReviews(tip),
+                  onTap: () => _openReviews(tip, context),
                   iconSize: 28,
                 ),
                 const SizedBox(height: 12),
@@ -175,12 +185,6 @@ class _MovieTipsListScreenState extends State<MovieTipsListScreen> {
           ),
         ),
         actions: [
-          // Tipps werden nicht automatisch ausgeblendet, Meldungen landen aber bei Jenny und Thorsten.
-          IconButton(
-            icon: const Icon(Icons.flag_outlined),
-            tooltip: 'Melden',
-            onPressed: () => showReportSheet(context, 'movie_tip', tip.id),
-          ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Schließen'),

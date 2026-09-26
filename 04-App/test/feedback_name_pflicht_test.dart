@@ -102,6 +102,32 @@ void main() {
     expect(find.textContaining('Steht öffentlich'), findsNothing);
   });
 
+  // Gaeste sehen nur, was sie auch duerfen (Wunsch Thorsten 26.09.2026).
+  testWidgets('Gast: Auswahl zeigt nur Feedback und Frage, kein Foto-Knopf', (tester) async {
+    await alsGast();
+    await oeffnen(tester, 'allgemein');
+    await tester.tap(find.text('Allgemeines Feedback'));
+    await tester.pumpAndSettle();
+    expect(find.text('Frage einreichen'), findsWidgets);
+    for (final art in ['Veranstaltungstipp', 'Filmtipp', 'Locationtipp', 'Fotoempfehlung', 'Sprachnachricht']) {
+      expect(find.text(art), findsNothing, reason: art);
+    }
+    await tester.tap(find.text('Allgemeines Feedback').last);
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.add_a_photo), findsNothing);
+  });
+
+  testWidgets('Angemeldet: Auswahl zeigt alle Arten und den Foto-Knopf', (tester) async {
+    await alsHoerer();
+    await oeffnen(tester, 'allgemein');
+    expect(find.byIcon(Icons.add_a_photo), findsOneWidget);
+    await tester.tap(find.text('Allgemeines Feedback'));
+    await tester.pumpAndSettle();
+    for (final art in ['Veranstaltungstipp', 'Filmtipp', 'Locationtipp', 'Fotoempfehlung', 'Sprachnachricht']) {
+      expect(find.text(art), findsWidgets, reason: art);
+    }
+  });
+
   testWidgets('Gast: gemerkter Name ist vorausgefuellt', (tester) async {
     SharedPreferences.setMockInitialValues({'guest_sender_name': 'Inga'});
     await AccountService.instance.load();

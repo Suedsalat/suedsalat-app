@@ -92,8 +92,10 @@ class _LocationTipsListScreenState extends State<LocationTipsListScreen> {
     );
   }
 
-  void _openReviews(LocationTip tip) {
-    Navigator.of(context).push(
+  /// [from]: aus dem Infofenster dessen Kontext - baut sich die Liste waehrend des offenen Fensters
+  /// neu auf (App kommt aus dem Hintergrund zurueck), ist der eigene Kontext nicht mehr gueltig.
+  void _openReviews(LocationTip tip, [BuildContext? from]) {
+    Navigator.of(from ?? context).push(
       MaterialPageRoute(
         builder: (_) => TipReviewsScreen(tipType: 'location_tip', tipId: tip.id, tipTitle: tip.name),
       ),
@@ -109,8 +111,16 @@ class _LocationTipsListScreenState extends State<LocationTipsListScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text(tip.name),
+        // Melden steht wie bei Rezensionen und Fotos im "⋮"-Menue oben rechts.
+        title: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: Text(tip.name)),
+            ContentMenuButton(contentType: 'location_tip', contentId: tip.id, color: Theme.of(context).colorScheme.primary),
+          ],
+        ),
         content: SingleChildScrollView(
           child: SizedBox(
             width: double.maxFinite,
@@ -166,7 +176,7 @@ class _LocationTipsListScreenState extends State<LocationTipsListScreen> {
                 MikroRatingDisplay(
                   avgRating: tip.avgRating,
                   reviewCount: tip.reviewCount,
-                  onTap: () => _openReviews(tip),
+                  onTap: () => _openReviews(tip, context),
                   iconSize: 28,
                 ),
                 if (tip.description != null && tip.description!.isNotEmpty) ...[
@@ -178,12 +188,6 @@ class _LocationTipsListScreenState extends State<LocationTipsListScreen> {
           ),
         ),
         actions: [
-          // Tipps werden nicht automatisch ausgeblendet, Meldungen landen aber bei Jenny und Thorsten.
-          IconButton(
-            icon: const Icon(Icons.flag_outlined),
-            tooltip: 'Melden',
-            onPressed: () => showReportSheet(context, 'location_tip', tip.id),
-          ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Schließen'),

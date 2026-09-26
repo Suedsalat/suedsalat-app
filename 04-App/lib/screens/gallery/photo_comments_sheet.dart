@@ -18,6 +18,8 @@ Future<int?> showPhotoComments(
 }) {
   return showModalBottomSheet<int>(
     context: context,
+    isDismissible: false,
+    enableDrag: false,
     isScrollControlled: true,
     useSafeArea: true,
     builder: (_) =>
@@ -101,6 +103,7 @@ class _PhotoCommentsSheetState extends State<PhotoCommentsSheet> {
   Future<void> _loeschen(PhotoComment k) async {
     final ok = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('Kommentar löschen?'),
         content: const Text('Dein Kommentar verschwindet sofort für alle.'),
@@ -165,9 +168,14 @@ class _PhotoCommentsSheetState extends State<PhotoCommentsSheet> {
 
   Widget _eingabe() {
     final account = AccountService.instance;
+    // Unten Platz fuer die Navigationsleiste des Handys (App laeuft randlos) bzw. die Tastatur -
+    // sonst liegt die Leiste ueber dem Hinweis oder dem Eingabefeld.
+    final unten = MediaQuery.viewInsetsOf(context).bottom > MediaQuery.viewPaddingOf(context).bottom
+        ? MediaQuery.viewInsetsOf(context).bottom
+        : MediaQuery.viewPaddingOf(context).bottom;
     if (!account.canContribute) {
       return Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + unten),
         child: account.isLoggedIn
             ? const Text(
                 'Dein Konto ist für Beiträge gesperrt – Kommentare sind deshalb nicht möglich.',
@@ -196,7 +204,7 @@ class _PhotoCommentsSheetState extends State<PhotoCommentsSheet> {
         16,
         8,
         8,
-        8 + MediaQuery.viewInsetsOf(context).bottom,
+        8 + unten,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,

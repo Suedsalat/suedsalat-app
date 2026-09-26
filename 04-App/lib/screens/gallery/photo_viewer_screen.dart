@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../services/account_service.dart';
 import '../../widgets/tip_submitter_line.dart';
 import '../../widgets/content_menu_button.dart';
 import 'photo_comments_sheet.dart';
@@ -298,8 +299,10 @@ class _KommentarZeile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // "Kommentieren" nur fuer alle, die auch schreiben duerfen - Gaeste (und gesperrte Konten)
+    // koennen Kommentare nur lesen, also sehen sie "Kommentare".
     final text = switch (anzahl) {
-      0 => 'Kommentieren',
+      0 => AccountService.instance.canContribute ? 'Kommentieren' : 'Kommentare',
       1 => '1 Kommentar',
       _ => '$anzahl Kommentare',
     };

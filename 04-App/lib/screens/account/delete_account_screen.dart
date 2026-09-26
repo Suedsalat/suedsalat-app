@@ -23,6 +23,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   Future<void> _submit() async {
     final ok = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text(
           _immediate ? 'Konto sofort endgültig löschen?' : 'Konto löschen?',

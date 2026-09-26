@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 
 import '../../models/episode.dart';
 import '../../services/api_service.dart';
-import '../../services/audio_player_service.dart';
 import '../../services/listened_episodes_service.dart';
 import '../../services/playback_position_service.dart';
 import '../../services/seen_items_service.dart';
@@ -54,9 +53,9 @@ class _EpisodesListScreenState extends State<EpisodesListScreen> {
     final episode = episodes[index];
     SeenItemsService.markSeen('episode', episode.guid);
     setState(() => _seenGuids = {..._seenGuids, episode.guid});
-    AudioPlayerService.instance.playFromList(episodes, index);
+    // Nur ansehen - abgespielt wird erst mit "Abspielen" (die laufende Folge spielt solange weiter).
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const EpisodePlayerScreen()),
+      MaterialPageRoute(builder: (_) => EpisodePlayerScreen(episode: episode, queue: episodes, index: index)),
     );
     // Zurueck aus dem Player: „Weiter bei …“ auf den neuen Stand bringen.
     final positions = await PlaybackPositionService.all();

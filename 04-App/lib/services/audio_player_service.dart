@@ -89,11 +89,10 @@ class AudioPlayerService extends ChangeNotifier {
     await AudioPlayer.global.setAudioContext(AudioContext(
       iOS: AudioContextIOS(
         category: AVAudioSessionCategory.playback,
-        options: {
-          AVAudioSessionOptions.allowAirPlay,
-          AVAudioSessionOptions.allowBluetooth,
-          AVAudioSessionOptions.allowBluetoothA2DP,
-        },
+        // Keine Zusatzoptionen: Bluetooth (A2DP) und AirPlay gehen bei "playback" von selbst.
+        // allowBluetooth/allowBluetoothA2DP/allowAirPlay sind laut Apple nur bei Aufnahme-
+        // Kategorien erlaubt - mit ihnen scheitert die Einstellung (Debug: Assertion).
+        options: const {},
       ),
       android: AudioContextAndroid(
         isSpeakerphoneOn: false,
