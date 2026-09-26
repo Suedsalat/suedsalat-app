@@ -54,6 +54,10 @@ function admin_nav_active(string $page, string $current): string
                 <?php if ($sidebarAdminName !== null): ?>
                     <small>Angemeldet als <?= htmlspecialchars($sidebarAdminName, ENT_QUOTES) ?></small>
                 <?php endif; ?>
+                <?php if (basename(dirname(__DIR__, 2)) === 'APP-test'): ?>
+                    <!-- Nur im Testbereich auf Strato (Ordner APP-test), nie im echten Admin-Bereich -->
+                    <strong style="display:block;margin-top:8px;color:#c62828;font-size:1.7rem;font-weight:800;letter-spacing:0.04em;line-height:1.1;">TESTBEREICH</strong>
+                <?php endif; ?>
             </span>
         </div>
 
