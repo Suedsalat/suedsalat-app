@@ -71,7 +71,12 @@ try {
     error_log('Homepage-Aktualisierung fehlgeschlagen: ' . $e->getMessage());
 }
 
-$xml = fetchRssXml(RSS_FEED_URL);
+// Liegt die RSS-Datei auf demselben Server (Live: Ordner ueber APP/), direkt von der Platte lesen,
+// sonst ueber die Adresse.
+$localFeed = \Suedsalat\Feed::path();
+$xml = $localFeed !== null && is_file($localFeed)
+    ? (@simplexml_load_file($localFeed) ?: null)
+    : fetchRssXml(RSS_FEED_URL);
 if ($xml === null) {
     exit(1);
 }
@@ -85,8 +90,16 @@ $insertStmt = $pdo->prepare(
      VALUES (:guid, :title, :description, :audio_url, :image_url, :duration, :pub_date)'
 );
 $existsStmt = $pdo->prepare('SELECT 1 FROM episodes_cache WHERE guid = :guid');
+// Bestehende Folgen nachziehen (Tippfehler, Kapitel, Kurztext ...) - ohne Push, die gibt es nur fuer
+// wirklich neue Folgen. Frueher blieben Aenderungen an alten Folgen in der App fuer immer unsichtbar.
+$updateStmt = $pdo->prepare(
+    'UPDATE episodes_cache SET title = :title, description = :description, audio_url = :audio_url,
+        image_url = :image_url, duration = :duration, pub_date = :pub_date
+     WHERE guid = :guid'
+);
 
 $newCount = 0;
+$updatedCount = 0;
 
 foreach ($xml->channel->item as $item) {
     $guid = trim((string) $item->guid) ?: trim((string) $item->link);
@@ -110,7 +123,7 @@ foreach ($xml->channel->item as $item) {
     $pubDate = strtotime((string) $item->pubDate);
     $pubDateSql = $pubDate !== false ? date('Y-m-d H:i:s', $pubDate) : date('Y-m-d H:i:s');
 
-    $insertStmt->execute([
+    $values = [
         ':guid' => $guid,
         ':title' => (string) $item->title,
         ':description' => (string) $item->description ?: null,
@@ -118,16 +131,22 @@ foreach ($xml->channel->item as $item) {
         ':image_url' => $imageUrl,
         ':duration' => $duration,
         ':pub_date' => $pubDateSql,
-    ]);
+    ];
+    if (!$isNew) {
+        $updateStmt->execute($values);
+        $updatedCount += $updateStmt->rowCount() > 0 ? 1 : 0;
+        continue;
+    }
+    $insertStmt->execute($values);
 
-    if ($isNew && $insertStmt->rowCount() > 0) {
+    if ($insertStmt->rowCount() > 0) {
         $newCount++;
         sendPushForNewEpisode((string) $item->title);
         recordPushSent($pdo, $guid);
     }
 }
 
-echo "Sync abgeschlossen. Neue Folgen: $newCount" . PHP_EOL;
+echo "Sync abgeschlossen. Neue Folgen: $newCount, aktualisiert: $updatedCount" . PHP_EOL;
 
 // Aufraeumen alter Auth-/Rate-Limit-Zeilen, damit diese Tabellen nicht unbegrenzt
 // wachsen. Laeuft im selben 15-Min-Cronjob mit, ist aber unabhaengig vom RSS-Sync -

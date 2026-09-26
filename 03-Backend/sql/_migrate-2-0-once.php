@@ -247,6 +247,19 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     // ---------------------------------------------------------------------------------------
+    // Folgen im Admin-Bereich: fruehere Fassungen der RSS-Datei (lib/Feed.php)
+    // ---------------------------------------------------------------------------------------
+
+    // Vor jedem Speichern die bisherige podcast.rss - zum Wiederherstellen, die 30 neuesten bleiben.
+    create_table($pdo, 'rss_versions', "CREATE TABLE rss_versions (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        content MEDIUMTEXT NOT NULL,
+        note VARCHAR(200) NOT NULL DEFAULT '',
+        admin_id INT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // ---------------------------------------------------------------------------------------
     // Store-Pruefung und Kontoloeschung ueber die Website
     // ---------------------------------------------------------------------------------------
 
