@@ -179,7 +179,7 @@ define('OWN_CONTENT_NAME', 'Südsalat');
 define('LOGIN_MAX_ATTEMPTS', 5);
 define('LOGIN_LOCKOUT_MINUTES', 15);
 define('PASSWORD_RESET_TTL_MINUTES', 60); // 1 Stunde
-define('ADMIN_IDLE_TIMEOUT_MINUTES', 8);
+define('ADMIN_IDLE_TIMEOUT_MINUTES', 30);
 
 // --- API-Auth fuer die App (anonyme Geraete-Tokens, siehe lib/Jwt.php, lib/ApiAuth.php) ---
 define('JWT_SECRET', env('JWT_SECRET'));

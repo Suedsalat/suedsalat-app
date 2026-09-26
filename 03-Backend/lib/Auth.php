@@ -8,6 +8,8 @@ final class Auth
     public static function startSession(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
+            // PHP raeumt Sitzungen sonst schon nach 24 Minuten weg - vor Ablauf der Leerlaufzeit.
+            ini_set('session.gc_maxlifetime', (string) (ADMIN_IDLE_TIMEOUT_MINUTES * 60 + 600));
             session_set_cookie_params([
                 'lifetime' => 0,
                 'path' => '/',
