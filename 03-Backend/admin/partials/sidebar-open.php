@@ -48,7 +48,7 @@ function admin_nav_active(string $page, string $current): string
     <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
     <nav class="admin-sidebar" id="admin-sidebar">
         <div class="sidebar-brand">
-            <img src="<?= BASE_PATH ?>/admin/assets/img/logo.png?v=<?= @filemtime(__DIR__ . '/../assets/img/logo.png') ?>" alt="Südsalat">
+            <img src="<?= BASE_PATH ?>/admin/assets/img/watermark-mikro.png?v=<?= @filemtime(__DIR__ . '/../assets/img/watermark-mikro.png') ?>" alt="Südsalat">
             <span>
                 APP-Administrationsbereich
                 <?php if ($sidebarAdminName !== null): ?>
