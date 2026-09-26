@@ -37,6 +37,10 @@ final class Skill
     {
         $type = (string) ($req['request']['type'] ?? '');
         $user = $this->userHash($req);
+        // Lehnt Amazon eine Antwort ab, kommt der Grund in einer eigenen Nachricht hinterher - aufheben.
+        if (isset($req['request']['error']) || $type === 'System.ExceptionEncountered') {
+            self::logProblem($req);
+        }
 
         return match (true) {
             $type === 'LaunchRequest' => $this->launch($user),
@@ -439,6 +443,21 @@ final class Skill
             $response['shouldEndSession'] = true;
         }
         return ['version' => '1.0', 'response' => $response];
+    }
+
+    /** Die letzten 20 Fehlermeldungen von Amazon, ohne Nutzerkennung (cron/*.json ist von aussen gesperrt). */
+    public static function logProblem(array $req): void
+    {
+        $file = dirname(__DIR__, 2) . '/cron/alexa-meldungen.json';
+        $list = is_file($file) ? (json_decode((string) file_get_contents($file), true) ?: []) : [];
+        $list[] = [
+            'zeit' => date('Y-m-d H:i:s'),
+            'typ' => $req['request']['type'] ?? null,
+            'grund' => $req['request']['reason'] ?? null,
+            'fehler' => $req['request']['error'] ?? null,
+            'anfrage' => $req['request']['cause'] ?? null,
+        ];
+        @file_put_contents($file, json_encode(array_slice($list, -20), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
     }
 
     private static function empty(): array
