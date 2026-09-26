@@ -84,6 +84,9 @@ class EpisodePlayerScreen extends StatelessWidget {
                           Text(shown.title, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
                           const SizedBox(height: 6),
                           Text(DateFormat('dd.MM.yyyy').format(shown.pubDate), style: Theme.of(context).textTheme.bodySmall),
+                          // Infoseite: Abspielen gleich unter dem Titel, nicht erst unter der Beschreibung
+                          // (Wunsch Thorsten 26.09.2026 - unten war er zu weit weg).
+                          if (!isCurrent) _StartButton(episode: shown, onStart: () => _start(service, shown)),
                           if (currentIndex >= 0) ...[
                             const SizedBox(height: 8),
                             Text(
@@ -122,10 +125,7 @@ class EpisodePlayerScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (isCurrent)
-                    _Controls(service: service, chapters: parts)
-                  else
-                    _StartButton(episode: shown, onStart: () => _start(service, shown)),
+                  if (isCurrent) _Controls(service: service, chapters: parts),
                   const SizedBox(height: 8),
                 ],
               ),

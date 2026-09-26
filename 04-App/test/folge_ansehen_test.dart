@@ -55,6 +55,10 @@ void main() {
     expect(find.text('Abspielen'), findsOneWidget);
     expect(find.byType(Slider), findsNothing);
     expect(find.text('Thema'), findsOneWidget); // Kapitel sind schon zu sehen
+    // Der Knopf steht gleich unter dem Titel, ueber Beschreibung und Kapiteln.
+    final knopf = tester.getTopLeft(find.byKey(const ValueKey('folge-abspielen'))).dy;
+    expect(knopf, lessThan(tester.getTopLeft(find.text('Worum es geht.')).dy));
+    expect(knopf, lessThan(tester.getTopLeft(find.text('Begrüßung')).dy));
     // Die laufende Folge bleibt die laufende.
     expect(service.currentEpisode!.guid, 'laeuft');
   });
