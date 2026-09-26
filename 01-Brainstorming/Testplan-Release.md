@@ -228,6 +228,27 @@ offenen Apps wischen) und starte dieselbe Folge wieder.
 - Antippen spielt den Beitrag im normalen Player, auch mit gesperrtem Bildschirm.
 - Das Symbol ist noch ein Platzhalter, bis Thorstens eigenes fertig ist.
 
+### 18. CarPlay-Menü (nur iPhone, im Auto)
+
+Neu: CarPlay zeigt jetzt die Folgenliste, bisher war dort nichts auswählbar.
+
+**Zuerst am iPhone ohne Auto – der Start der iOS-App wurde dafür umgebaut:** App öffnen, Folge
+abspielen, Sperrbildschirm-Steuerung, Push-Nachricht, App aus dem Hintergrund zurückholen. Alles muss
+wie bisher laufen, und es darf nie doppelt Ton kommen.
+
+**Dann im Auto:** iPhone mit CarPlay verbinden, **ohne** die App vorher am Handy zu öffnen, und in
+CarPlay „Südsalat“ antippen.
+
+**Erwartet:**
+- Kurz „Folgen werden geladen …“, dann die Folgen, neueste oben, mit Cover und Datum.
+- Gehörte Folgen tragen „Gehört“, angefangene „Weiter bei …“ mit Fortschrittsbalken.
+- Antippen spielt die Folge und öffnet „Läuft gerade“ (Pause, 15 s vor/zurück, Weiter).
+- Die laufende Folge ist in der Liste markiert.
+- Öffnest du danach die App am Handy, läuft dieselbe Folge weiter – kein zweiter Player.
+
+**Wenn CarPlay die App gar nicht öffnet:** Das ist ein Hinweis auf die Einstellung für mehrere Fenster
+in der `Info.plist` (`UIApplicationSupportsMultipleScenes`), mir Bescheid geben.
+
 ---
 
 ## Teil B — Aus 1.3.3 bis 1.3.6, für die Tester zum ersten Mal sichtbar
@@ -235,7 +256,7 @@ offenen Apps wischen) und starte dieselbe Folge wieder.
 Diese Dinge sind seit Mitte September fertig, kamen aber nie bei den Testern an. Wer von 1.3.2
 kommt, sieht sie jetzt zum ersten Mal — deshalb gehören sie in den Test.
 
-### 18. Android Auto
+### 19. Android Auto
 
 Die größte Neuerung dieses Sprungs. Die App meldet sich beim Auto als Medien-App an.
 
@@ -254,14 +275,14 @@ Die größte Neuerung dieses Sprungs. Die App meldet sich beim Auto als Medien-A
 **Bitte unbedingt melden, wenn** "Auswahl konnte nicht geladen werden" erscheint — das war der Fehler,
 der mehrere Anläufe gekostet hat, und der Fix ist in der Fassung, die ihr bekommt.
 
-### 19. Wiedergabe-Anzeige auf dem Sperrbildschirm
+### 20. Wiedergabe-Anzeige auf dem Sperrbildschirm
 
 **Erwartet:** Beim Abspielen erscheint eine Benachrichtigung mit Titel, Bild und Steuerung. Das
 Symbol in der Statusleiste ist einfarbig, nicht das bunte App-Icon. Läuft eine Folge ohne eigenes
 Bild, steht dort das quadratische Südsalat-Logo mit Schriftzug, kein einzelnes Mikrofon auf leerem
 Grund.
 
-### 20. Feedback einer Folge zuordnen
+### 21. Feedback einer Folge zuordnen
 
 **So prüfst du es:** Öffne das Feedback-Formular.
 

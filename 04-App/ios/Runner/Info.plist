@@ -44,6 +44,17 @@
 			<false/>
 			<key>UISceneConfigurations</key>
 			<dict>
+				<key>CPTemplateApplicationSceneSessionRoleApplication</key>
+				<array>
+					<dict>
+						<key>UISceneClassName</key>
+						<string>CPTemplateApplicationScene</string>
+						<key>UISceneConfigurationName</key>
+						<string>CarPlay</string>
+						<key>UISceneDelegateClassName</key>
+						<string>$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate</string>
+					</dict>
+				</array>
 				<key>UIWindowSceneSessionRoleApplication</key>
 				<array>
 					<dict>
@@ -53,8 +64,6 @@
 						<string>flutter</string>
 						<key>UISceneDelegateClassName</key>
 						<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
-						<key>UISceneStoryboardFile</key>
-						<string>Main</string>
 					</dict>
 				</array>
 			</dict>
@@ -63,8 +72,6 @@
 		<true/>
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>
-		<key>UIMainStoryboardFile</key>
-		<string>Main</string>
 		<key>UISupportedInterfaceOrientations</key>
 		<array>
 			<string>UIInterfaceOrientationPortrait</string>

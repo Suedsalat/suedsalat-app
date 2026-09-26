@@ -63,13 +63,6 @@ class _EpisodesListScreenState extends State<EpisodesListScreen> {
     if (mounted) setState(() => _positions = positions);
   }
 
-  static String _zeit(Duration d) {
-    String zwei(int n) => n.toString().padLeft(2, '0');
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    final s = d.inSeconds.remainder(60);
-    return h > 0 ? '$h:${zwei(m)}:${zwei(s)}' : '$m:${zwei(s)}';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +118,7 @@ class _EpisodesListScreenState extends State<EpisodesListScreen> {
                       isListened
                           ? '${DateFormat('dd.MM.yyyy').format(episode.pubDate)} · Gehört'
                           : _positions[episode.guid] != null
-                              ? '${DateFormat('dd.MM.yyyy').format(episode.pubDate)} · Weiter bei ${_zeit(_positions[episode.guid]!)}'
+                              ? '${DateFormat('dd.MM.yyyy').format(episode.pubDate)} · Weiter bei ${PlaybackPositionService.format(_positions[episode.guid]!)}'
                               : DateFormat('dd.MM.yyyy').format(episode.pubDate),
                     ),
                     trailing: Icon(

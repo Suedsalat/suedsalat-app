@@ -23,8 +23,8 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
   // Folgen) - das quadratische Südsalat-Logo mit Schriftzug, damit die
   // Vollbild-Cover-Anzeige (Sperrbildschirm, Android Auto/CarPlay, wie bei
   // Spotify) nicht nur ein einzelnes Mikro-Icon auf leerem Grund zeigt.
-  static final Uri _fallbackArtUri =
-      Uri.parse('https://www.xn--sdsalat-n2a.eu/APP/admin/assets/img/podcast_cover.png');
+  static const fallbackArtUrl = 'https://www.xn--sdsalat-n2a.eu/APP/admin/assets/img/podcast_cover.png';
+  static final Uri _fallbackArtUri = Uri.parse(fallbackArtUrl);
 
   Uri _artUriFor(Episode episode) =>
       episode.imageUrl != null ? Uri.tryParse(episode.imageUrl!) ?? _fallbackArtUri : _fallbackArtUri;
@@ -42,6 +42,19 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
 
   Future<List<Episode>> _loadEpisodes() async {
     return _episodesCache ??= await _api.fetchEpisodes();
+  }
+
+  /// Folgenliste fuer CarPlay (CarPlayService). Mit [refresh] wird sie neu vom Server geholt -
+  /// sonst saehe man im Auto eine neue Folge erst nach einem Neustart der App.
+  Future<List<Episode>> episodes({bool refresh = false}) async {
+    if (refresh) {
+      try {
+        _episodesCache = await _api.fetchEpisodes();
+      } catch (_) {
+        // Kein Netz: die bisherige Liste reicht.
+      }
+    }
+    return _loadEpisodes();
   }
 
   // Beschreibung aus dem RSS-Feed kann HTML enthalten (z.B. <p>/<br>-Tags) -

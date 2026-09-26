@@ -72,6 +72,15 @@ class PlaybackPositionService {
     await prefs.setString(_key, jsonEncode(all));
   }
 
+  /// "12:34" bzw. "1:02:03" fuer "Weiter bei …".
+  static String format(Duration d) {
+    String zwei(int n) => n.toString().padLeft(2, '0');
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    return h > 0 ? '$h:${zwei(m)}:${zwei(s)}' : '$m:${zwei(s)}';
+  }
+
   static Future<void> clear(String guid) async {
     final prefs = await SharedPreferences.getInstance();
     final all = await _all(prefs);

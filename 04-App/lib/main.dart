@@ -10,6 +10,7 @@ import 'screens/splash_screen.dart';
 import 'services/account_service.dart';
 import 'services/api_service.dart';
 import 'services/audio_handler.dart';
+import 'services/carplay_service.dart';
 import 'services/push_notification_service.dart';
 import 'services/stats_consent_service.dart';
 import 'theme/app_theme.dart';
@@ -43,7 +44,7 @@ void main() async {
   // Steuerung, Android Auto, CarPlay-Standardbildschirm "Wird wiedergegeben").
   // Siehe SuedsalatAudioHandler fuer die eigentliche Anbindung an den
   // bestehenden AudioPlayerService.
-  await AudioService.init(
+  final audioHandler = await AudioService.init(
     builder: () => SuedsalatAudioHandler(),
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'eu.suedsalat.suedsalat_app.audio',
@@ -59,6 +60,9 @@ void main() async {
       notificationColor: Color(0xFF77B538),
     ),
   );
+
+  // CarPlay-Menue (nur iOS): Folgenliste und Abspielen ueber denselben Handler wie Android Auto.
+  CarPlayService.init(audioHandler);
 
   runApp(const SuedsalatApp());
 }
