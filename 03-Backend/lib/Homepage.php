@@ -360,8 +360,10 @@ HTML;
     /** Ordner mit index.html und podcast.rss, oder null (dann ist die Automatik aus). */
     public static function directory(): ?string
     {
-        if (HOMEPAGE_DIR !== '') {
-            return rtrim(HOMEPAGE_DIR, '/\\');
+        // defined(): laeuft auch mit einer aelteren config.php, die HOMEPAGE_DIR noch nicht kennt.
+        $configured = defined('HOMEPAGE_DIR') ? (string) constant('HOMEPAGE_DIR') : '';
+        if ($configured !== '') {
+            return rtrim($configured, '/\\');
         }
         // Nur das Live-Backend (Ordner APP) schreibt automatisch in die Homepage daneben -
         // der Testbereich (APP-test) und die lokale Testumgebung nie, ausser ausdruecklich gesetzt.
