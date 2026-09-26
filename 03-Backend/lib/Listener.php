@@ -291,6 +291,12 @@ final class Listener
         $pdo->exec('DELETE FROM listener_login_codes WHERE created_at < DATE_SUB(NOW(), INTERVAL 1 DAY)');
         // Erledigte Meldungen nach 12 Monaten loeschen (Datenschutzerklaerung); offene bleiben bis zur Entscheidung.
         $meldungen = $pdo->exec("DELETE FROM content_reports WHERE status <> 'open' AND handled_at < DATE_SUB(NOW(), INTERVAL 12 MONTH)");
+        // Alexa-Hoerstellen nach 12 Monaten ohne Nutzung (Datenschutzerklaerung). try: Tabelle gibt es erst mit dem Skill.
+        try {
+            $pdo->exec('DELETE FROM alexa_positions WHERE updated_at < DATE_SUB(NOW(), INTERVAL 12 MONTH)');
+        } catch (\PDOException $e) {
+            error_log('Alexa-Hoerstellen nicht aufgeraeumt: ' . $e->getMessage());
+        }
 
         return "Hoererkonten: {$reminded} Erinnerung(en), {$deleted} endgueltig geloescht, {$meldungen} alte Meldung(en) geloescht.";
     }

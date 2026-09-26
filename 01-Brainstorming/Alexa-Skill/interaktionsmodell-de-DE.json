@@ -1,0 +1,126 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "südsalat",
+      "intents": [
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        { "name": "AMAZON.PauseIntent", "samples": [] },
+        { "name": "AMAZON.ResumeIntent", "samples": [] },
+        { "name": "AMAZON.NextIntent", "samples": [] },
+        { "name": "AMAZON.PreviousIntent", "samples": [] },
+        { "name": "AMAZON.StartOverIntent", "samples": ["von vorn", "von vorne", "fang von vorne an", "nochmal von vorn"] },
+        { "name": "AMAZON.LoopOnIntent", "samples": [] },
+        { "name": "AMAZON.LoopOffIntent", "samples": [] },
+        { "name": "AMAZON.ShuffleOnIntent", "samples": [] },
+        { "name": "AMAZON.ShuffleOffIntent", "samples": [] },
+        { "name": "AMAZON.RepeatIntent", "samples": [] },
+        {
+          "name": "NeuesteFolgeIntent",
+          "slots": [],
+          "samples": [
+            "spiel die neueste Folge",
+            "spiele die neueste Folge",
+            "die neueste Folge",
+            "neueste Folge",
+            "spiel die aktuelle Folge",
+            "die aktuelle Folge",
+            "spiel die neue Folge",
+            "was ist die neueste Folge",
+            "spiel den Podcast",
+            "spiel den neuesten Podcast",
+            "ich möchte die neueste Folge hören"
+          ]
+        },
+        {
+          "name": "FolgeSpielenIntent",
+          "slots": [{ "name": "nummer", "type": "AMAZON.NUMBER" }],
+          "samples": [
+            "spiel Folge {nummer}",
+            "spiele Folge {nummer}",
+            "spiel die Folge {nummer}",
+            "Folge {nummer}",
+            "Folge Nummer {nummer}",
+            "spiel Episode {nummer}",
+            "Episode {nummer}",
+            "starte Folge {nummer}",
+            "ich möchte Folge {nummer} hören",
+            "spiel eine bestimmte Folge",
+            "spiel eine ältere Folge"
+          ]
+        },
+        {
+          "name": "WeiterhoerenIntent",
+          "slots": [],
+          "samples": [
+            "mach weiter",
+            "weiterhören",
+            "weiter hören",
+            "da weitermachen wo ich aufgehört habe",
+            "mach da weiter wo ich aufgehört habe",
+            "wo ich aufgehört habe",
+            "setz die Folge fort",
+            "hör weiter"
+          ]
+        },
+        {
+          "name": "NaechstesKapitelIntent",
+          "slots": [],
+          "samples": [
+            "nächstes Kapitel",
+            "zum nächsten Kapitel",
+            "spring zum nächsten Kapitel",
+            "springe zum nächsten Kapitel",
+            "Kapitel weiter",
+            "überspring das Kapitel",
+            "überspringe dieses Kapitel"
+          ]
+        },
+        {
+          "name": "VorigesKapitelIntent",
+          "slots": [],
+          "samples": [
+            "voriges Kapitel",
+            "vorheriges Kapitel",
+            "zum vorigen Kapitel",
+            "zum vorherigen Kapitel",
+            "ein Kapitel zurück",
+            "Kapitel zurück",
+            "zurück zum Anfang des Kapitels"
+          ]
+        },
+        {
+          "name": "KapitelIntent",
+          "slots": [],
+          "samples": [
+            "welches Kapitel läuft",
+            "welches Kapitel läuft gerade",
+            "welches Kapitel ist das",
+            "in welchem Kapitel sind wir",
+            "wie heißt das Kapitel",
+            "was läuft gerade",
+            "welche Folge läuft gerade"
+          ]
+        },
+        {
+          "name": "NeuigkeitenIntent",
+          "slots": [],
+          "samples": [
+            "was gibt es Neues",
+            "was gibt's Neues",
+            "Neuigkeiten",
+            "was ist neu",
+            "gibt es neue Tipps",
+            "wann ist die nächste Veranstaltung",
+            "was ist der neueste Filmtipp",
+            "was ist der neueste Tipp"
+          ]
+        }
+      ],
+      "types": []
+    }
+  }
+}

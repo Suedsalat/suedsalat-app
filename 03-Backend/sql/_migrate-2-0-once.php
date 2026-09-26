@@ -260,6 +260,19 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     // ---------------------------------------------------------------------------------------
+    // Alexa-Skill: Hoerstelle pro Alexa-Konto (lib/Alexa/Skill.php)
+    // ---------------------------------------------------------------------------------------
+
+    // user_hash: HMAC der anonymen Alexa-Kennung - kein Name, keine E-Mail. Nach 12 Monaten ohne
+    // Nutzung loescht der Cronjob den Eintrag (Listener::runMaintenance).
+    create_table($pdo, 'alexa_positions', "CREATE TABLE alexa_positions (
+        user_hash CHAR(64) PRIMARY KEY,
+        episode_number INT NOT NULL,
+        offset_ms INT NOT NULL DEFAULT 0,
+        updated_at DATETIME NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // ---------------------------------------------------------------------------------------
     // Store-Pruefung und Kontoloeschung ueber die Website
     // ---------------------------------------------------------------------------------------
 

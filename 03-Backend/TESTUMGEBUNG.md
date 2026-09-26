@@ -49,7 +49,7 @@ Bei laufender Datenbank und laufendem PHP-Server (beide oben):
 ```bash
 cd D:/Suedsalat-App/03-Backend
 export SUEDSALAT_ENV_FILE="D:/Suedsalat-Testumgebung/.env.test"
-for t in ListenerFlowTest PermissionsTest ModerationTest AdminPagesTest StatsConsentTest CommentsTest PruefkontoTest WebLoeschenTest BonusTest HomepageTest FolgenTest; do php tests/$t.php; done
+for t in ListenerFlowTest PermissionsTest ModerationTest AdminPagesTest StatsConsentTest CommentsTest PruefkontoTest WebLoeschenTest BonusTest HomepageTest FolgenTest AlexaTest; do php tests/$t.php; done
 ```
 
 Die Tests leeren die betroffenen Tabellen selbst. `AdminPagesTest` meldet sich über eine Sitzungsdatei

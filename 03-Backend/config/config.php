@@ -201,6 +201,10 @@ define('REVIEW_LOGIN_CODE', (string) env('REVIEW_LOGIN_CODE', ''));
 // automatisch der Ordner ueber APP/ - aber nur im Live-Backend, nie im Testbereich APP-test.
 define('HOMEPAGE_DIR', (string) env('HOMEPAGE_DIR', ''));
 
+// Alexa-Skill (alexa/index.php): Skill-ID aus der Alexa-Konsole ("amzn1.ask.skill...."). Nur
+// Anfragen fuer genau diesen Skill werden beantwortet. Leer = Skill antwortet niemandem.
+define('ALEXA_SKILL_ID', (string) env('ALEXA_SKILL_ID', ''));
+
 // Zusaetzliche Bestaetigung vor endgueltigen Loeschvorgaengen/sensiblen
 // Aktionen im gesamten Admin-Bereich - prueft die AKTUELL eingeloggte Person,
 // unabhaengig davon, wessen Datensatz betroffen ist. Bevorzugt den 6-stelligen
