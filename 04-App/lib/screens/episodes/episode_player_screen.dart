@@ -64,7 +64,7 @@ class EpisodePlayerScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: Text(isCurrent ? 'Wird abgespielt' : 'Folge')),
           // Laeuft gerade eine andere Folge, bleibt sie unten bedienbar.
-          bottomNavigationBar: isCurrent ? null : const MiniPlayerBar(),
+          bottomNavigationBar: isCurrent ? null : const MiniPlayerBar(atBottomEdge: true),
           body: SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),

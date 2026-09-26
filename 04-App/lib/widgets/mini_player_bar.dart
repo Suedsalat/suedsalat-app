@@ -8,7 +8,11 @@ import '../services/audio_player_service.dart';
 /// ist - so laeuft die Wiedergabe weiter, auch wenn man Termine oder Fotos
 /// anschaut, und man kommt per Antippen zurueck zum vollen Player.
 class MiniPlayerBar extends StatelessWidget {
-  const MiniPlayerBar({super.key});
+  const MiniPlayerBar({super.key, this.atBottomEdge = false});
+
+  /// true, wenn die Leiste ganz unten sitzt (Folgen-Infoseite) - dann haelt sie Abstand zur
+  /// Navigationsleiste des Handys. Auf dem Startbildschirm liegt die App-Navigation darunter.
+  final bool atBottomEdge;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +34,7 @@ class MiniPlayerBar extends StatelessWidget {
             },
             child: SafeArea(
               top: false,
-              bottom: false,
+              bottom: atBottomEdge,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(

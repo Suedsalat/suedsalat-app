@@ -63,6 +63,21 @@ void main() {
     expect(service.currentEpisode!.guid, 'laeuft');
   });
 
+  testWidgets('Infoseite: Mini-Player liegt ueber der Navigationsleiste des Handys', (tester) async {
+    final service = AudioPlayerService.instance;
+    service.currentEpisode = folge('laeuft', 'Folge 12');
+    addTearDown(() => service.currentEpisode = null);
+    tester.view.padding = const FakeViewPadding(bottom: 60);
+    tester.view.viewPadding = const FakeViewPadding(bottom: 60);
+
+    await zeigen(tester, folge('neu', 'Folge 5', beschreibung: mitKapiteln));
+
+    final unten = tester.view.physicalSize.height - 60;
+    expect(find.text('Folge 12'), findsOneWidget);
+    expect(tester.getBottomLeft(find.text('Folge 12')).dy, lessThanOrEqualTo(unten));
+    expect(tester.getBottomLeft(find.byTooltip('Wiedergabe beenden')).dy, lessThanOrEqualTo(unten));
+  });
+
   testWidgets('Laufende Folge mit Kapiteln: Zeitleiste, Spruenge und Kapitelknoepfe', (tester) async {
     final service = AudioPlayerService.instance;
     final e = folge('laeuft', 'Folge 5', beschreibung: mitKapiteln);
