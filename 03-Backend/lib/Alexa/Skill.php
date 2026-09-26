@@ -36,6 +36,10 @@ final class Skill
     /** Unter 30 Sekunden lohnt sich "weiterhoeren" nicht. */
     private const MIN_RESUME_MS = 30000;
 
+    /** Angebote in der Sitzung, auf die "ja"/"weiter" antworten. */
+    private const OFFER_RESUME = 'weiterhoeren';
+    private const OFFER_LATEST = 'neueste';
+
     /** @param list<array<string,mixed>> $episodes aus Feed::parse()['items'] */
     public function __construct(private readonly PDO $pdo, array $episodes)
     {
@@ -74,9 +78,10 @@ final class Skill
         $saved = $user !== null ? $this->savedPosition($user) : null;
         if ($saved !== null) {
             $e = $this->episodes[$saved['episode']];
+            // Als Frage: "ja", "weiter" und "mach weiter" setzen dann fort (siehe OFFER_*).
             return self::ask('Willkommen bei Südsalat! Du hast ' . $this->name($e) . ' ' . self::spokenTime($saved['offset'])
-                . ' unterbrochen. Sag „mach weiter“, um dort weiterzuhören, oder „neueste Folge“.',
-                'Sag „mach weiter“ oder „neueste Folge“.');
+                . ' unterbrochen. Soll ich dort weitermachen?',
+                'Soll ich weitermachen? Sag „ja“, oder „neueste Folge“.', self::OFFER_RESUME);
         }
         $latest = $this->latest();
         $intro = $latest !== null ? ' Die neueste Folge ist ' . $this->name($latest) . '.' : '';
@@ -88,7 +93,15 @@ final class Skill
     private function intent(array $req, ?string $user): array
     {
         $name = (string) ($req['request']['intent']['name'] ?? '');
+        // Hat Alexa gerade etwas angeboten ("Soll ich dort weitermachen?"), sind "ja", "weiter" und
+        // "mach weiter" die Antwort darauf - "weiter" hiesse fuer Alexa sonst "naechster Titel".
+        $offer = (string) ($req['session']['attributes']['angebot'] ?? '');
+        if ($offer !== '' && in_array($name, ['AMAZON.YesIntent', 'AMAZON.NextIntent', 'AMAZON.ResumeIntent', 'WeiterhoerenIntent'], true)) {
+            return $offer === self::OFFER_LATEST ? $this->playLatest($user) : $this->resume($req, $user, true, true);
+        }
         return match ($name) {
+            'AMAZON.YesIntent' => self::ask('Was möchtest du hören? Sag zum Beispiel „spiel die neueste Folge“.', 'Was möchtest du hören?'),
+            'AMAZON.NoIntent' => self::ask('Okay. Sag „spiel die neueste Folge“, „spiel Folge“ mit einer Nummer, oder „stopp“.', 'Was möchtest du hören?'),
             'NeuesteFolgeIntent' => $this->playLatest($user),
             'FolgeSpielenIntent' => $this->playNumber($req, $user),
             'AMAZON.ResumeIntent', 'WeiterhoerenIntent' => $this->resume($req, $user, true),
@@ -145,9 +158,10 @@ final class Skill
         return $this->play($e, 0, 'Hier ist ' . $this->name($e) . '.');
     }
 
-    private function resume(array $req, ?string $user, bool $withSpeech): array
+    /** $fromSaved: genau die in der Begruessung angebotene, gemerkte Stelle nehmen. */
+    private function resume(array $req, ?string $user, bool $withSpeech, bool $fromSaved = false): array
     {
-        [$e, $offset] = $this->playing($req);
+        [$e, $offset] = $fromSaved ? [null, 0] : $this->playing($req);
         if ($e === null && $user !== null && ($saved = $this->savedPosition($user)) !== null) {
             $e = $this->episodes[$saved['episode']];
             $offset = $saved['offset'];
@@ -265,9 +279,10 @@ final class Skill
         }
         $latest = $this->latest();
         if ($latest !== null) {
-            $parts[] = 'Die neueste Folge ist ' . $this->name($latest) . '. Soll ich sie abspielen? Sag „spiel die neueste Folge“.';
+            $parts[] = 'Die neueste Folge ist ' . $this->name($latest) . '. Soll ich sie abspielen?';
+            return self::ask(implode(' ', $parts), 'Soll ich die neueste Folge abspielen? Sag „ja“ oder „nein“.', self::OFFER_LATEST);
         }
-        return self::ask(implode(' ', $parts), 'Sag „spiel die neueste Folge“ oder „stopp“.');
+        return self::ask(implode(' ', $parts), 'Was möchtest du hören?');
     }
 
     // -------------------------------------------------------------------------------------------
@@ -511,13 +526,18 @@ final class Skill
         return ['version' => '1.0', 'response' => $response];
     }
 
-    private static function ask(string $text, string $reprompt): array
+    /** $offer: was Alexa gerade angeboten hat - die naechste Antwort ("ja", "weiter") bezieht sich darauf. */
+    private static function ask(string $text, string $reprompt, ?string $offer = null): array
     {
-        return ['version' => '1.0', 'response' => [
+        $out = ['version' => '1.0', 'response' => [
             'outputSpeech' => ['type' => 'PlainText', 'text' => $text],
             'reprompt' => ['outputSpeech' => ['type' => 'PlainText', 'text' => $reprompt]],
             'shouldEndSession' => false,
         ]];
+        if ($offer !== null) {
+            $out['sessionAttributes'] = ['angebot' => $offer];
+        }
+        return $out;
     }
 
     /** Sagen und fertig. $end = false: Sitzung nicht beenden-Kennzeichen weglassen (Wiedergabe laeuft weiter). */

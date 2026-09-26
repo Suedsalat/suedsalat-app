@@ -3,21 +3,79 @@
     "languageModel": {
       "invocationName": "südsalat",
       "intents": [
-        { "name": "AMAZON.CancelIntent", "samples": [] },
-        { "name": "AMAZON.HelpIntent", "samples": [] },
-        { "name": "AMAZON.StopIntent", "samples": [] },
-        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
-        { "name": "AMAZON.FallbackIntent", "samples": [] },
-        { "name": "AMAZON.PauseIntent", "samples": [] },
-        { "name": "AMAZON.ResumeIntent", "samples": [] },
-        { "name": "AMAZON.NextIntent", "samples": [] },
-        { "name": "AMAZON.PreviousIntent", "samples": [] },
-        { "name": "AMAZON.StartOverIntent", "samples": ["von vorn", "von vorne", "fang von vorne an", "nochmal von vorn"] },
-        { "name": "AMAZON.LoopOnIntent", "samples": [] },
-        { "name": "AMAZON.LoopOffIntent", "samples": [] },
-        { "name": "AMAZON.ShuffleOnIntent", "samples": [] },
-        { "name": "AMAZON.ShuffleOffIntent", "samples": [] },
-        { "name": "AMAZON.RepeatIntent", "samples": [] },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NoIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.YesIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.PauseIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.ResumeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NextIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.PreviousIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StartOverIntent",
+          "samples": [
+            "von vorn",
+            "von vorne",
+            "fang von vorne an",
+            "nochmal von vorn"
+          ]
+        },
+        {
+          "name": "AMAZON.LoopOnIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.LoopOffIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.ShuffleOnIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.ShuffleOffIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.RepeatIntent",
+          "samples": []
+        },
         {
           "name": "NeuesteFolgeIntent",
           "slots": [],
@@ -37,7 +95,12 @@
         },
         {
           "name": "FolgeSpielenIntent",
-          "slots": [{ "name": "nummer", "type": "AMAZON.NUMBER" }],
+          "slots": [
+            {
+              "name": "nummer",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
           "samples": [
             "spiel Folge {nummer}",
             "spiele Folge {nummer}",

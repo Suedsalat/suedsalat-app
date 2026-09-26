@@ -100,9 +100,9 @@ $feed = static function (): string {
 file_put_contents(HOMEPAGE_DIR . '/podcast.rss', $feed());
 
 $user = 'amzn1.ask.account.GEHEIM123';
-$ask = static function (string $type, array $extra = [], ?array $player = null) use ($user): array {
+$ask = static function (string $type, array $extra = [], ?array $player = null, array $attributes = []) use ($user): array {
     $req = ['version' => '1.0',
-        'session' => ['application' => ['applicationId' => SKILL], 'user' => ['userId' => $user]],
+        'session' => ['application' => ['applicationId' => SKILL], 'user' => ['userId' => $user], 'attributes' => $attributes],
         'context' => ['System' => ['application' => ['applicationId' => SKILL], 'user' => ['userId' => $user]]],
         'request' => ['type' => $type, 'timestamp' => gmdate('Y-m-d\TH:i:s\Z')] + $extra];
     if ($player !== null) {
@@ -113,9 +113,10 @@ $ask = static function (string $type, array $extra = [], ?array $player = null) 
         CURLOPT_HTTPHEADER => ['Content-Type: application/json']]);
     $r = json_decode((string) curl_exec($ch), true) ?? [];
     curl_close($ch);
-    return $r['response'] ?? [];
+    // Sitzungsangaben (z. B. das Angebot "weiterhoeren") mit zurueckgeben.
+    return ($r['response'] ?? []) + (isset($r['sessionAttributes']) ? ['_sitzung' => $r['sessionAttributes']] : []);
 };
-$intent = static fn (string $name, array $slots = [], ?array $player = null) => $ask('IntentRequest', ['intent' => ['name' => $name, 'slots' => $slots]], $player);
+$intent = static fn (string $name, array $slots = [], ?array $player = null, array $attributes = []) => $ask('IntentRequest', ['intent' => ['name' => $name, 'slots' => $slots]], $player, $attributes);
 $speech = static fn (array $r): string => (string) ($r['outputSpeech']['text'] ?? '');
 $stream = static fn (array $r): array => $r['directives'][0]['audioItem']['stream'] ?? [];
 $playing = static fn (int $n, int $ms, string $activity = 'PLAYING') => ['token' => 'suedsalat-ep-' . $n, 'offsetInMilliseconds' => $ms, 'playerActivity' => $activity];
@@ -146,7 +147,20 @@ $gespeichert = $pdo->query('SELECT * FROM alexa_positions')->fetchAll();
 check(count($gespeichert) === 1 && (int) $gespeichert[0]['episode_number'] === 3 && (int) $gespeichert[0]['offset_ms'] === 725000, 'Stelle beim Anhalten gemerkt');
 check(!str_contains(json_encode($gespeichert), 'GEHEIM123') && strlen($gespeichert[0]['user_hash']) === 64, 'Alexa-Kennung nur als Pruefwert gespeichert');
 $r = $ask('LaunchRequest');
-check(str_contains($speech($r), 'Folge 3, „Titel 3“ bei Minute 12 unterbrochen'), 'Begruessung bietet das Weiterhoeren an');
+check(str_contains($speech($r), 'Folge 3, „Titel 3“ bei Minute 12 unterbrochen. Soll ich dort weitermachen?'), 'Begruessung fragt, ob sie weitermachen soll');
+$angebot = $r['_sitzung'] ?? [];
+check(($angebot['angebot'] ?? '') === 'weiterhoeren', 'Angebot wird in der Sitzung gemerkt');
+// Thorstens Fund (26.09.2026): auf das Angebot "weiter" gesagt -> spielte die naechste Folge.
+$r = $intent('AMAZON.NextIntent', [], ['token' => 'suedsalat-ep-3', 'offsetInMilliseconds' => 0, 'playerActivity' => 'STOPPED'], $angebot);
+check($stream($r)['token'] === 'suedsalat-ep-3' && $stream($r)['offsetInMilliseconds'] === 725000, '„weiter“ als Antwort auf das Angebot: setzt fort statt naechste Folge');
+$r = $intent('AMAZON.YesIntent', [], null, $angebot);
+check($stream($r)['token'] === 'suedsalat-ep-3' && $stream($r)['offsetInMilliseconds'] === 725000, '„ja“: setzt fort');
+$r = $intent('AMAZON.NoIntent', [], null, $angebot);
+check(!isset($r['directives']) && str_contains($speech($r), 'spiel die neueste Folge'), '„nein“: fragt, was stattdessen');
+$r = $intent('AMAZON.NextIntent', [], ['token' => 'suedsalat-ep-2', 'offsetInMilliseconds' => 5000, 'playerActivity' => 'PLAYING']);
+check($stream($r)['token'] === 'suedsalat-ep-3', 'ohne Angebot (Folge laeuft) bleibt „weiter“ = naechste Folge');
+// Ausgangslage fuer die folgenden Pruefungen wiederherstellen: Folge 3 bei 12:05 angehalten.
+$pdo->exec('UPDATE alexa_positions SET episode_number = 3, offset_ms = 725000, playing_since = NULL');
 $r = $intent('WeiterhoerenIntent');
 check($stream($r)['token'] === 'suedsalat-ep-3' && $stream($r)['offsetInMilliseconds'] === 725000, '„weiter“ nach Tagen: an der gemerkten Stelle');
 $r = $intent('NeuesteFolgeIntent');
@@ -226,6 +240,9 @@ $pdo->exec("INSERT INTO location_tips (name, location, created_by, submitted_by_
 $r = $intent('NeuigkeitenIntent');
 check(str_contains($speech($r), 'Die nächste Veranstaltung: Stadtfest, Donnerstag, 3. Oktober um 19 Uhr 30.'), 'naechste Veranstaltung mit Wochentag und Uhrzeit');
 check(str_contains($speech($r), 'Filmtipp: Neuer Film') && str_contains($speech($r), 'Eisdiele in Weilerswist') && !str_contains($speech($r), 'Altes Fest'), 'neuester Film- und Locationtipp, vergangene Veranstaltung nicht');
+check(str_contains($speech($r), 'Soll ich sie abspielen?') && ($r['_sitzung']['angebot'] ?? '') === 'neueste', 'Neuigkeiten enden mit der Frage nach der neuesten Folge');
+$r = $intent('AMAZON.YesIntent', [], null, $r['_sitzung']);
+check($stream($r)['token'] === 'suedsalat-ep-3', '„ja“ spielt die neueste Folge');
 $r = $intent('AMAZON.ShuffleOnIntent');
 check(str_contains($speech($r), 'kann Südsalat leider nicht'), 'Zufallswiedergabe: freundlich abgelehnt');
 $r = $intent('AMAZON.StopIntent');
