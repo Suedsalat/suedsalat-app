@@ -110,7 +110,7 @@ final class Feed
                 continue;
             }
             if (!preg_match('/^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\s*[-–:]?\s*(.+)$/u', $line, $m) || (int) $m[3] > 59) {
-                $errors[] = 'Zeile ' . ($i + 1) . ': „' . $line . '“ – bitte im Format „12:34 Titel“ (oder „1:02:03 Titel“).';
+                $errors[] = 'Zeile ' . ($i + 1) . ': „' . $line . '“ – bitte im Format „00:12:34 Titel“ (oder kurz „12:34 Titel“).';
                 continue;
             }
             $start = ((int) $m[1]) * 3600 + ((int) $m[2]) * 60 + (int) $m[3];
@@ -123,7 +123,7 @@ final class Feed
             $errors[] = 'Bitte mindestens zwei Kapitel angeben (oder das Feld leer lassen).';
         }
         if ($chapters[0]['start'] !== 0) {
-            $errors[] = 'Das erste Kapitel muss bei 00:00 beginnen.';
+            $errors[] = 'Das erste Kapitel muss bei 00:00:00 beginnen.';
         }
         for ($i = 1; $i < count($chapters); $i++) {
             if ($chapters[$i]['start'] <= $chapters[$i - 1]['start']) {

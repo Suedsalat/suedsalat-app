@@ -254,9 +254,9 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES)
                     <?php endforeach; ?>
                 </select>
             </label>
-            <label>Kapitel (optional) – eine Zeile pro Kapitel, z. B. „00:00 Begrüßung“, „12:34 Urlaub“, „1:02:03 Verabschiedung“
-                <textarea name="chapters" rows="8" placeholder="00:00 Begrüßung&#10;04:15 Was diese Woche los war&#10;31:40 Filmtipp"><?= $e($editing['chapters']) ?></textarea></label>
-            <p style="font-size:0.85rem;color:#666;margin-top:-6px;">Das erste Kapitel beginnt bei 00:00, mindestens zwei Kapitel. Tipp: Spotify zeigt bei deinen Folgen automatisch erzeugte Kapitel – die kannst du hier hineinkopieren und die Titel anpassen. Die Kapitel erscheinen in der App, bei Spotify und auf der Homepage.</p>
+            <label>Kapitel (optional) – eine Zeile pro Kapitel, z. B. „00:00:00 Begrüßung“, „00:12:34 Urlaub“, „01:02:03 Verabschiedung“
+                <textarea name="chapters" rows="8" placeholder="00:00:00 Begrüßung&#10;00:04:15 Was diese Woche los war&#10;00:31:40 Filmtipp"><?= $e($editing['chapters']) ?></textarea></label>
+            <p style="font-size:0.85rem;color:#666;margin-top:-6px;">Das erste Kapitel beginnt bei 00:00:00, mindestens zwei Kapitel. Die kurze Schreibweise „04:15“ geht auch. Tipp: Spotify zeigt bei deinen Folgen automatisch erzeugte Kapitel – die kannst du hier hineinkopieren und die Titel anpassen. Die Kapitel erscheinen in der App, bei Spotify und auf der Homepage.</p>
             <div class="actions">
                 <button type="submit"><?= $editing['original'] === 'new' ? 'Folge anlegen' : 'Speichern' ?></button>
                 <a class="button button-secondary" href="<?= BASE_PATH ?>/admin/episodes.php">Abbrechen</a>
