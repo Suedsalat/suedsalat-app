@@ -289,26 +289,20 @@ class _ReviewAccountHint extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              blocked
-                  ? 'Dein Konto ist für Beiträge gesperrt – Rezensionen sind deshalb nicht möglich.'
-                  : 'Du möchtest auch bewerten? Rezensionen gibt es mit einem kostenlosen Hörerkonto – '
-                        'sie erscheinen dann unter deinem Spitznamen.',
-            ),
-            if (!blocked) ...[
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () async {
-                  if (await ensureCanContribute(context)) onChanged();
-                },
-                child: const Text('Registrieren oder anmelden'),
+        // Gleicher lockerer Ton wie bei den Foto-Kommentaren (Wunsch Thorsten 26.09.2026).
+        child: blocked
+            ? const Text('Dein Konto ist für Beiträge gesperrt – Rezensionen sind deshalb nicht möglich.')
+            : Row(
+                children: [
+                  const Expanded(child: Text('Bewerten geht mit einem kostenlosen Hörerkonto.')),
+                  TextButton(
+                    onPressed: () async {
+                      if (await ensureCanContribute(context)) onChanged();
+                    },
+                    child: const Text('Mitmachen'),
+                  ),
+                ],
               ),
-            ],
-          ],
-        ),
       ),
     );
   }
