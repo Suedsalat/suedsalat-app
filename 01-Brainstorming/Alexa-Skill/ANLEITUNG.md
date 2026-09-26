@@ -77,7 +77,7 @@ du einfügen musst, liegt in diesem Ordner.
 
 Die eingereichten Symbole zeigen Mikro **mit** Schriftzug „SÜDSALAT“. Gewünscht ist **nur das Mikro auf
 grünem Grund** – liegt fertig bereit: `symbol-mikro-108.png` und `symbol-mikro-512.png` (aus
-`U:LogoMikro.png`, mit Rand für den runden Rahmen, Grün #77B538).
+`U:\Logo\Mikro.png`, mit Rand für den runden Rahmen, Grün #77B538).
 
 So geht’s: Während der Prüfung ist der Skill gesperrt. Nach der Freigabe **Distribution → Skill Preview**
 → beide Symbole ersetzen → speichern → **Certification → Submit for review**. Das ist eine kleine
