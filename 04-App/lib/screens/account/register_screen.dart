@@ -106,13 +106,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.viewPaddingOf(context).bottom),
           children: [
             const Text(
               'Mit einem kostenlosen Hörerkonto kannst du Tipps, Fotos, Rezensionen und Sprachnachrichten '
               'einreichen. Ein Passwort brauchst du nicht – du meldest dich mit einem Code per E-Mail an.',
             ),
-            const SizedBox(height: 20),
+            // Wer schon ein Konto hat, soll nicht erst durchs Formular scrollen (Thorsten 26.09.2026).
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        final done = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        );
+                        if (done == true && context.mounted) {
+                          Navigator.of(context).pop(true);
+                        }
+                      },
+                child: const Text('Ich habe schon ein Konto – anmelden'),
+              ),
+            ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _firstName,
               textCapitalization: TextCapitalization.words,
@@ -235,20 +252,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text('Code anfordern'),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: _busy
-                  ? null
-                  : () async {
-                      final done = await Navigator.of(context).push<bool>(
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      );
-                      if (done == true && context.mounted) {
-                        Navigator.of(context).pop(true);
-                      }
-                    },
-              child: const Text('Ich habe schon ein Konto – anmelden'),
             ),
           ],
         ),

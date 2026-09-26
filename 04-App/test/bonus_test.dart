@@ -37,7 +37,7 @@ void main() {
     expect(find.text('Outtakes'), findsNothing);
   });
 
-  testWidgets('Angemeldet: Outtakes-Kachel direkt nach der Galerie', (tester) async {
+  testWidgets('Angemeldet: Outtakes-Kachel direkt unter Folgen, mit gleichem Abstand', (tester) async {
     SharedPreferences.setMockInitialValues({
       'listener_profile': jsonEncode({
         'id': 7, 'first_name': 'Angela', 'last_name': 'Test', 'email': 'a@example.org', 'nickname': 'Angela', 'blocked': false,
@@ -51,8 +51,13 @@ void main() {
       findsOneWidget,
       reason: 'Thorstens Outtakes-Symbol auf der Kachel',
     );
-    expect(tester.getTopLeft(find.text('Outtakes')).dy, greaterThan(tester.getTopLeft(find.text('Galerie')).dy));
-    expect(tester.getTopLeft(find.text('Outtakes')).dy, lessThan(tester.getTopLeft(find.text('Newsletter')).dy));
+    // Direkt unter Folgen, vor Veranstaltungen (Thorsten 26.09.2026).
+    Rect karte(String titel) => tester.getRect(find.ancestor(of: find.text(titel), matching: find.byType(Card)).first);
+    final folgen = karte('Folgen'), outtakes = karte('Outtakes'), termine = karte('Veranstaltungen');
+    expect(outtakes.top, greaterThan(folgen.bottom));
+    expect(outtakes.bottom, lessThan(termine.top));
+    // Gleicher Abstand nach oben und nach unten - vorher klebte die Kachel am Nachbarn.
+    expect(outtakes.top - folgen.bottom, moreOrLessEquals(termine.top - outtakes.bottom, epsilon: 0.5));
   });
 
   testWidgets('Liste zeigt Titel, Datum und Text', (tester) async {

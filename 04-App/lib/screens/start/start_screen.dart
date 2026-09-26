@@ -64,6 +64,26 @@ class StartScreen extends StatelessWidget {
             showNewDot: hasNewEpisodes,
             onTap: () => onNavigateToTab(1),
           ),
+          // Nur mit Hoererkonto - Gaeste sehen den Bereich gar nicht (Konzept 2.0). Steht direkt unter
+          // Folgen; der Abstand gehoert zur Kachel, sonst klebt sie am Nachbarn (Thorsten 26.09.2026).
+          ListenableBuilder(
+            listenable: AccountService.instance,
+            builder: (context, _) => !AccountService.instance.isLoggedIn
+                ? const SizedBox.shrink()
+                : Column(
+                    children: [
+                      const SizedBox(height: 12),
+                      _StartTile(
+                        leading: Image.asset('assets/images/outtakes.png', width: 40, height: 40),
+                        title: 'Outtakes',
+                        subtitle: 'Versprecher und Pannen – nur für Hörer mit Konto',
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const BonusScreen()),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
           const SizedBox(height: 12),
           _StartTile(
             leading: Image.asset('assets/images/kalender.png', width: 40, height: 40),
@@ -95,20 +115,6 @@ class StartScreen extends StatelessWidget {
             subtitle: 'Eure und unsere Fotos zu unserem Podcast',
             showNewDot: hasNewPhotos,
             onTap: () => onNavigateToTab(5),
-          ),
-          // Nur mit Hoererkonto - Gaeste sehen den Bereich gar nicht (Konzept 2.0).
-          ListenableBuilder(
-            listenable: AccountService.instance,
-            builder: (context, _) => !AccountService.instance.isLoggedIn
-                ? const SizedBox.shrink()
-                : _StartTile(
-                    leading: Image.asset('assets/images/outtakes.png', width: 40, height: 40),
-                    title: 'Outtakes',
-                    subtitle: 'Versprecher und Pannen – nur für Hörer mit Konto',
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const BonusScreen()),
-                    ),
-                  ),
           ),
           const SizedBox(height: 12),
           _StartTile(

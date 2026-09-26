@@ -76,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Anmelden')),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.viewPaddingOf(context).bottom),
         children: [
           const Text(
             'Gib die E-Mail-Adresse deines Hörerkontos ein. Wir schicken dir einen Code – ein Passwort gibt es nicht.',
