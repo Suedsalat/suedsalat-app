@@ -29,8 +29,9 @@ android {
 
     defaultConfig {
         // Test-App "Suedsalat TEST": eigene Kennung, laesst sich neben der Store-App installieren
-        // (fuer Tests gegen den Testbereich). Nur beim Bauen mit ORG_GRADLE_PROJECT_suedsalatTest=true;
-        // ohne diesen Schalter (Codemagic, Store) bleibt alles wie bisher. Die Kennung ist in
+        // (fuer Tests gegen den Testbereich). Nur beim Bauen mit "flutter build apk -P suedsalatTest=true"
+        // (die Umgebungsvariable ORG_GRADLE_PROJECT_... kommt NICHT an); ohne Schalter (Codemagic, Store)
+        // bleibt alles wie bisher. Die Kennung ist in
         // google-services.json als zweite App im Firebase-Projekt eingetragen.
         val testApp = (project.findProperty("suedsalatTest") as String?) == "true"
         applicationId = if (testApp) "eu.suedsalat.suedsalat_app.test" else "eu.suedsalat.suedsalat_app"
