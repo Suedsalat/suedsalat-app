@@ -269,8 +269,11 @@ try {
         user_hash CHAR(64) PRIMARY KEY,
         episode_number INT NOT NULL,
         offset_ms INT NOT NULL DEFAULT 0,
+        playing_since DATETIME NULL,
         updated_at DATETIME NOT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    // playing_since: seit wann ab offset_ms abgespielt wird - fuer Geraete, die die Stelle nicht melden.
+    add_column($pdo, 'alexa_positions', 'playing_since', 'DATETIME NULL AFTER offset_ms');
 
     // ---------------------------------------------------------------------------------------
     // Store-Pruefung und Kontoloeschung ueber die Website

@@ -1,0 +1,434 @@
+[
+    {
+        "zeit": "13:04:06",
+        "typ": "AudioPlayer.PlaybackStopped",
+        "intent": null,
+        "kontext": null,
+        "ereignis_stelle": 100000,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:07",
+        "typ": "LaunchRequest",
+        "intent": null,
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:07",
+        "typ": "IntentRequest",
+        "intent": "NeuesteFolgeIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @0"
+        ]
+    },
+    {
+        "zeit": "13:04:07",
+        "typ": "IntentRequest",
+        "intent": "FolgeSpielenIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-2 @0"
+        ]
+    },
+    {
+        "zeit": "13:04:07",
+        "typ": "IntentRequest",
+        "intent": "FolgeSpielenIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:07",
+        "typ": "IntentRequest",
+        "intent": "FolgeSpielenIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:07",
+        "typ": "AudioPlayer.PlaybackStopped",
+        "intent": null,
+        "kontext": null,
+        "ereignis_stelle": 725000,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:07",
+        "typ": "LaunchRequest",
+        "intent": null,
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "WeiterhoerenIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @725000"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "NeuesteFolgeIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @725000"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.StartOverIntent",
+        "kontext": {
+            "token": "suedsalat-ep-3",
+            "offsetInMilliseconds": 725000,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @0"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.PauseIntent",
+        "kontext": {
+            "token": "suedsalat-ep-3",
+            "offsetInMilliseconds": 900000,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Stop  @"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.ResumeIntent",
+        "kontext": {
+            "token": "suedsalat-ep-3",
+            "offsetInMilliseconds": 900000,
+            "playerActivity": "PAUSED"
+        },
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @900000"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "AudioPlayer.PlaybackFinished",
+        "intent": null,
+        "kontext": null,
+        "ereignis_stelle": 3000000,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "AudioPlayer.PlaybackNearlyFinished",
+        "intent": null,
+        "kontext": null,
+        "ereignis_stelle": 2990000,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @0"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "FolgeSpielenIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-2 @0"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "AudioPlayer.PlaybackStarted",
+        "intent": null,
+        "kontext": {
+            "token": "suedsalat-ep-2",
+            "offsetInMilliseconds": 0,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": 0,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.PauseIntent",
+        "kontext": {
+            "token": "suedsalat-ep-2",
+            "offsetInMilliseconds": 0,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Stop  @"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "AudioPlayer.PlaybackStopped",
+        "intent": null,
+        "kontext": {
+            "token": "suedsalat-ep-2",
+            "offsetInMilliseconds": 0,
+            "playerActivity": "STOPPED"
+        },
+        "ereignis_stelle": 0,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.ResumeIntent",
+        "kontext": {
+            "token": "suedsalat-ep-2",
+            "offsetInMilliseconds": 0,
+            "playerActivity": "STOPPED"
+        },
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-2 @122000"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "AudioPlayer.PlaybackStarted",
+        "intent": null,
+        "kontext": {
+            "token": "suedsalat-ep-2",
+            "offsetInMilliseconds": 0,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": 0,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "AudioPlayer.PlaybackStopped",
+        "intent": null,
+        "kontext": {
+            "token": "suedsalat-ep-2",
+            "offsetInMilliseconds": 0,
+            "playerActivity": "STOPPED"
+        },
+        "ereignis_stelle": 0,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "LaunchRequest",
+        "intent": null,
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "NeuesteFolgeIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @0"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.NextIntent",
+        "kontext": {
+            "token": "suedsalat-ep-3",
+            "offsetInMilliseconds": 0,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @600000"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "KapitelIntent",
+        "kontext": {
+            "token": "suedsalat-ep-3",
+            "offsetInMilliseconds": 0,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.NextIntent",
+        "kontext": {
+            "token": "suedsalat-ep-3",
+            "offsetInMilliseconds": 65000,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @600000"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.PreviousIntent",
+        "kontext": {
+            "token": "suedsalat-ep-3",
+            "offsetInMilliseconds": 602000,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @0"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.PreviousIntent",
+        "kontext": {
+            "token": "suedsalat-ep-3",
+            "offsetInMilliseconds": 700000,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @600000"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.NextIntent",
+        "kontext": {
+            "token": "suedsalat-ep-3",
+            "offsetInMilliseconds": 2500000,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.NextIntent",
+        "kontext": {
+            "token": "suedsalat-ep-1",
+            "offsetInMilliseconds": 5000,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-2 @0"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "NaechstesKapitelIntent",
+        "kontext": {
+            "token": "suedsalat-ep-1",
+            "offsetInMilliseconds": 5000,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "KapitelIntent",
+        "kontext": {
+            "token": "suedsalat-ep-3",
+            "offsetInMilliseconds": 700000,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "PlaybackController.NextCommandIssued",
+        "intent": null,
+        "kontext": {
+            "token": "suedsalat-ep-3",
+            "offsetInMilliseconds": 65000,
+            "playerActivity": "PLAYING"
+        },
+        "ereignis_stelle": null,
+        "antwort": [
+            "AudioPlayer.Play suedsalat-ep-3 @600000"
+        ]
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "NeuigkeitenIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.ShuffleOnIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.StopIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "IntentRequest",
+        "intent": "AMAZON.HelpIntent",
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "SessionEndedRequest",
+        "intent": null,
+        "kontext": null,
+        "ereignis_stelle": null,
+        "antwort": []
+    },
+    {
+        "zeit": "13:04:08",
+        "typ": "AudioPlayer.PlaybackStopped",
+        "intent": null,
+        "kontext": null,
+        "ereignis_stelle": 100000,
+        "antwort": []
+    }
+]

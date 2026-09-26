@@ -163,6 +163,42 @@ $r = $ask('AudioPlayer.PlaybackNearlyFinished', ['token' => 'suedsalat-ep-2', 'o
 check(($r['directives'][0]['playBehavior'] ?? '') === 'ENQUEUE' && $stream($r)['token'] === 'suedsalat-ep-3'
     && $stream($r)['expectedPreviousToken'] === 'suedsalat-ep-2' && !isset($r['outputSpeech']), 'kurz vor Ende: naechste Folge eingereiht, ohne Ansage');
 
+echo "Geraete, die die Stelle immer als 0 melden (so Thorstens Echo, 26.09.2026)\n";
+$pdo->exec('DELETE FROM alexa_positions');
+$zurueck = static function (int $sekunden) use ($pdo): void {
+    // "Die Zeit vergeht": Startzeitpunkt in die Vergangenheit schieben.
+    $pdo->exec("UPDATE alexa_positions SET playing_since = DATE_SUB(playing_since, INTERVAL {$sekunden} SECOND)");
+};
+$null = static fn (int $n, string $activity = 'PLAYING') => ['token' => 'suedsalat-ep-' . $n, 'offsetInMilliseconds' => 0, 'playerActivity' => $activity];
+$intent('FolgeSpielenIntent', ['nummer' => ['name' => 'nummer', 'value' => '2']]);
+$ask('AudioPlayer.PlaybackStarted', ['token' => 'suedsalat-ep-2', 'offsetInMilliseconds' => 0], $null(2));
+$zurueck(125);
+$r = $intent('AMAZON.PauseIntent', [], $null(2));
+$zeile = $pdo->query('SELECT offset_ms, playing_since FROM alexa_positions')->fetch();
+check(($r['directives'][0]['type'] ?? '') === 'AudioPlayer.Stop' && abs((int) $zeile['offset_ms'] - 122000) <= 1000 && $zeile['playing_since'] === null,
+    'Pause nach gut 2 Minuten: Stelle selbst berechnet (125 s minus 3 s Sprachverzoegerung)');
+$ask('AudioPlayer.PlaybackStopped', ['token' => 'suedsalat-ep-2', 'offsetInMilliseconds' => 0], $null(2, 'STOPPED'));
+check(abs((int) $pdo->query('SELECT offset_ms FROM alexa_positions')->fetchColumn() - 122000) <= 1000, 'nachfolgendes „angehalten“ mit 0 ueberschreibt die Stelle nicht');
+$r = $intent('AMAZON.ResumeIntent', [], $null(2, 'STOPPED'));
+check($stream($r)['token'] === 'suedsalat-ep-2' && abs($stream($r)['offsetInMilliseconds'] - 122000) <= 1000, '„fortsetzen“: an der berechneten Stelle statt von vorn');
+$ask('AudioPlayer.PlaybackStarted', ['token' => 'suedsalat-ep-2', 'offsetInMilliseconds' => 0], $null(2));
+check(abs((int) $pdo->query('SELECT offset_ms FROM alexa_positions')->fetchColumn() - 122000) <= 1000, 'Start mit gemeldeter 0: angeforderte Stelle bleibt');
+$zurueck(60);
+$ask('AudioPlayer.PlaybackStopped', ['token' => 'suedsalat-ep-2', 'offsetInMilliseconds' => 0], $null(2, 'STOPPED'));
+check(abs((int) $pdo->query('SELECT offset_ms FROM alexa_positions')->fetchColumn() - 182000) <= 1000, 'anderweitig angehalten (z. B. Anruf): weiter gezaehlt, ohne Abzug');
+$r = $ask('LaunchRequest');
+check(str_contains($speech($r), 'bei Minute 3 unterbrochen'), 'Begruessung am naechsten Tag bietet die berechnete Stelle an');
+
+$pdo->exec('DELETE FROM alexa_positions');
+$intent('NeuesteFolgeIntent');
+$zurueck(65);
+$r = $intent('AMAZON.NextIntent', [], $null(3));
+check($stream($r)['offsetInMilliseconds'] === 600000, 'Kapitelsprung bei gemeldeter 0: nach berechneter Stelle (Minute 1 -> Kapitel ab 10:00)');
+$zurueck(10);
+$r = $intent('KapitelIntent', [], $null(3));
+check(str_contains($speech($r), 'Kapitel „Urlaub“'), '„welches Kapitel laeuft“ bei gemeldeter 0: berechnet');
+$pdo->exec('DELETE FROM alexa_positions');
+
 echo "Kapitel\n";
 $r = $intent('AMAZON.NextIntent', [], $playing(3, 65000));
 check($stream($r)['offsetInMilliseconds'] === 600000 && $speech($r) === 'Kapitel: Urlaub.', 'weiter: naechstes Kapitel');
@@ -205,7 +241,7 @@ check(Feed::parse($feed())['items'][2]['chapters'][1]['title'] === 'Urlaub', 'Ka
 
 $pdo->exec("UPDATE alexa_positions SET updated_at = DATE_SUB(NOW(), INTERVAL 13 MONTH)");
 $ask('AudioPlayer.PlaybackStopped', ['token' => 'suedsalat-ep-2', 'offsetInMilliseconds' => 100000]);
-$pdo->exec("INSERT INTO alexa_positions VALUES ('" . str_repeat('a', 64) . "', 1, 50000, DATE_SUB(NOW(), INTERVAL 13 MONTH))");
+$pdo->exec("INSERT INTO alexa_positions (user_hash, episode_number, offset_ms, updated_at) VALUES ('" . str_repeat('a', 64) . "', 1, 50000, DATE_SUB(NOW(), INTERVAL 13 MONTH))");
 \Suedsalat\Listener::runMaintenance($pdo);
 check((int) $pdo->query('SELECT COUNT(*) FROM alexa_positions')->fetchColumn() === 1, 'Hoerstellen nach 12 Monaten ohne Nutzung geloescht');
 

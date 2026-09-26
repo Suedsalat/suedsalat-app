@@ -57,4 +57,20 @@ try {
     $episodes = [];
 }
 
-echo json_encode((new Skill(Database::connection(), $episodes))->handle($request), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+$response = (new Skill(Database::connection(), $episodes))->handle($request);
+
+// VORUEBERGEHEND zur Fehlersuche (26.09.2026): die letzten 40 Anfragen in Kurzform, ohne Nutzerkennung.
+$verlauf = dirname(__DIR__) . '/cron/alexa-verlauf.json';
+$liste = is_file($verlauf) ? (json_decode((string) file_get_contents($verlauf), true) ?: []) : [];
+$liste[] = [
+    'zeit' => date('H:i:s'),
+    'typ' => $request['request']['type'] ?? null,
+    'intent' => $request['request']['intent']['name'] ?? null,
+    'kontext' => $request['context']['AudioPlayer'] ?? null,
+    'ereignis_stelle' => $request['request']['offsetInMilliseconds'] ?? null,
+    'antwort' => array_map(static fn ($d) => ($d['type'] ?? '') . ' ' . ($d['audioItem']['stream']['token'] ?? '') . ' @' . ($d['audioItem']['stream']['offsetInMilliseconds'] ?? ''),
+        is_array($response['response'] ?? null) ? ($response['response']['directives'] ?? []) : []),
+];
+@file_put_contents($verlauf, json_encode(array_slice($liste, -40), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+
+echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

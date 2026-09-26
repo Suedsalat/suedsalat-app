@@ -23,6 +23,19 @@ final class Skill
     /** @var array<int, array<string,mixed>> Folgen nach Nummer */
     private array $episodes = [];
 
+    /** Pruefwert des Alexa-Kontos der laufenden Anfrage (null = unbekannt). */
+    private ?string $user = null;
+
+    /**
+     * Manche Geraete (und die Alexa-App) melden die Wiedergabestelle immer als 0. Dann rechnet der
+     * Server selbst: Start-Stelle + seit dem Start vergangene Zeit. Beim Anhalten per Sprache laeuft
+     * die Wiedergabe schon ein paar Sekunden nicht mehr, bis der Befehl hier ankommt - so viel abziehen.
+     */
+    private const VOICE_DELAY_MS = 3000;
+
+    /** Unter 30 Sekunden lohnt sich "weiterhoeren" nicht. */
+    private const MIN_RESUME_MS = 30000;
+
     /** @param list<array<string,mixed>> $episodes aus Feed::parse()['items'] */
     public function __construct(private readonly PDO $pdo, array $episodes)
     {
@@ -37,6 +50,7 @@ final class Skill
     {
         $type = (string) ($req['request']['type'] ?? '');
         $user = $this->userHash($req);
+        $this->user = $user;
         // Lehnt Amazon eine Antwort ab, kommt der Grund in einer eigenen Nachricht hinterher - aufheben.
         if (isset($req['request']['error']) || $type === 'System.ExceptionEncountered') {
             self::logProblem($req);
@@ -125,10 +139,10 @@ final class Skill
     {
         $saved = $user !== null ? $this->savedPosition($user) : null;
         if ($saved !== null && $saved['episode'] === (int) $e['number']) {
-            return self::play($e, $saved['offset'], 'Weiter geht es mit ' . $this->name($e) . ' ' . self::spokenTime($saved['offset'])
+            return $this->play($e, $saved['offset'], 'Weiter geht es mit ' . $this->name($e) . ' ' . self::spokenTime($saved['offset'])
                 . '. Sag „von vorn“, um neu zu beginnen.');
         }
-        return self::play($e, 0, 'Hier ist ' . $this->name($e) . '.');
+        return $this->play($e, 0, 'Hier ist ' . $this->name($e) . '.');
     }
 
     private function resume(array $req, ?string $user, bool $withSpeech): array
@@ -141,14 +155,14 @@ final class Skill
         if ($e === null) {
             return $withSpeech ? self::ask('Du hast noch nichts angefangen. Sag „spiel die neueste Folge“.', 'Was möchtest du hören?') : self::empty();
         }
-        return self::play($e, $offset, null);
+        return $this->play($e, $offset, null);
     }
 
     private function stop(array $req, ?string $user): array
     {
-        [$e, $offset] = $this->playing($req);
+        [$e, $offset, $reported] = $this->playing($req);
         if ($e !== null && $user !== null) {
-            $this->savePosition($user, (int) $e['number'], $offset);
+            $this->remember((int) $e['number'], $reported ? $offset : max(0, $offset - self::VOICE_DELAY_MS), false);
         }
         return ['version' => '1.0', 'response' => ['directives' => [['type' => 'AudioPlayer.Stop']], 'shouldEndSession' => true]];
     }
@@ -159,7 +173,7 @@ final class Skill
         if ($e === null && $user !== null && ($saved = $this->savedPosition($user)) !== null) {
             $e = $this->episodes[$saved['episode']];
         }
-        return $e !== null ? self::play($e, 0, null) : self::ask('Welche Folge möchtest du von vorn hören?', 'Sag zum Beispiel „spiel die neueste Folge“.');
+        return $e !== null ? $this->play($e, 0, null) : self::ask('Welche Folge möchtest du von vorn hören?', 'Sag zum Beispiel „spiel die neueste Folge“.');
     }
 
     /**
@@ -173,12 +187,12 @@ final class Skill
         }
         foreach ($e['chapters'] as $c) {
             if ($c['start'] * 1000 > $offset + 1000) {
-                return self::play($e, $c['start'] * 1000, $withSpeech ? 'Kapitel: ' . $c['title'] . '.' : null);
+                return $this->play($e, $c['start'] * 1000, $withSpeech ? 'Kapitel: ' . $c['title'] . '.' : null);
             }
         }
         $following = $this->episodes[(int) $e['number'] + 1] ?? null;
         if ($toEpisode && $following !== null) {
-            return self::play($following, 0, $withSpeech ? 'Hier ist ' . $this->name($following) . '.' : null);
+            return $this->play($following, 0, $withSpeech ? 'Hier ist ' . $this->name($following) . '.' : null);
         }
         if (!$withSpeech) {
             return self::empty();
@@ -206,11 +220,11 @@ final class Skill
                 }
             }
             $target = ($offset - $chapters[$index]['start'] * 1000 > 3000 || $index === 0) ? $chapters[$index] : $chapters[$index - 1];
-            return self::play($e, $target['start'] * 1000, $withSpeech ? 'Kapitel: ' . $target['title'] . '.' : null);
+            return $this->play($e, $target['start'] * 1000, $withSpeech ? 'Kapitel: ' . $target['title'] . '.' : null);
         }
         $before = $this->episodes[(int) $e['number'] - 1] ?? null;
         if ($toEpisode && $before !== null) {
-            return self::play($before, 0, $withSpeech ? 'Hier ist ' . $this->name($before) . '.' : null);
+            return $this->play($before, 0, $withSpeech ? 'Hier ist ' . $this->name($before) . '.' : null);
         }
         return $withSpeech ? self::tell($toEpisode ? 'Das ist schon die erste Folge.' : 'Diese Folge hat keine Kapitel.', false) : self::empty();
     }
@@ -271,8 +285,23 @@ final class Skill
         }
         switch ($type) {
             case 'AudioPlayer.PlaybackStarted':
+                $row = $this->row();
+                if ($offset > 0 || $row === null || (int) $row['episode_number'] !== (int) $e['number']) {
+                    $this->remember((int) $e['number'], $offset, true);
+                } else {
+                    // Geraet meldet 0: angeforderte Stelle behalten, nur den echten Startzeitpunkt setzen.
+                    $this->pdo->prepare('UPDATE alexa_positions SET playing_since = NOW(), updated_at = NOW() WHERE user_hash = :u')
+                        ->execute([':u' => $user]);
+                }
+                return self::empty();
             case 'AudioPlayer.PlaybackStopped':
-                $this->savePosition($user, (int) $e['number'], $offset);
+                $row = $this->row();
+                if ($offset > 0) {
+                    $this->remember((int) $e['number'], $offset, false);
+                } elseif ($row !== null && $row['playing_since'] !== null && (int) $row['episode_number'] === (int) $e['number']) {
+                    // Nicht per Sprache angehalten (sonst waere playing_since schon leer): ohne Abzug.
+                    $this->remember((int) $e['number'], $this->estimate($row), false);
+                }
                 return self::empty();
             case 'AudioPlayer.PlaybackFinished':
                 $this->pdo->prepare('DELETE FROM alexa_positions WHERE user_hash = :u AND episode_number = :n')
@@ -281,7 +310,7 @@ final class Skill
             case 'AudioPlayer.PlaybackNearlyFinished':
                 // Wie beim Nachhoeren am Stueck: danach die naechste Folge einreihen.
                 $following = $this->episodes[(int) $e['number'] + 1] ?? null;
-                return $following !== null ? self::play($following, 0, null, 'ENQUEUE', $token) : self::empty();
+                return $following !== null ? $this->play($following, 0, null, 'ENQUEUE', $token) : self::empty();
             default: // PlaybackFailed u. a.
                 error_log('Alexa: ' . $type . ' ' . json_encode($req['request']['error'] ?? null));
                 return self::empty();
@@ -314,12 +343,74 @@ final class Skill
         return 'Folge ' . $e['number'] . ($e['name'] !== '' ? ', „' . $e['name'] . '“' : '');
     }
 
-    /** @return array{0: ?array, 1: int} laufende (oder zuletzt pausierte) Folge und Stelle in ms */
+    /**
+     * Laufende (oder zuletzt angehaltene) Folge und Stelle in ms. Meldet das Geraet 0, wird die Stelle
+     * aus dem Gemerkten berechnet. Drittes Feld: true = vom Geraet gemeldet, false = berechnet.
+     * @return array{0: ?array, 1: int, 2: bool}
+     */
     private function playing(array $req): array
     {
         $player = $req['context']['AudioPlayer'] ?? [];
         $e = $this->fromToken((string) ($player['token'] ?? ''));
-        return [$e, (int) ($player['offsetInMilliseconds'] ?? 0)];
+        $offset = (int) ($player['offsetInMilliseconds'] ?? 0);
+        if ($e === null || $offset > 0) {
+            return [$e, $offset, true];
+        }
+        $row = $this->row();
+        if ($row !== null && (int) $row['episode_number'] === (int) $e['number']) {
+            return [$e, $this->estimate($row), false];
+        }
+        return [$e, 0, true];
+    }
+
+    /** @return array<string,mixed>|null Gemerkte Zeile des aktuellen Kontos */
+    private function row(): ?array
+    {
+        if ($this->user === null) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT episode_number, offset_ms, playing_since,
+                                            TIMESTAMPDIFF(SECOND, playing_since, NOW()) AS seit
+                                     FROM alexa_positions WHERE user_hash = :u');
+        $stmt->execute([':u' => $this->user]);
+        return $stmt->fetch() ?: null;
+    }
+
+    /** Gemerkte Stelle plus die seit dem Start vergangene Zeit (wenn gerade laeuft). */
+    private function estimate(array $row): int
+    {
+        $offset = (int) $row['offset_ms'];
+        if ($row['playing_since'] !== null) {
+            $offset += max(0, (int) $row['seit']) * 1000;
+        }
+        $e = $this->episodes[(int) $row['episode_number']] ?? null;
+        $length = $e !== null ? self::durationMs((string) ($e['duration'] ?? '')) : null;
+        return $length !== null ? min($offset, $length) : $offset;
+    }
+
+    private static function durationMs(string $duration): ?int
+    {
+        if (!preg_match('/^\d+(:\d{1,2}){0,2}$/', trim($duration))) {
+            return null;
+        }
+        $seconds = 0;
+        foreach (explode(':', trim($duration)) as $part) {
+            $seconds = $seconds * 60 + (int) $part;
+        }
+        return $seconds * 1000;
+    }
+
+    /** Folge und Stelle merken; $running: laeuft ab jetzt (Startzeitpunkt setzen) oder steht. */
+    private function remember(int $episode, int $offset, bool $running): void
+    {
+        if ($this->user === null) {
+            return;
+        }
+        $this->pdo->prepare('INSERT INTO alexa_positions (user_hash, episode_number, offset_ms, playing_since, updated_at)
+                             VALUES (:u, :n, :o, ' . ($running ? 'NOW()' : 'NULL') . ', NOW())
+                             ON DUPLICATE KEY UPDATE episode_number = VALUES(episode_number), offset_ms = VALUES(offset_ms),
+                                playing_since = VALUES(playing_since), updated_at = NOW()')
+            ->execute([':u' => $this->user, ':n' => $episode, ':o' => max(0, $offset)]);
     }
 
     private function isPlaying(array $req): bool
@@ -348,21 +439,10 @@ final class Skill
         $stmt = $this->pdo->prepare('SELECT episode_number, offset_ms FROM alexa_positions WHERE user_hash = :u');
         $stmt->execute([':u' => $user]);
         $row = $stmt->fetch();
-        if (!$row || !isset($this->episodes[(int) $row['episode_number']])) {
+        if (!$row || !isset($this->episodes[(int) $row['episode_number']]) || (int) $row['offset_ms'] < self::MIN_RESUME_MS) {
             return null;
         }
         return ['episode' => (int) $row['episode_number'], 'offset' => (int) $row['offset_ms']];
-    }
-
-    private function savePosition(string $user, int $episode, int $offset): void
-    {
-        // Ganz am Anfang lohnt sich das Merken nicht.
-        if ($offset < 30000) {
-            $offset = 0;
-        }
-        $this->pdo->prepare('INSERT INTO alexa_positions (user_hash, episode_number, offset_ms, updated_at) VALUES (:u, :n, :o, NOW())
-                             ON DUPLICATE KEY UPDATE episode_number = VALUES(episode_number), offset_ms = VALUES(offset_ms), updated_at = NOW()')
-            ->execute([':u' => $user, ':n' => $episode, ':o' => max(0, $offset)]);
     }
 
     public static function spokenTime(int $ms): string
@@ -399,8 +479,13 @@ final class Skill
     // Antworten
     // -------------------------------------------------------------------------------------------
 
-    private static function play(array $e, int $offsetMs, ?string $speech, string $behavior = 'REPLACE_ALL', ?string $previousToken = null): array
+    private function play(array $e, int $offsetMs, ?string $speech, string $behavior = 'REPLACE_ALL', ?string $previousToken = null): array
     {
+        // Merken, ab wo die Folge startet - Grundlage, falls das Geraet die Stelle nicht meldet.
+        // Eingereihte Folgen starten erst spaeter (PlaybackStarted).
+        if ($behavior === 'REPLACE_ALL' && $this->user !== null) {
+            $this->remember((int) $e['number'], $offsetMs, true);
+        }
         $stream = ['url' => $e['url'], 'token' => self::TOKEN_PREFIX . $e['number'], 'offsetInMilliseconds' => max(0, $offsetMs)];
         if ($previousToken !== null) {
             $stream['expectedPreviousToken'] = $previousToken;
