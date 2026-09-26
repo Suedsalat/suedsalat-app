@@ -273,9 +273,12 @@ class _PhotoCommentsSheetState extends State<PhotoCommentsSheet> {
               child: _laden && _kommentare == null
                   ? const Center(child: CircularProgressIndicator())
                   : k.isEmpty
-                  ? const Center(
+                  // Gaeste koennen nicht schreiben - also auch nicht dazu auffordern (Thorsten 26.09.2026).
+                  ? Center(
                       child: Text(
-                        'Noch keine Kommentare – schreib den ersten!',
+                        AccountService.instance.canContribute
+                            ? 'Noch keine Kommentare – schreib den ersten!'
+                            : 'Noch keine Kommentare.',
                       ),
                     )
                   : ListView.separated(

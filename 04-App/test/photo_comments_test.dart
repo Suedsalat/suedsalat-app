@@ -72,6 +72,13 @@ void main() {
     expect(find.byIcon(Icons.more_vert), findsOneWidget, reason: 'Melden geht auch fuer Gaeste');
   });
 
+  testWidgets('Gast ohne Kommentare: keine Aufforderung zum Schreiben', (tester) async {
+    await alsGast();
+    await oeffnen(tester, FakeApi([]));
+    expect(find.text('Noch keine Kommentare.'), findsOneWidget);
+    expect(find.text('Noch keine Kommentare – schreib den ersten!'), findsNothing);
+  });
+
   testWidgets('Angemeldet: kommentieren unter dem eigenen Spitznamen', (tester) async {
     await alsHoerer();
     final api = FakeApi([]);
