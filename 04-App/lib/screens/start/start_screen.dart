@@ -102,9 +102,7 @@ class StartScreen extends StatelessWidget {
             builder: (context, _) => !AccountService.instance.isLoggedIn
                 ? const SizedBox.shrink()
                 : _StartTile(
-                    // Platzhalter, bis Thorstens eigenes Symbol da ist (dann wie die anderen als
-                    // Image.asset('assets/images/bonus.png', width: 40, height: 40)).
-                    leading: Icon(Icons.auto_awesome, size: 40, color: Theme.of(context).colorScheme.primary),
+                    leading: Image.asset('assets/images/outtakes.png', width: 40, height: 40),
                     title: 'Bonus und Outtakes',
                     subtitle: 'Extras und Versprecher, nur für Hörer mit Konto',
                     onTap: () => Navigator.of(context).push(

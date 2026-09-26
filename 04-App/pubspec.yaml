@@ -111,6 +111,7 @@ flutter:
     - assets/images/galerie.png
     - assets/images/kino.png
     - assets/images/location.png
+    - assets/images/outtakes.png
     - assets/images/feedback.png
     - assets/images/newsletter.png
     - assets/images/feedback_rand.png

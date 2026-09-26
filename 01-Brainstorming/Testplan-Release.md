@@ -226,7 +226,7 @@ offenen Apps wischen) und starte dieselbe Folge wieder.
 - Als Gast gibt es die Kachel „Bonus und Outtakes“ nicht.
 - Angemeldet steht sie direkt unter der Galerie. Sie öffnet die Liste mit Titel, Datum und Text.
 - Antippen spielt den Beitrag im normalen Player, auch mit gesperrtem Bildschirm.
-- Das Symbol ist noch ein Platzhalter, bis Thorstens eigenes fertig ist.
+- Die Kachel zeigt Thorstens Outtakes-Symbol (zerschnittener Filmstreifen mit Mikro).
 
 ### 18. CarPlay-Menü (nur iPhone, im Auto)
 

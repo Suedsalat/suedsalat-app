@@ -46,6 +46,11 @@ void main() {
     await AccountService.instance.load();
     await startseite(tester);
     expect(find.text('Bonus und Outtakes'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName == 'assets/images/outtakes.png'),
+      findsOneWidget,
+      reason: 'Thorstens Outtakes-Symbol auf der Kachel',
+    );
     expect(tester.getTopLeft(find.text('Bonus und Outtakes')).dy, greaterThan(tester.getTopLeft(find.text('Galerie')).dy));
     expect(tester.getTopLeft(find.text('Bonus und Outtakes')).dy, lessThan(tester.getTopLeft(find.text('Newsletter')).dy));
   });
