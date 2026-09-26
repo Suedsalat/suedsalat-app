@@ -63,6 +63,14 @@ function recordPushSent(PDO $pdo, string $guid): void
     $stmt->execute([':guid' => $guid]);
 }
 
+// Homepage aus der RSS-Datei erzeugen (lib/Homepage.php) - bewusst VOR dem Einlesen fuer die App:
+// Ist die RSS-Datei kaputt, bricht das Skript unten ab; die Fehlermail an Thorsten geht aber raus.
+try {
+    echo 'Homepage: ' . \Suedsalat\Homepage::run(Database::connection())['message'] . PHP_EOL;
+} catch (Throwable $e) {
+    error_log('Homepage-Aktualisierung fehlgeschlagen: ' . $e->getMessage());
+}
+
 $xml = fetchRssXml(RSS_FEED_URL);
 if ($xml === null) {
     exit(1);

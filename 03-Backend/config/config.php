@@ -197,6 +197,10 @@ define('JWT_REFRESH_TTL_DAYS', 180);
 define('REVIEW_LOGIN_EMAIL', (string) env('REVIEW_LOGIN_EMAIL', ''));
 define('REVIEW_LOGIN_CODE', (string) env('REVIEW_LOGIN_CODE', ''));
 
+// Homepage aus der RSS-Datei (lib/Homepage.php): Ordner mit index.html und podcast.rss. Leer =
+// automatisch der Ordner ueber APP/ - aber nur im Live-Backend, nie im Testbereich APP-test.
+define('HOMEPAGE_DIR', (string) env('HOMEPAGE_DIR', ''));
+
 // Zusaetzliche Bestaetigung vor endgueltigen Loeschvorgaengen/sensiblen
 // Aktionen im gesamten Admin-Bereich - prueft die AKTUELL eingeloggte Person,
 // unabhaengig davon, wessen Datensatz betroffen ist. Bevorzugt den 6-stelligen
