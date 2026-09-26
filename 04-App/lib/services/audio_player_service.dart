@@ -202,7 +202,7 @@ class AudioPlayerService extends ChangeNotifier {
   /// da manche Hoerer schon beim Abspann abschalten, bevor die Datei technisch
   /// zu Ende ist - eine strikte "letzte Sekunde"-Pruefung wuerde solche
   /// vollstaendigen Anhoerungen sonst nicht mitzaehlen.
-  /// Bonus und Outtakes laufen im selben Player, zaehlen aber nicht in der Folgen-Statistik.
+  /// Outtakes laufen im selben Player, zaehlen aber nicht in der Folgen-Statistik.
   static bool _isBonus(Episode episode) => episode.guid.startsWith(BonusItem.guidPrefix);
 
   void _checkMilestones() {

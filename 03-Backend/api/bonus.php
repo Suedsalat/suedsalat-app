@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-// Bonus und Outtakes (App 2.0): nur fuer angemeldete Hoerer. Gaeste sehen den Bereich in der
+// Outtakes (App 2.0, intern "bonus"): nur fuer angemeldete Hoerer. Gaeste sehen den Bereich in der
 // App gar nicht; kommt trotzdem eine Anfrage ohne Konto, gibt es 403 statt der Liste.
 // Gesperrte Hoerer duerfen weiter hoeren (Sperre betrifft nur das Veroeffentlichen).
 
@@ -24,7 +24,7 @@ $pdo = Database::connection();
 $listener = Listener::forDevice($pdo, isset($claims['sub']) ? (int) $claims['sub'] : null);
 if ($listener === null) {
     http_response_code(403);
-    echo json_encode(['error' => 'Bonus und Outtakes gibt es mit einem kostenlosen Hörerkonto.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'Outtakes gibt es mit einem kostenlosen Hörerkonto.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

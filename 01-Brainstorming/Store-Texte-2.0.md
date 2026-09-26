@@ -22,7 +22,7 @@ Südsalat 2.0 – die größte Aktualisierung bisher!
 • Melden und Ausblenden: Unpassende Beiträge meldest du mit einem Tipp, Nutzer kannst du für dich ausblenden.
 • Kapitel: Springe im Player direkt zum gewünschten Thema einer Folge.
 • Weiterhören: Eine Folge geht genau dort weiter, wo du aufgehört hast.
-• Bonus und Outtakes: exklusive Extras für registrierte Hörer.
+• Outtakes: Versprecher und Pannen aus den Aufnahmen – exklusiv für registrierte Hörer.
 • CarPlay: Folgen jetzt auch bequem im Auto auswählen.
 • Neue Schrift im Südsalat-Look.
 • Statistik nur mit deiner Zustimmung – jederzeit in den Einstellungen änderbar.
@@ -37,7 +37,7 @@ Danke, dass du Teil der Südsalat-Community bist!
 Mit Klammer-Teil 438 Zeichen, ohne 362 – passt beides.
 
 ```
-Südsalat 2.0: kostenloses Hörerkonto ohne Passwort (Anmeldung per Code). Mit Konto Tipps, Fotos, Videos, Sprachnachrichten und Rezensionen einreichen – Rezensionen erscheinen sofort. Neu: Kommentare in der Galerie, seitlich zum nächsten Foto wischen, "Tipp von" bei jedem Tipp, Melden und Ausblenden. Kapitel im Player. Weiterhören an der letzten Stelle. Bonus und Outtakes. Neue Schrift, Statistik nur mit Zustimmung, Fehlerbehebungen.
+Südsalat 2.0: kostenloses Hörerkonto ohne Passwort (Anmeldung per Code). Mit Konto Tipps, Fotos, Videos, Sprachnachrichten und Rezensionen einreichen – Rezensionen erscheinen sofort. Neu: Kommentare in der Galerie, seitlich zum nächsten Foto wischen, "Tipp von" bei jedem Tipp, Melden und Ausblenden. Kapitel im Player. Weiterhören an der letzten Stelle. Outtakes. Neue Schrift, Statistik nur mit Zustimmung, Fehlerbehebungen.
 ```
 
 ---
@@ -89,10 +89,10 @@ Die App ist komplett kostenlos und enthält keine Werbung. Wir sammeln keine Dat
 Hör direkt rein und werde Teil der Südsalat-Community!
 ```
 
-Wenn Kapitel, Weiterhören, Bonus und CarPlay mitkommen, beim Punkt „Folgen“ ergänzen:
+Wenn Kapitel, Weiterhören, Outtakes und CarPlay mitkommen, beim Punkt „Folgen“ ergänzen:
 „Mit Kapiteln springst du direkt zum gewünschten Thema, und jede Folge geht dort weiter, wo du
 aufgehört hast. Unterwegs läuft die App auch mit Android Auto und CarPlay.“ – und als eigenen Punkt:
-„• Bonus und Outtakes – exklusive Extras für registrierte Hörer:innen.“
+„• Outtakes – Versprecher und Pannen aus den Aufnahmen, exklusiv für registrierte Hörer:innen.“
 
 ## Werbetext App Store (max. 170 Zeichen, jederzeit änderbar)
 

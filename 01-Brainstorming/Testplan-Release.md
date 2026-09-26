@@ -218,12 +218,12 @@ offenen Apps wischen) und starte dieselbe Folge wieder.
 - Ein Sprung von einer Veranstaltung oder einem Tipp zur passenden Stelle einer Folge geht weiterhin
   genau dorthin.
 
-### 17. Bonus und Outtakes
+### 17. Outtakes
 
 **So prüfst du es:** Schau als Gast und angemeldet auf die Startseite.
 
 **Erwartet:**
-- Als Gast gibt es die Kachel „Bonus und Outtakes“ nicht.
+- Als Gast gibt es die Kachel „Outtakes“ nicht.
 - Angemeldet steht sie direkt unter der Galerie. Sie öffnet die Liste mit Titel, Datum und Text.
 - Antippen spielt den Beitrag im normalen Player, auch mit gesperrtem Bildschirm.
 - Die Kachel zeigt Thorstens Outtakes-Symbol (zerschnittener Filmstreifen mit Mikro).
@@ -338,7 +338,7 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
   vorbelegt; auch die Rezension per Häkchen beim Anlegen eines Tipps heißt „Südsalat“. Beim Bearbeiten
   einer Rezension lässt sich der Name nicht leeren.
 
-- **Neue Seite „Bonus und Outtakes“** (nur Thorsten, Menü „Inhalte“): Titel, Text und Audiodatei
+- **Neue Seite „Outtakes“** (nur Thorsten, Menü „Inhalte“): Titel, Text und Audiodatei
   (MP3 oder M4A, höchstens 24 MB) anlegen, bearbeiten, Datei austauschen, löschen. Erscheint sofort in der
   App, eine Push-Nachricht geht nicht raus. Jenny sieht die Seite nicht.
 

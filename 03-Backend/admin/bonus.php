@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-// Bonus und Outtakes (App 2.0): eigene Audiodateien mit Titel und Text - nicht aus dem RSS-Feed.
+// Outtakes (App 2.0, intern "bonus"): eigene Audiodateien mit Titel und Text - nicht aus dem RSS-Feed.
 // Wie der Newsletter nur fuer den Owner (Thorsten): Menue-Link versteckt UND Seite serverseitig
 // gesperrt. In der App sehen nur angemeldete Hoerer den Bereich (api/bonus.php).
 
@@ -155,22 +155,22 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES)
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" href="https://www.xn--sdsalat-n2a.eu/favicon.png">
-    <title>Bonus und Outtakes – Südsalat Admin</title>
+    <title>Outtakes – Südsalat Admin</title>
     <link rel="stylesheet" href="<?= BASE_PATH ?>/admin/assets/admin.css?v=<?= @filemtime(__DIR__ . '/assets/admin.css') ?>">
 </head>
 <body>
 <?php require __DIR__ . '/partials/sidebar-open.php'; ?>
 <main class="content-box">
-    <h1>Bonus und Outtakes</h1>
+    <h1>Outtakes</h1>
     <p style="font-size:0.9rem;color:#666;">Eigene Audiodateien, unabhängig vom Podcast-Feed. In der App sehen nur angemeldete Hörer diesen Bereich, Gäste nicht. Neue Beiträge erscheinen sofort, eine Push-Nachricht geht nicht raus.</p>
 
     <?php if ($notice): ?><p class="info"><?= $e($notice) ?></p><?php endif; ?>
     <?php if ($error): ?><p class="error"><?= $e($error) ?></p><?php endif; ?>
     <?php if ($deleteError): ?><p class="error text-center">Falscher Code – nichts wurde gelöscht.</p><?php endif; ?>
 
-    <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Bonus-Beitrag anlegen</button>
+    <button type="button" class="button" data-show-create-form="create-form" style="<?= $showCreateForm ? 'display:none;' : '' ?>">+ Outtake anlegen</button>
     <div id="create-form" style="<?= $showCreateForm ? '' : 'display:none;' ?>">
-        <button type="button" class="button-secondary" data-hide-create-form="create-form">- Bonus-Beitrag anlegen</button>
+        <button type="button" class="button-secondary" data-hide-create-form="create-form">- Outtake anlegen</button>
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="action" value="create">
             <label>Titel <input type="text" name="title" maxlength="200" required value="<?= $showCreateForm ? $e($_POST['title'] ?? '') : '' ?>"></label>
@@ -219,7 +219,7 @@ $e = static fn (?string $s): string => htmlspecialchars((string) $s, ENT_QUOTES)
             </tr>
         <?php endforeach; ?>
         <?php if ($items === []): ?>
-            <tr><td colspan="5">Noch keine Bonus-Beiträge.</td></tr>
+            <tr><td colspan="5">Noch keine Outtakes.</td></tr>
         <?php endif; ?>
         </tbody>
     </table>

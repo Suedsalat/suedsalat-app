@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Bonus und Outtakes (App 2.0): nur Thorsten laedt hoch, nur angemeldete Hoerer sehen die Liste.
+ * Outtakes (App 2.0, intern "bonus"): nur Thorsten laedt hoch, nur angemeldete Hoerer sehen die Liste.
  *
  *   SUEDSALAT_ENV_FILE=D:/Suedsalat-Testumgebung/.env.test php tests/BonusTest.php
  */
@@ -31,7 +31,7 @@ check($s === 302 && str_contains($loc, 'dashboard.php'), 'Jenny kommt nicht auf 
 [, $html] = page($jenny, '/admin/dashboard.php');
 check(!str_contains($html, 'bonus.php'), 'Jenny sieht keinen Menuepunkt');
 [$s, $html] = page($owner, '/admin/bonus.php');
-check($s === 200 && str_contains($html, 'Noch keine Bonus-Beiträge') && clean($html), 'Thorsten sieht die leere Seite');
+check($s === 200 && str_contains($html, 'Noch keine Outtakes') && clean($html), 'Thorsten sieht die leere Seite');
 check(str_contains($html, 'href="' . BASE_PATH . '/admin/bonus.php"'), 'Thorsten hat den Menuepunkt');
 
 [, $html] = page($owner, '/admin/bonus.php', ['action' => 'create', 'title' => 'Falsch', 'audio' => new CURLFile($txt, 'audio/mpeg')]);

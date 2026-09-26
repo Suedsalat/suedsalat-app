@@ -17,7 +17,7 @@ class FakeApi extends ApiService {
   Future<List<BonusItem>> fetchBonus() async => items;
 }
 
-/// Bonus und Outtakes: nur mit Hoererkonto sichtbar, Liste mit Titel, Datum und Text.
+/// Outtakes: nur mit Hoererkonto sichtbar, Liste mit Titel, Datum und Text.
 void main() {
   Future<void> startseite(WidgetTester tester) async {
     tester.view.physicalSize = const Size(800, 2400);
@@ -29,15 +29,15 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('Gast sieht keine Bonus-Kachel', (tester) async {
+  testWidgets('Gast sieht keine Outtakes-Kachel', (tester) async {
     SharedPreferences.setMockInitialValues({});
     await AccountService.instance.load();
     await startseite(tester);
     expect(find.text('Galerie'), findsOneWidget);
-    expect(find.text('Bonus und Outtakes'), findsNothing);
+    expect(find.text('Outtakes'), findsNothing);
   });
 
-  testWidgets('Angemeldet: Bonus-Kachel direkt nach der Galerie', (tester) async {
+  testWidgets('Angemeldet: Outtakes-Kachel direkt nach der Galerie', (tester) async {
     SharedPreferences.setMockInitialValues({
       'listener_profile': jsonEncode({
         'id': 7, 'first_name': 'Angela', 'last_name': 'Test', 'email': 'a@example.org', 'nickname': 'Angela', 'blocked': false,
@@ -45,14 +45,14 @@ void main() {
     });
     await AccountService.instance.load();
     await startseite(tester);
-    expect(find.text('Bonus und Outtakes'), findsOneWidget);
+    expect(find.text('Outtakes'), findsOneWidget);
     expect(
       find.byWidgetPredicate((w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName == 'assets/images/outtakes.png'),
       findsOneWidget,
       reason: 'Thorstens Outtakes-Symbol auf der Kachel',
     );
-    expect(tester.getTopLeft(find.text('Bonus und Outtakes')).dy, greaterThan(tester.getTopLeft(find.text('Galerie')).dy));
-    expect(tester.getTopLeft(find.text('Bonus und Outtakes')).dy, lessThan(tester.getTopLeft(find.text('Newsletter')).dy));
+    expect(tester.getTopLeft(find.text('Outtakes')).dy, greaterThan(tester.getTopLeft(find.text('Galerie')).dy));
+    expect(tester.getTopLeft(find.text('Outtakes')).dy, lessThan(tester.getTopLeft(find.text('Newsletter')).dy));
   });
 
   testWidgets('Liste zeigt Titel, Datum und Text', (tester) async {
@@ -74,10 +74,10 @@ void main() {
   testWidgets('leere Liste: freundlicher Hinweis', (tester) async {
     await tester.pumpWidget(MaterialApp(home: BonusScreen(api: FakeApi(const []))));
     await tester.pumpAndSettle();
-    expect(find.textContaining('bald Extras'), findsOneWidget);
+    expect(find.textContaining('bald Outtakes'), findsOneWidget);
   });
 
-  test('Bonus laeuft im Player unter eigener Kennung', () {
+  test('Outtakes laufen im Player unter eigener Kennung', () {
     final e = BonusItem(id: 5, title: 'x', audioUrl: 'https://x.invalid/c.mp3', publishedAt: DateTime(2026)).toEpisode();
     expect(e.guid, 'bonus-5');
     expect(e.audioUrl, 'https://x.invalid/c.mp3');

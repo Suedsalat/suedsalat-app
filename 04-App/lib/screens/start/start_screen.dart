@@ -103,8 +103,8 @@ class StartScreen extends StatelessWidget {
                 ? const SizedBox.shrink()
                 : _StartTile(
                     leading: Image.asset('assets/images/outtakes.png', width: 40, height: 40),
-                    title: 'Bonus und Outtakes',
-                    subtitle: 'Extras und Versprecher, nur für Hörer mit Konto',
+                    title: 'Outtakes',
+                    subtitle: 'Versprecher und Pannen – nur für Hörer mit Konto',
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const BonusScreen()),
                     ),

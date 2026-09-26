@@ -7,7 +7,7 @@ import '../../services/audio_player_service.dart';
 import '../../widgets/async_state_views.dart';
 import '../episodes/episode_player_screen.dart';
 
-/// Bonus und Outtakes (App 2.0): nur fuer angemeldete Hoerer - die Kachel auf der Startseite
+/// Outtakes (App 2.0, intern "bonus"): nur fuer angemeldete Hoerer - die Kachel auf der Startseite
 /// erscheint nur mit Konto. Abgespielt wird im normalen Player, also auch mit Sperrbildschirm
 /// und gemerkter Wiedergabeposition.
 class BonusScreen extends StatefulWidget {
@@ -37,7 +37,7 @@ class _BonusScreenState extends State<BonusScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Bonus und Outtakes')),
+      appBar: AppBar(title: const Text('Outtakes')),
       body: RefreshIndicator(
         onRefresh: _reload,
         child: FutureBuilder<List<BonusItem>>(
@@ -51,7 +51,7 @@ class _BonusScreenState extends State<BonusScreen> {
             }
             final items = snapshot.data ?? const [];
             if (items.isEmpty) {
-              return const EmptyStateView(message: 'Hier gibt es bald Extras und Outtakes aus dem Podcast.');
+              return const EmptyStateView(message: 'Hier gibt es bald Outtakes aus dem Podcast.');
             }
             return ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),

@@ -1,6 +1,6 @@
 import 'episode.dart';
 
-/// Bonus und Outtakes (App 2.0): eigene Audiodateien, nur fuer angemeldete Hoerer.
+/// Outtakes (App 2.0, intern "bonus"): eigene Audiodateien, nur fuer angemeldete Hoerer.
 class BonusItem {
   final int id;
   final String title;
@@ -24,7 +24,7 @@ class BonusItem {
         publishedAt: DateTime.parse(json['published_at'] as String),
       );
 
-  /// Guid-Praefix, an dem der Player Bonus-Beitraege von Podcast-Folgen unterscheidet
+  /// Guid-Praefix, an dem der Player Outtakes von Podcast-Folgen unterscheidet
   /// (keine Folgen-Statistik, eigener Merkplatz fuer die Wiedergabeposition).
   static const guidPrefix = 'bonus-';
 
