@@ -73,6 +73,16 @@ du einfügen musst, liegt in diesem Ordner.
    - „was gibt es Neues?“
    - „Alexa, stopp“ und danach „Alexa, öffne Südsalat“ → er bietet an, weiterzuhören
 
+## Nach der Freigabe: Symbole tauschen (Wunsch Thorsten, 26.09.2026)
+
+Die eingereichten Symbole zeigen Mikro **mit** Schriftzug „SÜDSALAT“. Gewünscht ist **nur das Mikro auf
+grünem Grund** – liegt fertig bereit: `symbol-mikro-108.png` und `symbol-mikro-512.png` (aus
+`U:LogoMikro.png`, mit Rand für den runden Rahmen, Grün #77B538).
+
+So geht’s: Während der Prüfung ist der Skill gesperrt. Nach der Freigabe **Distribution → Skill Preview**
+→ beide Symbole ersetzen → speichern → **Certification → Submit for review**. Das ist eine kleine
+Änderung, die Prüfung geht meist schnell; der Skill bleibt währenddessen normal nutzbar.
+
 ## Schritt 8: Veröffentlichen
 
 **Vertrieb** (Distribution) → Store-Vorschau:
