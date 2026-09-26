@@ -249,6 +249,24 @@ CarPlay „Südsalat“ antippen.
 **Wenn CarPlay die App gar nicht öffnet:** Das ist ein Hinweis auf die Einstellung für mehrere Fenster
 in der `Info.plist` (`UIApplicationSupportsMultipleScenes`), mir Bescheid geben.
 
+### 19. Kapitel im Player
+
+Neu: Folgen können Kapitel haben. Thorsten trägt sie im Admin-Bereich unter „Folgen“ ein, auch für
+alte Folgen.
+
+**So prüfst du es:** Öffne eine Folge mit Kapiteln.
+
+**Erwartet:**
+- Unter dem Datum steht in Grün das Kapitel, das gerade läuft. Es wechselt beim Weiterhören.
+- Unter der Beschreibung steht die Liste „Kapitel“. Antippen springt dorthin, auch wenn die Folge
+  gerade pausiert ist.
+- In der Beschreibung stehen keine Zeitangaben-Zeilen mehr.
+- Sperrbildschirm, Android Auto und CarPlay zeigen das Kapitel als zweite Zeile unter dem Titel.
+- Die Tasten Weiter/Zurück (Sperrbildschirm, Lenkrad, Auto) springen zwischen den Kapiteln.
+  „Zurück“ kurz nach einem Kapitelanfang springt ins vorige Kapitel, sonst an den Anfang des
+  laufenden. Hinter dem letzten Kapitel geht „Weiter“ zur nächsten Folge.
+- Folgen ohne Kapitel verhalten sich wie bisher.
+
 ---
 
 ## Teil B — Aus 1.3.3 bis 1.3.6, für die Tester zum ersten Mal sichtbar
@@ -256,7 +274,7 @@ in der `Info.plist` (`UIApplicationSupportsMultipleScenes`), mir Bescheid geben.
 Diese Dinge sind seit Mitte September fertig, kamen aber nie bei den Testern an. Wer von 1.3.2
 kommt, sieht sie jetzt zum ersten Mal — deshalb gehören sie in den Test.
 
-### 19. Android Auto
+### 20. Android Auto
 
 Die größte Neuerung dieses Sprungs. Die App meldet sich beim Auto als Medien-App an.
 
@@ -275,14 +293,14 @@ Die größte Neuerung dieses Sprungs. Die App meldet sich beim Auto als Medien-A
 **Bitte unbedingt melden, wenn** "Auswahl konnte nicht geladen werden" erscheint — das war der Fehler,
 der mehrere Anläufe gekostet hat, und der Fix ist in der Fassung, die ihr bekommt.
 
-### 20. Wiedergabe-Anzeige auf dem Sperrbildschirm
+### 21. Wiedergabe-Anzeige auf dem Sperrbildschirm
 
 **Erwartet:** Beim Abspielen erscheint eine Benachrichtigung mit Titel, Bild und Steuerung. Das
 Symbol in der Statusleiste ist einfarbig, nicht das bunte App-Icon. Läuft eine Folge ohne eigenes
 Bild, steht dort das quadratische Südsalat-Logo mit Schriftzug, kein einzelnes Mikrofon auf leerem
 Grund.
 
-### 21. Feedback einer Folge zuordnen
+### 22. Feedback einer Folge zuordnen
 
 **So prüfst du es:** Öffne das Feedback-Formular.
 
@@ -323,6 +341,18 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
 - **Neue Seite „Bonus und Outtakes“** (nur Thorsten, Menü „Inhalte“): Titel, Text und Audiodatei
   (MP3 oder M4A, höchstens 24 MB) anlegen, bearbeiten, Datei austauschen, löschen. Erscheint sofort in der
   App, eine Push-Nachricht geht nicht raus. Jenny sieht die Seite nicht.
+
+- **Neue Seite „Folgen“** (nur Thorsten): neue Folge anlegen (MP3 vorher per FTP nach `episodes/`,
+  dann aus der Liste wählen; Länge und Größe ermittelt der Server), jede Folge bearbeiten, Kapitel
+  eintragen („00:00 Titel“ je Zeile, auch für alte Folgen), Kurztext fürs Archiv. Schreibt
+  `podcast.rss`, die bisherige Fassung wird aufgehoben und lässt sich wiederherstellen. Prüfen: eine
+  Folge mit Kapiteln versehen und danach in der App, bei Spotify (dauert dort etwas) und auf der
+  Homepage nachsehen.
+- **Neue Seite „Homepage“** (nur Thorsten): Die Folgen auf der Homepage entstehen automatisch aus
+  `podcast.rss` (alle 15 Minuten oder per Knopf). Laufender Zehner einzeln oben, volle Zehner im
+  Archiv mit Kurztext. Kapitel erscheinen unter dem Player. Bei einer kaputten RSS-Datei bleibt die
+  Seite stehen, und Thorsten bekommt eine Mail.
+- **Änderungen an alten Folgen kommen jetzt in der App an** (Titel, Text, Kapitel), ohne Push.
 
 ### Bereits live, nicht Teil dieses Release-Tests
 
@@ -380,6 +410,16 @@ Diese Änderungen liegen in Git, sind aber noch nicht auf dem Server. Beim Relea
    Weiterleitung) und `REVIEW_LOGIN_CODE` (6 Ziffern) setzen, Adresse + Code in App Store Connect
    („Anmeldung erforderlich“) und Play Console („App-Zugriff“) eintragen. Beiträge des Prüfkontos sieht
    nur es selbst; im Admin-Bereich steht es als „Prüfkonto (Apple/Google)“.
+6d. **Homepage und Folgen (Stand 26.09.2026):**
+   - Backend hochladen und die 2.0-Migration laufen lassen (legt u. a. `rss_versions` an).
+   - Aus `U:Web` hochladen: `podcast.rss` (Kurztexte der Folgen 1–29, fünf korrigierte Titel) und
+     `index.html` (Folgenbereich zwischen den Markierungen `FOLGEN-ANFANG`/`FOLGEN-ENDE`). Die Reihenfolge
+     ist egal: Ohne Markierungen fasst der Server die Seite nicht an.
+   - Danach im Admin-Bereich unter „Homepage“ auf „Jetzt aktualisieren“ klicken und die Seite ansehen.
+     Der Folgenteil muss aussehen wie vorher. Neu: Der Download-Knopf von Folge 35 funktioniert.
+   - **Ab dann Folgen nur noch im Admin-Bereich unter „Folgen“ pflegen**, nicht mehr `podcast.rss`
+     oder den Folgenteil der `index.html` von Hand. Alles außerhalb der Markierungen darf weiter
+     von Hand geändert werden.
 6c. **Bevor die Nutzungsbedingungen später einmal geändert werden:** In der App eine erneute Zustimmung
    einbauen (die Bedingungen versprechen in Nr. 12, dass neue Beiträge erst nach Zustimmung zur neuen
    Fassung möglich sind). Die Fassung steht pro Konto in `listeners.terms_version`.

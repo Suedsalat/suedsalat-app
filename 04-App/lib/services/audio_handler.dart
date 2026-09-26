@@ -1,6 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:audioplayers/audioplayers.dart' show PlayerState;
 
+import '../models/chapter.dart';
 import '../models/episode.dart';
 import 'api_service.dart';
 import 'audio_player_service.dart';
@@ -63,8 +64,9 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
   static final _htmlTagPattern = RegExp(r'<[^>]*>');
 
   String? _plainDescriptionFor(Episode episode) {
-    final description = episode.description;
-    if (description == null || description.isEmpty) return null;
+    // Ohne Kapitelzeilen - die zeigt der Player als eigene Liste.
+    final description = EpisodeChapters.of(episode).text;
+    if (description.isEmpty) return null;
     return description.replaceAll(_htmlTagPattern, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
@@ -138,13 +140,22 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
     }
   }
 
+  /// Kapitel der laufenden Folge (leer, wenn sie keine hat).
+  EpisodeChapters? get _chapters {
+    final episode = _service.currentEpisode;
+    return episode != null ? EpisodeChapters.of(episode) : null;
+  }
+
   void _syncState() {
     final episode = _service.currentEpisode;
+    final chapters = _chapters;
+    final hasChapters = chapters != null && chapters.chapters.isNotEmpty;
     if (episode != null) {
       mediaItem.add(MediaItem(
         id: episode.guid,
         title: episode.title,
-        artist: 'Südsalat Podcast',
+        // Zweite Zeile in Android Auto, CarPlay und auf dem Sperrbildschirm: das laufende Kapitel.
+        artist: chapters?.at(_service.position)?.title ?? 'Südsalat Podcast',
         duration: _service.duration.inMilliseconds > 0 ? _service.duration : null,
         artUri: _artUriFor(episode),
       ));
@@ -155,7 +166,11 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
         MediaControl.rewind,
         _service.playerState == PlayerState.playing ? MediaControl.pause : MediaControl.play,
         MediaControl.stop,
-        if (_service.hasNext) MediaControl.skipToNext,
+        // Mit Kapiteln springen Zurueck/Weiter zwischen den Kapiteln (hinter dem letzten zur
+        // naechsten Folge), ohne Kapitel wie bisher zur naechsten Folge.
+        if (hasChapters) MediaControl.skipToPrevious,
+        if ((hasChapters && chapters.nextStart(_service.position) != null) || _service.hasNext)
+          MediaControl.skipToNext,
       ],
       systemActions: const {
         MediaAction.seek,
@@ -187,7 +202,17 @@ class SuedsalatAudioHandler extends BaseAudioHandler with SeekHandler {
   Future<void> seek(Duration position) => _service.seek(position);
 
   @override
-  Future<void> skipToNext() => _service.playNext();
+  Future<void> skipToNext() {
+    final next = _chapters?.nextStart(_service.position);
+    return next != null ? _service.seek(next) : _service.playNext();
+  }
+
+  @override
+  Future<void> skipToPrevious() {
+    final chapters = _chapters;
+    if (chapters == null || chapters.chapters.isEmpty) return _service.seek(Duration.zero);
+    return _service.seek(chapters.previousStart(_service.position));
+  }
 
   @override
   Future<void> fastForward() => _service.seek(_service.position + const Duration(seconds: 15));

@@ -20,7 +20,7 @@ Südsalat 2.0 – die größte Aktualisierung bisher!
 • Galerie: Wische im geöffneten Foto seitlich zum nächsten Bild, Videos laufen direkt mit.
 • Jeder Tipp zeigt jetzt, von wem er kommt.
 • Melden und Ausblenden: Unpassende Beiträge meldest du mit einem Tipp, Nutzer kannst du für dich ausblenden.
-• [Kapitel: Springe im Player direkt zum gewünschten Thema einer Folge.]
+• Kapitel: Springe im Player direkt zum gewünschten Thema einer Folge.
 • Weiterhören: Eine Folge geht genau dort weiter, wo du aufgehört hast.
 • Bonus und Outtakes: exklusive Extras für registrierte Hörer.
 • CarPlay: Folgen jetzt auch bequem im Auto auswählen.
@@ -37,7 +37,7 @@ Danke, dass du Teil der Südsalat-Community bist!
 Mit Klammer-Teil 438 Zeichen, ohne 362 – passt beides.
 
 ```
-Südsalat 2.0: kostenloses Hörerkonto ohne Passwort (Anmeldung per Code). Mit Konto Tipps, Fotos, Videos, Sprachnachrichten und Rezensionen einreichen – Rezensionen erscheinen sofort. Neu: Kommentare in der Galerie, seitlich zum nächsten Foto wischen, "Tipp von" bei jedem Tipp, Melden und Ausblenden. [Kapitel im Player.] Weiterhören an der letzten Stelle. Bonus und Outtakes. Neue Schrift, Statistik nur mit Zustimmung, Fehlerbehebungen.
+Südsalat 2.0: kostenloses Hörerkonto ohne Passwort (Anmeldung per Code). Mit Konto Tipps, Fotos, Videos, Sprachnachrichten und Rezensionen einreichen – Rezensionen erscheinen sofort. Neu: Kommentare in der Galerie, seitlich zum nächsten Foto wischen, "Tipp von" bei jedem Tipp, Melden und Ausblenden. Kapitel im Player. Weiterhören an der letzten Stelle. Bonus und Outtakes. Neue Schrift, Statistik nur mit Zustimmung, Fehlerbehebungen.
 ```
 
 ---

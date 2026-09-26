@@ -2,7 +2,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../models/chapter.dart';
 import '../../services/audio_player_service.dart';
+import '../../widgets/chapter_list.dart';
 import '../feedback/feedback_screen.dart';
 
 class EpisodePlayerScreen extends StatelessWidget {
@@ -32,9 +34,10 @@ class EpisodePlayerScreen extends StatelessWidget {
 
         final maxSeconds = service.duration.inSeconds > 0 ? service.duration.inSeconds.toDouble() : 1.0;
         final currentSeconds = service.position.inSeconds.toDouble().clamp(0, maxSeconds);
-        final description = episode.description
-            ?.replaceAll(RegExp(r'\s+'), ' ')
-            .trim();
+        // Kapitelzeilen ("00:00 Begruessung") stehen im Feed in der Beschreibung - hier als Liste.
+        final parts = EpisodeChapters.of(episode);
+        final description = parts.text;
+        final currentIndex = parts.indexAt(service.position);
 
         return Scaffold(
           appBar: AppBar(title: const Text('Wird abgespielt')),
@@ -74,9 +77,32 @@ class EpisodePlayerScreen extends StatelessWidget {
                             DateFormat('dd.MM.yyyy').format(episode.pubDate),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
-                          if (description != null && description.isNotEmpty) ...[
+                          if (currentIndex >= 0) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              parts.chapters[currentIndex].title,
+                              key: const ValueKey('aktuelles-kapitel'),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                          if (description.isNotEmpty) ...[
                             const SizedBox(height: 16),
                             Text(description, textAlign: TextAlign.center),
+                          ],
+                          if (parts.chapters.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            ChapterList(
+                              chapters: parts.chapters,
+                              currentIndex: currentIndex,
+                              onTap: (chapter) async {
+                                await service.seek(chapter.start);
+                                if (service.playerState != PlayerState.playing) await service.play();
+                              },
+                            ),
                           ],
                           const SizedBox(height: 16),
                           OutlinedButton.icon(
